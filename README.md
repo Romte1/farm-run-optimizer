@@ -9,6 +9,10 @@
 
 ---
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/bank-and-timers.png" alt="Items to withdraw outlined in the bank, with every patch timer in the sidebar" width="100%">
+</p>
+
 ## Getting started
 
 1. Install **Farm Run Optimizer** from the Plugin Hub.
@@ -27,11 +31,15 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 - **Most profitable herb first.** See the profit per patch for every herb you can grow, at Grand Exchange prices, and plant the best one first.
 - **Farming contracts.** Your Farming Guild contract is shown, and the contract crop is planted in the guild patch.
 
+<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/runs-and-profit.png" alt="Herb picker with profit per patch" height="520"></p>
+
 ### What to bring
 - **Take with you.** One list of seeds, saplings, compost, gardener payments (noted is fine), coins, tools, teleport items and spell runes. Items you're carrying get a green border; the rest are outlined in your bank.
 - **Bank stops.** If it won't all fit in 28 slots, the route adds a stop at the nearest bank with exactly what to withdraw.
 - **Plant cure and secateurs** are added when a patch is diseased.
 - **Tree seed reminders** to pot and water your seeds so you have saplings for next time.
+
+<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/take-with-you.png" alt="Take with you list, tips and finished stops" height="520"></p>
 
 ### Getting there
 - **Fastest teleports you own**: jewellery, capes, the ectophial, spells or tablets (your choice).
@@ -54,6 +62,8 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 ## Settings
 
 Everything can be switched on or off in the panel's **Settings** section or in RuneLite's plugin settings: the ground highlight, hint arrow, walking line, gardener highlight, inventory and bank highlights, notifications, the run-ready box, run history, which teleports to use (spells, tablets, individual items) and more.
+
+<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/travel-and-settings.png" alt="Travel and settings" height="520"></p>
 
 ## Patches
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 (2026-11-14) - first Plugin Hub update
+- Includes b12 and b13: run in progress saved, live "This run" in history, real fairy ring outline, fairer run profit.
+- Support link on the Plugin Hub page; screenshots in the README.
+
 ## 1.0.0 b13 (2026-11-14)
 - Fairy ring stops outline the real fairy ring (like patches), and the path and arrow go to it.
 - Run profit now counts the seed that grew what you harvested, instead of the seed you planted for next time, so a run is no longer negative just because you planted pricier seeds.
