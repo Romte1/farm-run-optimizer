@@ -1,7 +1,31 @@
-# Farm Run Planner (RuneLite plugin)
+<p align="center">
+  <img src="images/banner.png" alt="Farm Run Planner - a farming companion for RuneLite" width="100%">
+</p>
 
-**Made by ToadFx.** Plans herb, tree, fruit tree and hardwood runs from your Farming level,
-quests and bank, tells you exactly what to do at each stop, and tracks every patch's timer.
+<p align="center">
+  <a href="https://github.com/triggleman/farm-run-planner/actions/workflows/build.yml"><img src="https://github.com/triggleman/farm-run-planner/actions/workflows/build.yml/badge.svg" alt="Build"></a>
+  <img src="https://img.shields.io/badge/RuneLite-plugin-orange" alt="RuneLite plugin">
+  <img src="https://img.shields.io/badge/Java-11%2B-blue" alt="Java 11+">
+</p>
+
+<p align="center">
+  <b>Plan every herb, tree, fruit tree and hardwood run: what to bring, the fastest route, what to do at each patch, and every growth timer.</b><br>
+  Made by ToadFx
+</p>
+
+---
+
+## Highlights
+
+| | |
+|---|---|
+| **Smart route** | Fastest teleports you own, fairy rings chained back to back with the code to dial, spells or tabs your choice. |
+| **Take with you** | One list of seeds, saplings, compost, payments, runes and tools. Bank stops added when it won't fit. |
+| **Step by step** | A card for every patch with its to-do list. The item you need next is highlighted in your inventory. |
+| **Exact timers** | Read straight from the game, including your account's growth-tick offset. Notifications when ready. |
+| **Your picks** | Choose which herbs and trees to plant and which patches to visit. |
+
+> Screenshots coming soon.
 
 ## What it does
 
