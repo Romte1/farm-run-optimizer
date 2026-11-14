@@ -114,6 +114,9 @@ public class HerbRunPlugin extends Plugin
 	private RunReadyOverlay readyOverlay;
 
 	@Inject
+	private LeadHintOverlay leadHintOverlay;
+
+	@Inject
 	private net.runelite.client.game.SpriteManager spriteManager;
 
 	private static final String HISTORY_KEY = "runHistory";
@@ -170,6 +173,13 @@ public class HerbRunPlugin extends Plugin
 	private volatile String payLabel;
 	/** Fairy ring objects currently loaded, to outline the real ring. */
 	private final Set<GameObject> fairyRingObjects = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	private final Set<GameObject> spiritTreeObjects = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	/** What to click first (fairy ring or spirit tree) and what to pick there. */
+	private volatile GameObject navLeadObject;
+	private volatile String navLeadHint;
+	/** A walkable tile beside each tree patch (where the gardener stands), for the walking path. */
+	private final Map<FarmPatch, WorldPoint> approachTiles = new EnumMap<>(FarmPatch.class);
+	private static final String APPROACH_KEY = "approachTiles";
 	private boolean ourHintArrow;
 	private RunPlan lastPlan;
 
@@ -205,10 +215,12 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(navigationOverlay);
 		overlayManager.add(inventoryOverlay);
 		overlayManager.add(readyOverlay);
+		overlayManager.add(leadHintOverlay);
 		dirty = true;
 		timersLoaded = false;
 		ticksSinceQuestCheck = QUEST_CHECK_INTERVAL_TICKS;
 		loadTiles();
+		loadTileMap(APPROACH_KEY, approachTiles);
 	}
 
 	@Override
@@ -219,6 +231,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(navigationOverlay);
 		overlayManager.remove(inventoryOverlay);
 		overlayManager.remove(readyOverlay);
+		overlayManager.remove(leadHintOverlay);
 		saveHistory(); // keeps the run in progress for next time
 		lastStatus.clear();
 		statusesPrimed = false;
@@ -236,6 +249,7 @@ public class HerbRunPlugin extends Plugin
 		patchObjects.clear();
 		gardeners.clear();
 		fairyRingObjects.clear();
+		spiritTreeObjects.clear();
 		lastSeenValue.clear();
 		bankSeen = false;
 		highlightIds = Collections.emptySet();
@@ -424,6 +438,11 @@ public class HerbRunPlugin extends Plugin
 			fairyRingObjects.add(obj);
 			return;
 		}
+		if (def != null && "Spirit tree".equalsIgnoreCase(def.getName()))
+		{
+			spiritTreeObjects.add(obj);
+			return;
+		}
 		if (def == null || !FARMING_VARBITS.contains(def.getVarbitId()))
 		{
 			return;
@@ -466,13 +485,14 @@ public class HerbRunPlugin extends Plugin
 	{
 		patchObjects.remove(event.getGameObject());
 		fairyRingObjects.remove(event.getGameObject());
+		spiritTreeObjects.remove(event.getGameObject());
 	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
 		if (!HerbRunConfig.GROUP.equals(event.getGroup()) || TIMERS_KEY.equals(event.getKey())
-			|| CLOCK_KEY.equals(event.getKey()) || TILES_KEY.equals(event.getKey()))
+			|| CLOCK_KEY.equals(event.getKey()) || TILES_KEY.equals(event.getKey()) || APPROACH_KEY.equals(event.getKey()))
 		{
 			return;
 		}
@@ -865,6 +885,37 @@ public class HerbRunPlugin extends Plugin
 			try
 			{
 				learnedTiles.put(FarmPatch.valueOf(c[0]),
+					new WorldPoint(Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3])));
+			}
+			catch (RuntimeException ignored)
+			{
+				// old or bad entry
+			}
+		}
+	}
+
+	private void saveTileMap(String key, Map<FarmPatch, WorldPoint> map)
+	{
+		StringBuilder sb = new StringBuilder();
+		map.forEach((p, w) -> sb.append(sb.length() > 0 ? ";" : "").append(p.name()).append(':')
+			.append(w.getX()).append(':').append(w.getY()).append(':').append(w.getPlane()));
+		configManager.setConfiguration(HerbRunConfig.GROUP, key, sb.toString());
+	}
+
+	private void loadTileMap(String key, Map<FarmPatch, WorldPoint> map)
+	{
+		map.clear();
+		String raw = configManager.getConfiguration(HerbRunConfig.GROUP, key);
+		if (raw == null || raw.isEmpty())
+		{
+			return;
+		}
+		for (String part : raw.split(";"))
+		{
+			String[] c = part.split(":");
+			try
+			{
+				map.put(FarmPatch.valueOf(c[0]),
 					new WorldPoint(Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3])));
 			}
 			catch (RuntimeException ignored)
@@ -1460,31 +1511,72 @@ public class HerbRunPlugin extends Plugin
 
 		WorldPoint target = next == null ? null : tileFor(next);
 		String ringLabel = null;
+		GameObject leadObj = null;
+		String leadHint = null;
 		Player player = client.getLocalPlayer();
 		WorldPoint me = player == null ? null : player.getWorldLocation();
-		if (next != null && me != null)
+		RunPlan.RouteStep step = next == null ? null : stepFor(next);
+		if (step != null && step.teleport != null && me != null && me.getPlane() == 0)
 		{
-			// A fairy ring step: lead you to the ring first, until you've teleported.
-			RunPlan.RouteStep step = stepFor(next);
-			int i = step == null ? -1 : lastPlan.route.indexOf(step);
-			String start = step == null ? null : FairyRings.startRing(step, i > 0 ? lastPlan.route.get(i - 1) : null);
-			int[] ring = FairyRings.tile(start);
-			int[] dest = step == null ? null : FairyRings.tile(step.teleport.getFairyCode());
-			if (ring != null && me.getPlane() == 0
-				&& dist(me, ring[0], ring[1]) <= RING_LEAD_RANGE
-				&& (dest == null || dist(me, dest[0], dest[1]) > 20)
-				&& dist(me, target.getX(), target.getY()) > 25)
+			String code = step.teleport.getFairyCode();
+			if (code != null)
 			{
-				GameObject ringObj = ringObjectNear(ring[0], ring[1]);
-				target = ringObj != null ? ringObj.getWorldLocation() : new WorldPoint(ring[0], ring[1], 0);
-				ringLabel = "Fairy ring: dial " + step.teleport.getFairyCode();
+				// Fairy ring step: lead you to a ring (the nearest one loaded, or the one named in the
+				// directions), until you've teleported.
+				int[] dest = FairyRings.tile(code);
+				if ((dest == null || dist(me, dest[0], dest[1]) > 20) && dist(me, target.getX(), target.getY()) > 25)
+				{
+					GameObject ringObj = nearest(fairyRingObjects, me, 40);
+					int i = lastPlan.route.indexOf(step);
+					int[] ring = FairyRings.tile(FairyRings.startRing(step, i > 0 ? lastPlan.route.get(i - 1) : null));
+					if (ringObj != null)
+					{
+						target = ringObj.getWorldLocation();
+					}
+					else if (ring != null && dist(me, ring[0], ring[1]) <= RING_LEAD_RANGE)
+					{
+						target = new WorldPoint(ring[0], ring[1], 0);
+					}
+					if (ringObj != null || (ring != null && dist(me, ring[0], ring[1]) <= RING_LEAD_RANGE))
+					{
+						leadObj = ringObj;
+						ringLabel = "Fairy ring: dial " + code;
+						leadHint = "Dial " + code + " for " + next.getDisplayName();
+					}
+				}
+			}
+			else if (step.teleport == Teleport.SPIRIT_TREE && dist(me, target.getX(), target.getY()) > 40)
+			{
+				// Spirit tree step: lead you to the nearest spirit tree and say which one to pick.
+				GameObject tree = nearest(spiritTreeObjects, me, 40);
+				if (tree != null)
+				{
+					target = tree.getWorldLocation();
+					leadObj = tree;
+					String where = spiritTreeDestination(next);
+					ringLabel = "Spirit tree: " + where;
+					leadHint = "Spirit tree: pick " + where;
+				}
 			}
 		}
+		navLeadObject = leadObj;
+		navLeadHint = leadHint;
 		navTarget = target;
 		navRingLabel = ringLabel;
 
 		// Shortest Path plugin: post again whenever the target tile changes (e.g. the real
 		// patch object loads in, or you move on from the fairy ring).
+		WorldPoint pathTarget = target;
+		if (ringLabel == null && next != null && next.getType().isTreeLike())
+		{
+			learnApproach(next);
+			WorldPoint approach = approachTiles.get(next);
+			if (approach != null)
+			{
+				pathTarget = approach; // the patch itself can't be walked on
+			}
+		}
+		target = pathTarget;
 		if (config.useShortestPath() && !java.util.Objects.equals(target, shortestPathTarget))
 		{
 			if (target == null)
@@ -1500,7 +1592,8 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 
-		// Hint arrow when close enough to render.
+		// Hint arrow when close enough to render (on the patch / ring / tree, not the approach tile).
+		target = navTarget;
 		if (config.hintArrow())
 		{
 			boolean near = target != null && me != null && me.getPlane() == target.getPlane()
@@ -1527,6 +1620,102 @@ public class HerbRunPlugin extends Plugin
 		return Math.max(Math.abs(p.getX() - x), Math.abs(p.getY() - y));
 	}
 
+	private static GameObject nearest(Set<GameObject> objects, WorldPoint me, int range)
+	{
+		GameObject best = null;
+		int bestDist = range;
+		for (GameObject o : objects)
+		{
+			WorldPoint w = o.getWorldLocation();
+			int d = dist(me, w.getX(), w.getY());
+			if (w.getPlane() == me.getPlane() && d <= bestDist)
+			{
+				bestDist = d;
+				best = o;
+			}
+		}
+		return best;
+	}
+
+	private static String spiritTreeDestination(FarmPatch patch)
+	{
+		switch (patch)
+		{
+			case GNOME_TREE:
+			case GNOME_FRUIT:
+				return "Gnome Stronghold";
+			case TREE_GNOME_VILLAGE_FRUIT:
+				return "Tree Gnome Village";
+			default:
+				return patch.getDisplayName();
+		}
+	}
+
+	/** Remembers where the gardener stands beside a tree patch, as a walkable tile to path to. */
+	private void learnApproach(FarmPatch patch)
+	{
+		GameObject obj = objectFor(patch);
+		if (obj == null)
+		{
+			return;
+		}
+		WorldPoint p = obj.getWorldLocation();
+		for (NPC npc : gardeners)
+		{
+			WorldPoint w = npc.getWorldLocation();
+			if (w != null && w.getPlane() == p.getPlane() && dist(w, p.getX(), p.getY()) <= 10)
+			{
+				if (!w.equals(approachTiles.get(patch)))
+				{
+					approachTiles.put(patch, w);
+					saveTileMap(APPROACH_KEY, approachTiles);
+				}
+				return;
+			}
+		}
+	}
+
+	/** The object to click first (fairy ring / spirit tree), or null. */
+	GameObject getNavLeadObject()
+	{
+		return navLeadObject;
+	}
+
+	/** "Dial AIS for Nemus Retreat tree" / "Spirit tree: pick Gnome Stronghold", or null. */
+	String getNavLeadHint()
+	{
+		return navLeadHint;
+	}
+
+	private static final int FAIRY_RING_INTERFACE = 398;
+
+	/** The hint to show on screen: when the fairy ring interface is open, or you're at the ring/tree. */
+	String getOnScreenLeadHint()
+	{
+		String hint = navLeadHint;
+		if (hint == null)
+		{
+			return null;
+		}
+		net.runelite.api.widgets.Widget w = client.getWidget(FAIRY_RING_INTERFACE, 0);
+		if (w != null && !w.isHidden() && hint.startsWith("Dial"))
+		{
+			return hint;
+		}
+		GameObject o = navLeadObject;
+		Player player = client.getLocalPlayer();
+		if (o != null && player != null)
+		{
+			WorldPoint me = player.getWorldLocation();
+			WorldPoint t = o.getWorldLocation();
+			if (me.getPlane() == t.getPlane() && dist(me, t.getX(), t.getY()) <= 6)
+			{
+				return hint;
+			}
+		}
+		return null;
+	}
+
 	/** The loaded fairy ring object near a ring's map position, or null. */
 	private GameObject ringObjectNear(int x, int y)
 	{
@@ -1548,8 +1737,7 @@ public class HerbRunPlugin extends Plugin
 	/** The real fairy ring to outline, when heading to one and it's loaded. */
 	GameObject getNavRingObject()
 	{
-		WorldPoint t = getNavRing();
-		return t == null ? null : ringObjectNear(t.getX(), t.getY());
+		return navRingLabel == null ? null : navLeadObject;
 	}
 
 	/** The fairy ring to walk to first, or null when heading straight for the patch. */

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 (2026-11-14) - big update
+Everything since the first Plugin Hub version (1.0.1 + 1.0.2), plus:
+- **Fairy rings everywhere**: on any fairy ring step ("From any fairy ring, dial AIS" too), the nearest ring is outlined with the code, and a big "Dial AIS for Nemus Retreat tree" box shows at the top of the screen while the fairy ring interface is open.
+- **Spirit trees**: on spirit tree steps the nearest spirit tree is outlined ("Spirit tree: Gnome Stronghold"), the path and arrow lead to it, and the top-of-screen box says which destination to pick.
+- **Tree patches**: the walking path goes to the tile where the gardener stands (learned the first time you visit), since the patch itself can't be walked on. Fixes "Destination could not be reached".
+
 ## 1.0.2 (2026-11-14)
 Tree run fixes:
 - No sapling for a grown tree: just check its health (XP) and leave it standing, instead of paying 200 coins to chop it with nothing to replant.

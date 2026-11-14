@@ -108,3 +108,8 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 
 ## 2026-11-14 (1.0.2)
 - [x] Tree run fixes: health check only without sapling, coins only when replanting, no compost for empty stops
+
+## 2026-11-14 (1.1.0)
+- [x] Nearest fairy ring outlined + on-screen "Dial XXX" box (also for "any fairy ring" steps)
+- [x] Spirit tree outlined + "pick Gnome Stronghold"
+- [x] Tree path goes to a walkable tile (gardener spot)
