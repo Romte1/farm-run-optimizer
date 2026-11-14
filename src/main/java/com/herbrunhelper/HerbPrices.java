@@ -60,7 +60,7 @@ public final class HerbPrices
 	}
 
 	/** Profit for one patch: yield x herb price - seed price. */
-	public static int profitPerPatch(double yield, int herbPrice, int seedPrice)
+	public static int profitPerPatch(double yield, long herbPrice, long seedPrice)
 	{
 		return (int) Math.round(yield * herbPrice - seedPrice);
 	}

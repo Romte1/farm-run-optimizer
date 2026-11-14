@@ -71,12 +71,12 @@ public final class RunHistory
 	}
 
 	/** You picked some produce at a patch. */
-	public synchronized void harvested(FarmPatch patch, String name, int qty, int unitPrice, boolean herb, long now)
+	public synchronized void harvested(FarmPatch patch, String name, int qty, long unitPrice, boolean herb, long now)
 	{
 		Run r = active(now);
 		r.patches.add(patch);
 		r.produce.merge(name, qty, Integer::sum);
-		r.value += (long) qty * Math.max(0, unitPrice);
+		r.value += qty * Math.max(0L, unitPrice);
 		if (herb)
 		{
 			r.herbsPicked += qty;
@@ -88,11 +88,11 @@ public final class RunHistory
 	}
 
 	/** You planted a seed or sapling. */
-	public synchronized void planted(FarmPatch patch, int seedPrice, long now)
+	public synchronized void planted(FarmPatch patch, long seedPrice, long now)
 	{
 		Run r = active(now);
 		r.patches.add(patch);
-		r.cost += Math.max(0, seedPrice);
+		r.cost += Math.max(0L, seedPrice);
 		harvestedHerbs.remove(patch);
 	}
 

@@ -321,7 +321,7 @@ public class HerbRunPlugin extends Plugin
 		timers.planted(patch, crop, System.currentTimeMillis());
 		int seedId = HerbPrices.seedId(crop) > 0 ? HerbPrices.seedId(crop)
 			: inventoryNameToId.getOrDefault(crop.getSeedName(), -1);
-		history.planted(patch, seedId > 0 ? itemManager.getItemPrice(itemManager.canonicalize(seedId)) : 0,
+		history.planted(patch, seedId > 0 ? (long) itemManager.getItemPrice(itemManager.canonicalize(seedId)) : 0L,
 			System.currentTimeMillis());
 		RunPlan.RouteStep step = stepFor(patch);
 		progress.clear();
@@ -1042,8 +1042,8 @@ public class HerbRunPlugin extends Plugin
 			int herb = HerbPrices.grimyId(crop);
 			if (herb > 0)
 			{
-				int herbPrice = itemManager.getItemPrice(herb);
-				int seedPrice = itemManager.getItemPrice(HerbPrices.seedId(crop));
+				long herbPrice = itemManager.getItemPrice(herb);
+				long seedPrice = itemManager.getItemPrice(HerbPrices.seedId(crop));
 				if (herbPrice > 0)
 				{
 					herbProfit.put(crop, HerbPrices.profitPerPatch(herbYield, herbPrice, seedPrice));
