@@ -60,8 +60,12 @@ public class PatchNavigationOverlay extends Overlay
 			{
 				return null;
 			}
-			GameObject ringObj = plugin.getNavRingObject();
-			Shape ringHull = ringObj == null ? null : ringObj.getConvexHull();
+			net.runelite.api.TileObject ringObj = plugin.getNavRingObject();
+			Shape ringHull = ringObj == null ? null : ringObj.getClickbox();
+			if (ringHull == null && ringObj != null)
+			{
+				ringHull = ringObj.getCanvasTilePoly();
+			}
 			if (ringHull != null)
 			{
 				graphics.setColor(fill);

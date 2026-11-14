@@ -33,6 +33,7 @@ class LeadHintOverlay extends OverlayPanel
 		{
 			return null;
 		}
+		panelComponent.setPreferredSize(new Dimension(Math.max(150, graphics.getFontMetrics().stringWidth(hint) + 20), 0));
 		panelComponent.getChildren().add(TitleComponent.builder().text(hint).color(new Color(127, 212, 255)).build());
 		return super.render(graphics);
 	}

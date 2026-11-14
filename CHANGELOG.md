@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3 (2026-11-14)
+- Shortest Path is aimed at the patch again (not the fairy ring), so it plans and draws the whole trip including the ring, like before. The ring itself is still outlined with the code.
+- "Dial AKR for Hosidius herb" box shows more reliably when the fairy ring interface is open, and is wide enough for the full text.
+- Fairy rings are found whichever way the game sends them (ground objects, decorations, impostors).
+- Directions say which way to walk to the ring: "Walk south (about 30 tiles) to fairy ring ALQ, dial AKR".
+
 ## 1.1.2 (2026-11-14)
 - On the way to the next stop, the teleport is highlighted: the spell in your spellbook (e.g. Falador Teleport), or the teleport item/tab in your inventory. The NOW banner says "Cast Falador Teleport" / "Teleport".
 

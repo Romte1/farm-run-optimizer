@@ -388,7 +388,8 @@ public final class RunPlanner
 					}
 					else if (prev != null && startRing != null && prev.patch.getNearbyRing() != null)
 					{
-						from = "Walk to fairy ring " + prev.patch.getNearbyRing() + ", dial " + code;
+						from = "Walk " + direction(prev.patch, FairyRings.tile(prev.patch.getNearbyRing()))
+							+ "to fairy ring " + prev.patch.getNearbyRing() + ", dial " + code;
 					}
 					else
 					{
@@ -591,6 +592,26 @@ public final class RunPlanner
 		{
 			plan.tips.add("Nothing is ready yet." + next + " This is the full run for when they are.");
 		}
+	}
+
+	/** "south " / "north-west " from a patch to a tile (with a rough distance when it's a walk), or "". */
+	static String direction(FarmPatch from, int[] to)
+	{
+		if (to == null)
+		{
+			return "";
+		}
+		int dx = to[0] - from.getX();
+		int dy = to[1] - from.getY();
+		int d = Math.max(Math.abs(dx), Math.abs(dy));
+		if (d < 4)
+		{
+			return "";
+		}
+		String ns = Math.abs(dy) * 2 < Math.abs(dx) ? "" : dy > 0 ? "north" : "south";
+		String ew = Math.abs(dx) * 2 < Math.abs(dy) ? "" : dx > 0 ? "east" : "west";
+		String dir = ns.isEmpty() ? ew : ew.isEmpty() ? ns : ns + "-" + ew;
+		return dir + (d >= 15 ? " (about " + (Math.round(d / 5.0) * 5) + " tiles) " : " ");
 	}
 
 	private static String aOrAn(String word)

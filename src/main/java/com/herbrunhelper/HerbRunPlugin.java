@@ -18,7 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
+import net.runelite.api.DecorativeObject;
 import net.runelite.api.GameState;
+import net.runelite.api.GroundObject;
+import net.runelite.api.TileObject;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.Item;
@@ -34,6 +37,10 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.DecorativeObjectDespawned;
+import net.runelite.api.events.DecorativeObjectSpawned;
+import net.runelite.api.events.GroundObjectDespawned;
+import net.runelite.api.events.GroundObjectSpawned;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
@@ -175,10 +182,10 @@ public class HerbRunPlugin extends Plugin
 	private volatile FarmPatch payPatch;
 	private volatile String payLabel;
 	/** Fairy ring objects currently loaded, to outline the real ring. */
-	private final Set<GameObject> fairyRingObjects = java.util.concurrent.ConcurrentHashMap.newKeySet();
-	private final Set<GameObject> spiritTreeObjects = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	private final Set<TileObject> fairyRingObjects = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	private final Set<TileObject> spiritTreeObjects = java.util.concurrent.ConcurrentHashMap.newKeySet();
 	/** What to click first (fairy ring or spirit tree) and what to pick there. */
-	private volatile GameObject navLeadObject;
+	private volatile TileObject navLeadObject;
 	private volatile String navLeadHint;
 	/** A walkable tile beside each tree patch (where the gardener stands), for the walking path. */
 	private final Map<FarmPatch, WorldPoint> approachTiles = new EnumMap<>(FarmPatch.class);
@@ -438,14 +445,8 @@ public class HerbRunPlugin extends Plugin
 	{
 		GameObject obj = event.getGameObject();
 		ObjectComposition def = client.getObjectDefinition(obj.getId());
-		if (def != null && "Fairy ring".equalsIgnoreCase(def.getName()))
+		if (noteTravelObject(obj, def))
 		{
-			fairyRingObjects.add(obj);
-			return;
-		}
-		if (def != null && "Spirit tree".equalsIgnoreCase(def.getName()))
-		{
-			spiritTreeObjects.add(obj);
 			return;
 		}
 		if (def == null || !FARMING_VARBITS.contains(def.getVarbitId()))
@@ -491,6 +492,68 @@ public class HerbRunPlugin extends Plugin
 		patchObjects.remove(event.getGameObject());
 		fairyRingObjects.remove(event.getGameObject());
 		spiritTreeObjects.remove(event.getGameObject());
+	}
+
+	// Fairy rings are flat on the ground, so the game sends them as ground objects.
+	@Subscribe
+	public void onGroundObjectSpawned(GroundObjectSpawned event)
+	{
+		GroundObject obj = event.getGroundObject();
+		noteTravelObject(obj, client.getObjectDefinition(obj.getId()));
+	}
+
+	@Subscribe
+	public void onGroundObjectDespawned(GroundObjectDespawned event)
+	{
+		fairyRingObjects.remove(event.getGroundObject());
+		spiritTreeObjects.remove(event.getGroundObject());
+	}
+
+	@Subscribe
+	public void onDecorativeObjectSpawned(DecorativeObjectSpawned event)
+	{
+		DecorativeObject obj = event.getDecorativeObject();
+		noteTravelObject(obj, client.getObjectDefinition(obj.getId()));
+	}
+
+	@Subscribe
+	public void onDecorativeObjectDespawned(DecorativeObjectDespawned event)
+	{
+		fairyRingObjects.remove(event.getDecorativeObject());
+		spiritTreeObjects.remove(event.getDecorativeObject());
+	}
+
+	/** Remembers fairy rings and spirit trees (by name, following "impostor" objects). */
+	private boolean noteTravelObject(TileObject obj, ObjectComposition def)
+	{
+		if (def == null)
+		{
+			return false;
+		}
+		String name = def.getName();
+		if (def.getImpostorIds() != null)
+		{
+			ObjectComposition real = def.getImpostor();
+			if (real != null)
+			{
+				name = real.getName();
+			}
+		}
+		if (name == null)
+		{
+			return false;
+		}
+		if (name.toLowerCase().startsWith("fairy ring"))
+		{
+			fairyRingObjects.add(obj);
+			return true;
+		}
+		if (name.equalsIgnoreCase("Spirit tree"))
+		{
+			spiritTreeObjects.add(obj);
+			return true;
+		}
+		return false;
 	}
 
 	@Subscribe
@@ -1543,8 +1606,9 @@ public class HerbRunPlugin extends Plugin
 		}
 
 		WorldPoint target = next == null ? null : tileFor(next);
+		WorldPoint patchTarget = target;
 		String ringLabel = null;
-		GameObject leadObj = null;
+		TileObject leadObj = null;
 		String leadHint = null;
 		Player player = client.getLocalPlayer();
 		WorldPoint me = player == null ? null : player.getWorldLocation();
@@ -1559,7 +1623,7 @@ public class HerbRunPlugin extends Plugin
 				int[] dest = FairyRings.tile(code);
 				if ((dest == null || dist(me, dest[0], dest[1]) > 20) && dist(me, target.getX(), target.getY()) > 25)
 				{
-					GameObject ringObj = nearest(fairyRingObjects, me, 40);
+					TileObject ringObj = nearest(fairyRingObjects, me, 40);
 					int i = lastPlan.route.indexOf(step);
 					int[] ring = FairyRings.tile(FairyRings.startRing(step, i > 0 ? lastPlan.route.get(i - 1) : null));
 					if (ringObj != null)
@@ -1581,7 +1645,7 @@ public class HerbRunPlugin extends Plugin
 			else if (step.teleport == Teleport.SPIRIT_TREE && dist(me, target.getX(), target.getY()) > 40)
 			{
 				// Spirit tree step: lead you to the nearest spirit tree and say which one to pick.
-				GameObject tree = nearest(spiritTreeObjects, me, 40);
+				TileObject tree = nearest(spiritTreeObjects, me, 40);
 				if (tree != null)
 				{
 					target = tree.getWorldLocation();
@@ -1597,10 +1661,10 @@ public class HerbRunPlugin extends Plugin
 		navTarget = target;
 		navRingLabel = ringLabel;
 
-		// Shortest Path plugin: post again whenever the target tile changes (e.g. the real
-		// patch object loads in, or you move on from the fairy ring).
-		WorldPoint pathTarget = target;
-		if (ringLabel == null && next != null && next.getType().isTreeLike())
+		// Shortest Path plugin: always aim it at the patch itself, so it plans the whole trip
+		// (including the fairy ring or spirit tree) and draws it. Post again whenever the tile changes.
+		WorldPoint pathTarget = patchTarget;
+		if (next != null && next.getType().isTreeLike())
 		{
 			learnApproach(next);
 			WorldPoint approach = approachTiles.get(next);
@@ -1653,11 +1717,11 @@ public class HerbRunPlugin extends Plugin
 		return Math.max(Math.abs(p.getX() - x), Math.abs(p.getY() - y));
 	}
 
-	private static GameObject nearest(Set<GameObject> objects, WorldPoint me, int range)
+	private static TileObject nearest(Set<TileObject> objects, WorldPoint me, int range)
 	{
-		GameObject best = null;
+		TileObject best = null;
 		int bestDist = range;
-		for (GameObject o : objects)
+		for (TileObject o : objects)
 		{
 			WorldPoint w = o.getWorldLocation();
 			int d = dist(me, w.getX(), w.getY());
@@ -1709,7 +1773,7 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	/** The object to click first (fairy ring / spirit tree), or null. */
-	GameObject getNavLeadObject()
+	TileObject getNavLeadObject()
 	{
 		return navLeadObject;
 	}
@@ -1730,12 +1794,18 @@ public class HerbRunPlugin extends Plugin
 		{
 			return null;
 		}
-		net.runelite.api.widgets.Widget w = client.getWidget(FAIRY_RING_INTERFACE, 0);
-		if (w != null && !w.isHidden() && hint.startsWith("Dial"))
+		if (hint.startsWith("Dial"))
 		{
-			return hint;
+			for (int child = 0; child < 8; child++)
+			{
+				net.runelite.api.widgets.Widget w = client.getWidget(FAIRY_RING_INTERFACE, child);
+				if (w != null && !w.isHidden())
+				{
+					return hint;
+				}
+			}
 		}
-		GameObject o = navLeadObject;
+		TileObject o = navLeadObject;
 		Player player = client.getLocalPlayer();
 		if (o != null && player != null)
 		{
@@ -1750,11 +1820,11 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	/** The loaded fairy ring object near a ring's map position, or null. */
-	private GameObject ringObjectNear(int x, int y)
+	private TileObject ringObjectNear(int x, int y)
 	{
-		GameObject best = null;
+		TileObject best = null;
 		int bestDist = 8;
-		for (GameObject o : fairyRingObjects)
+		for (TileObject o : fairyRingObjects)
 		{
 			WorldPoint w = o.getWorldLocation();
 			int d = Math.max(Math.abs(w.getX() - x), Math.abs(w.getY() - y));
@@ -1768,7 +1838,7 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	/** The real fairy ring to outline, when heading to one and it's loaded. */
-	GameObject getNavRingObject()
+	TileObject getNavRingObject()
 	{
 		return navRingLabel == null ? null : navLeadObject;
 	}
