@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/triggleman/farm-run-planner/actions/workflows/build.yml"><img src="https://github.com/triggleman/farm-run-planner/actions/workflows/build.yml/badge.svg" alt="Build"></a>
+  <a href="https://github.com/triggleman/farm-run-optimizer/actions/workflows/build.yml"><img src="https://github.com/triggleman/farm-run-optimizer/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <img src="https://img.shields.io/badge/RuneLite-plugin-orange" alt="RuneLite plugin">
   <img src="https://img.shields.io/badge/Java-11%2B-blue" alt="Java 11+">
 </p>

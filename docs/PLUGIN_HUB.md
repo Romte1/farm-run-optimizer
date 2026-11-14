@@ -2,7 +2,7 @@
 
 ## Checklist (done in this repo)
 
-- [x] Public GitHub repo: https://github.com/triggleman/farm-run-planner
+- [x] Public GitHub repo: https://github.com/triggleman/farm-run-optimizer
 - [x] `runelite-plugin.properties` with displayName, author, description, tags, plugins
 - [x] `icon.png` at the repo root (48x48, the limit is 48x72)
 - [x] `README.md` describing the features
@@ -26,7 +26,7 @@
 3. Name it `plugins/farm-run-optimizer` (no extension) with exactly these two lines:
 
    ```
-   repository=https://github.com/triggleman/farm-run-planner.git
+   repository=https://github.com/triggleman/farm-run-optimizer.git
    commit=PASTE_THE_40_CHARACTER_HASH_HERE
    ```
 
