@@ -28,6 +28,8 @@ public final class RunPlanner
 		public Set<Crop> disabledCrops = EnumSet.noneOf(Crop.class);
 		/** Patches you've unticked: skipped. */
 		public Set<FarmPatch> disabledPatches = EnumSet.noneOf(FarmPatch.class);
+		/** Patches with something of yours growing or ready: always visited, and get seeds first. */
+		public Set<FarmPatch> usedPatches = EnumSet.noneOf(FarmPatch.class);
 		/** Levels, quests, spellbook, disabled teleports, spells/tabs, fairy chaining. */
 		public Teleport.Context teleports = new Teleport.Context();
 	}
@@ -111,6 +113,15 @@ public final class RunPlanner
 			included.add(patch);
 		}
 
+		// Decide what goes in each patch first: seeds go to the patches you use, then the rest.
+		// A patch with nothing to plant and nothing of yours growing is left off the run.
+		Map<FarmPatch, Crop> crops = new java.util.EnumMap<>(FarmPatch.class);
+		for (PatchType t : doing)
+		{
+			allocateCrops(plan, t, included, owned, options, crops);
+		}
+		included.removeIf(p -> !crops.containsKey(p) && !options.usedPatches.contains(p));
+
 		List<RunPlan.RouteStep> picked = new ArrayList<>();
 		for (FarmPatch patch : included)
 		{
@@ -132,10 +143,17 @@ public final class RunPlanner
 			plan.warnings.add("Open your bank once so the plugin can see what you own.");
 		}
 
-		for (PatchType t : doing)
+		for (RunPlan.RouteStep step : plan.route)
 		{
-			assignCrops(plan, t, owned, options);
+			step.crop = crops.get(step.patch);
+			if (step.crop != null && step.patch.getType().isTreeLike() && options.payGardeners
+				&& step.crop.getPaymentItem() != null)
+			{
+				step.paymentItem = step.crop.getPaymentItem();
+				step.paymentQuantity = step.crop.getPaymentQuantity();
+			}
 		}
+		paymentWarnings(plan, owned);
 		String bottomless = assignCompost(plan, owned, options);
 		for (RunPlan.RouteStep s : plan.route)
 		{
@@ -389,8 +407,12 @@ public final class RunPlanner
 		return null;
 	}
 
-	/** Hand out the best seeds/saplings owned to this type's stops, plus gardener payments. */
-	private static void assignCrops(RunPlan plan, PatchType type, Map<String, Integer> owned, Options options)
+	/**
+	 * Hands out the best seeds/saplings you own to this type's patches: patches you already use
+	 * first, then the rest in route order. Patches left without one simply aren't in the map.
+	 */
+	private static void allocateCrops(RunPlan plan, PatchType type, Set<FarmPatch> included,
+		Map<String, Integer> owned, Options options, Map<FarmPatch, Crop> out)
 	{
 		List<Crop> plantable = new ArrayList<>();
 		for (Crop crop : Crop.values())
@@ -417,38 +439,56 @@ public final class RunPlanner
 				queue.add(crop);
 			}
 		}
-		int next = 0;
-		int missing = 0;
-		Map<String, Integer> payNeed = new LinkedHashMap<>();
-		for (RunPlan.RouteStep step : plan.route)
+		List<FarmPatch> order = new ArrayList<>();
+		for (FarmPatch p : included)
 		{
-			if (step.patch.getType() != type)
+			if (p.getType() == type && options.usedPatches.contains(p))
 			{
-				continue;
+				order.add(p);
 			}
+		}
+		for (FarmPatch p : included)
+		{
+			if (p.getType() == type && !options.usedPatches.contains(p))
+			{
+				order.add(p);
+			}
+		}
+		int next = 0;
+		int unplanted = 0;
+		for (FarmPatch p : order)
+		{
 			if (next < queue.size())
 			{
-				step.crop = queue.get(next++);
-				if (type.isTreeLike() && options.payGardeners && step.crop.getPaymentItem() != null)
-				{
-					step.paymentItem = step.crop.getPaymentItem();
-					step.paymentQuantity = step.crop.getPaymentQuantity();
-					payNeed.merge(step.paymentItem, step.paymentQuantity, Integer::sum);
-				}
+				out.put(p, queue.get(next++));
 			}
 			else
 			{
-				missing++;
+				unplanted++;
 			}
 		}
-		if (missing > 0)
+		if (unplanted > 0 && !order.isEmpty())
 		{
 			Crop best = plantable.get(plantable.size() - 1);
-			String what = type == PatchType.HERB ? "seed(s)" : "sapling(s)";
-			plan.warnings.add("Short " + missing + " " + what + " for " + type.getDisplayName().toLowerCase()
-				+ ". Best you can plant: " + best.getSeedName() + ".");
+			String what = type == PatchType.HERB ? "seeds" : "saplings";
+			String patchName = type == PatchType.HERB ? "herb" : type == PatchType.TREE ? "tree"
+				: type == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
+			plan.warnings.add("Only enough " + what + " for " + (order.size() - unplanted) + " of " + order.size()
+				+ " " + patchName + " patches, so the rest are left off. Best you can plant: " + best.getSeedName() + ".");
 		}
-		payNeed.forEach((item, qty) ->
+	}
+
+	private static void paymentWarnings(RunPlan plan, Map<String, Integer> owned)
+	{
+		Map<String, Integer> need = new LinkedHashMap<>();
+		for (RunPlan.RouteStep s : plan.route)
+		{
+			if (s.paymentItem != null)
+			{
+				need.merge(s.paymentItem, s.paymentQuantity, Integer::sum);
+			}
+		}
+		need.forEach((item, qty) ->
 		{
 			int have = owned.getOrDefault(item, 0);
 			if (have < qty)

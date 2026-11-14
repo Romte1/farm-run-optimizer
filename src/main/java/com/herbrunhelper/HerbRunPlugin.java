@@ -702,6 +702,14 @@ public class HerbRunPlugin extends Plugin
 		options.bankKnown = bankSeen;
 		options.disabledCrops = readSet(config.disabledCrops(), Crop.class);
 		options.disabledPatches = readSet(config.disabledPatches(), FarmPatch.class);
+		for (FarmPatch p : FarmPatch.values())
+		{
+			PatchTimers.Status st = timers.getStatus(p);
+			if (timers.get(p) != null || (st != null && st != PatchTimers.Status.EMPTY && st != PatchTimers.Status.WEEDS))
+			{
+				options.usedPatches.add(p);
+			}
+		}
 		Teleport.Context ctx = options.teleports;
 		ctx.magicLevel = client.getRealSkillLevel(Skill.MAGIC);
 		ctx.standardSpellbook = client.getVarbitValue(SPELLBOOK_VARBIT) == 0;

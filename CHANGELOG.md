@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Seeds and saplings go to the patches you use first; patches with nothing to plant and nothing of
+  yours growing are left off the route and the bank list.
+- Patch outline matches the real patch object by its farming varbit (works while crops grow).
+- Exact patch tiles learned from the game; built-in tiles from RuneLite's world map.
+- Patch data generated from RuneLite's Time Tracking source; all patches verified.
+- New logo, GitHub banner, build check, issue templates, progress file.
+
 ## 1.0.0 - 2026-11-13
 
 First release of Farm Run Planner.

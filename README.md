@@ -92,6 +92,8 @@ in settings).
 - `GrowthClock.java` countdown maths and tick-offset learning
 - `PatchTimers.java` timers and saving
 - `HerbRunPlugin.java` connects it all to the game
+
+Progress and what's next: [PROGRESS.md](PROGRESS.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 - `HerbRunPanel.java` sidebar; `PatchNavigationOverlay.java` ground highlight;
   `HerbRunBankOverlay.java` bank highlight
 
