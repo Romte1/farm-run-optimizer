@@ -75,3 +75,7 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 - [x] LICENSE + Plugin Hub prep (docs/PLUGIN_HUB.md)
 - [ ] In-game test run (Todd)
 - [ ] Submit to Plugin Hub (Todd, following docs/PLUGIN_HUB.md)
+
+## 2026-11-13 (b7)
+- [x] Path line follows the real patch tile (Hosidius / Varlamore were pointing past the patch)
+- [x] Lead to the fairy ring first on fairy ring steps

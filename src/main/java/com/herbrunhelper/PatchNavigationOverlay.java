@@ -50,6 +50,29 @@ public class PatchNavigationOverlay extends Overlay
 		Color color = config.patchColor();
 		Color fill = new Color(color.getRed(), color.getGreen(), color.getBlue(), 50);
 
+		// Heading to a fairy ring first: mark the ring and say what to dial.
+		WorldPoint ring = plugin.getNavRing();
+		if (ring != null)
+		{
+			LocalPoint lp = LocalPoint.fromWorld(client, ring);
+			if (lp == null)
+			{
+				return null;
+			}
+			Polygon tile = Perspective.getCanvasTilePoly(client, lp);
+			if (tile != null)
+			{
+				OverlayUtil.renderPolygon(graphics, tile, color);
+			}
+			String text = plugin.getNavRingLabel();
+			Point textLoc = Perspective.getCanvasTextLocation(client, graphics, lp, text, 150);
+			if (textLoc != null)
+			{
+				OverlayUtil.renderTextLocation(graphics, textLoc, text, color);
+			}
+			return null;
+		}
+
 		// The real patch object (matched by its farming varbit), when it's loaded.
 		GameObject best = plugin.objectFor(next);
 

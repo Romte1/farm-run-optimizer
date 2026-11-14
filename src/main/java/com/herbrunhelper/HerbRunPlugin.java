@@ -152,7 +152,10 @@ public class HerbRunPlugin extends Plugin
 		4771, 4772, 4773, 4774, 4775, 7904, 7905, 7906, 7907, 7908, 7909, 7910, 7911, 7912));
 	private volatile Set<Integer> highlightIds = Collections.emptySet();
 	private volatile FarmPatch nextPatch;
-	private FarmPatch shortestPathTarget;
+	private WorldPoint shortestPathTarget;
+	/** Where to go right now: the patch, or the fairy ring to use first. */
+	private volatile WorldPoint navTarget;
+	private volatile String navRingLabel;
 	private boolean ourHintArrow;
 	private RunPlan lastPlan;
 
@@ -1342,37 +1345,54 @@ public class HerbRunPlugin extends Plugin
 			SwingUtilities.invokeLater(() -> panel.setNextPatch(shown));
 		}
 
-		// Shortest Path plugin: only post when the target changes.
-		if (config.useShortestPath() && next != shortestPathTarget)
+		WorldPoint target = next == null ? null : tileFor(next);
+		String ringLabel = null;
+		Player player = client.getLocalPlayer();
+		WorldPoint me = player == null ? null : player.getWorldLocation();
+		if (next != null && me != null)
 		{
-			if (next == null)
+			// A fairy ring step: lead you to the ring first, until you've teleported.
+			RunPlan.RouteStep step = stepFor(next);
+			int i = step == null ? -1 : lastPlan.route.indexOf(step);
+			String start = step == null ? null : FairyRings.startRing(step, i > 0 ? lastPlan.route.get(i - 1) : null);
+			int[] ring = FairyRings.tile(start);
+			int[] dest = step == null ? null : FairyRings.tile(step.teleport.getFairyCode());
+			if (ring != null && me.getPlane() == 0
+				&& dist(me, ring[0], ring[1]) <= RING_LEAD_RANGE
+				&& (dest == null || dist(me, dest[0], dest[1]) > 20)
+				&& dist(me, target.getX(), target.getY()) > 25)
+			{
+				target = new WorldPoint(ring[0], ring[1], 0);
+				ringLabel = "Fairy ring: dial " + step.teleport.getFairyCode();
+			}
+		}
+		navTarget = target;
+		navRingLabel = ringLabel;
+
+		// Shortest Path plugin: post again whenever the target tile changes (e.g. the real
+		// patch object loads in, or you move on from the fairy ring).
+		if (config.useShortestPath() && !java.util.Objects.equals(target, shortestPathTarget))
+		{
+			if (target == null)
 			{
 				clearShortestPath();
 			}
 			else
 			{
 				Map<String, Object> data = new HashMap<>();
-				data.put("target", tileFor(next));
+				data.put("target", target);
 				eventBus.post(new PluginMessage("shortestpath", "path", data));
-				shortestPathTarget = next;
+				shortestPathTarget = target;
 			}
 		}
 
 		// Hint arrow when close enough to render.
 		if (config.hintArrow())
 		{
-			Player player = client.getLocalPlayer();
-			boolean near = false;
-			if (next != null && player != null)
-			{
-				WorldPoint p = player.getWorldLocation();
-				WorldPoint t = tileFor(next);
-				near = p.getPlane() == t.getPlane()
-					&& Math.max(Math.abs(p.getX() - t.getX()), Math.abs(p.getY() - t.getY())) <= HINT_ARROW_RANGE;
-			}
+			boolean near = target != null && me != null && me.getPlane() == target.getPlane()
+				&& dist(me, target.getX(), target.getY()) <= HINT_ARROW_RANGE;
 			if (near)
 			{
-				WorldPoint target = tileFor(next);
 				if (!ourHintArrow || !target.equals(client.getHintArrowPoint()))
 				{
 					client.setHintArrow(target);
@@ -1384,6 +1404,24 @@ public class HerbRunPlugin extends Plugin
 				clearHintArrow();
 			}
 		}
+	}
+
+	private static final int RING_LEAD_RANGE = 120;
+
+	private static int dist(WorldPoint p, int x, int y)
+	{
+		return Math.max(Math.abs(p.getX() - x), Math.abs(p.getY() - y));
+	}
+
+	/** The fairy ring to walk to first, or null when heading straight for the patch. */
+	WorldPoint getNavRing()
+	{
+		return navRingLabel == null ? null : navTarget;
+	}
+
+	String getNavRingLabel()
+	{
+		return navRingLabel;
 	}
 
 	private void checkReadyNotifications()

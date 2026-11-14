@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0 b7 (2026-11-13)
+- Walking path now goes to the real patch: it's re-sent whenever the target tile changes (e.g. when the patch loads in), instead of once per patch using the rough map tile.
+- Fairy ring steps lead you to the ring first ("Fairy ring: dial AKR" on the ring, path and arrow), then on to the patch after you teleport.
+
 ## 1.0.0 b6 (2026-11-13)
 - Run history & profit: harvests logged at GE prices, profit per run, average herbs per patch.
 - Herb profit per patch, and "Most profitable herb first" planting (setting, on by default).
