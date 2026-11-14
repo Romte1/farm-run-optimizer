@@ -59,7 +59,7 @@ public final class StepItems
 			{
 				return new Next(step.compost, "Add compost");
 			}
-			if (type.isTreeLike() && step.paymentItem != null && !progress.paid)
+			if (type.hasGardenerPayment() && step.paymentItem != null && !progress.paid)
 			{
 				return new Next(step.paymentItem, "Pay the gardener");
 			}
@@ -75,7 +75,7 @@ public final class StepItems
 			return new Next("Spade", "Dig it up");
 		}
 		boolean ready = planting != null && planting.isReady(now);
-		if (ready && type == PatchType.HERB)
+		if (ready && !type.isTreeLike())
 		{
 			return null; // harvest by clicking the patch
 		}

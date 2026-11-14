@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 (2026-11-14)
+- **New: Allotment run.** 14 allotments (2 each at Falador, Catherby, Ardougne, Morytania, Hosidius, Varlamore and the Farming Guild at 45 Farming), all 8 crops from potatoes (level 1) to snape grass (61), 3 seeds per patch, compost, and the gardener's protection payment. Great for new players before herbs and trees unlock. Combines with the herb run (the allotments are right next to the herb patches).
+- Farming Guild allotment contracts plant in the guild allotment.
+- The two allotments side by side are told apart by their real position when you plant.
+- Same item used two ways (e.g. compost to use and to pay for potatoes) is one line in the bring list.
+
 ## 1.1.4 (2026-11-14)
 - Fix: after planting, the compost (and the gardener payment on tree runs) is highlighted again. Since 1.0.2 a just-planted stop lost its compost/payment step.
 - Tree patches: the walking path aims at a walkable tile right beside the patch, worked out from the game's collision map (fixes "Destination could not be reached" at Varrock, Falador park, Nemus Retreat and others).

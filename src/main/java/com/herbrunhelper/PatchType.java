@@ -3,6 +3,7 @@ package com.herbrunhelper;
 public enum PatchType
 {
 	HERB("Herbs", "HERB", 20),
+	ALLOTMENT("Allotments", "ALLOTMENT", 10),
 	TREE("Trees", "TREE", 40),
 	FRUIT_TREE("Fruit trees", "FRUIT_TREE", 160),
 	HARDWOOD("Hardwood", "HARDWOOD_TREE", 640);
@@ -38,6 +39,18 @@ public enum PatchType
 	/** Trees of any kind need saplings, a gardener payment and clearing when grown. */
 	public boolean isTreeLike()
 	{
-		return this != HERB;
+		return this == TREE || this == FRUIT_TREE || this == HARDWOOD;
+	}
+
+	/** Gardeners can be paid to protect these crops. */
+	public boolean hasGardenerPayment()
+	{
+		return isTreeLike() || this == ALLOTMENT;
+	}
+
+	/** Seeds that stack in one inventory slot (not saplings). */
+	public boolean seedsStack()
+	{
+		return this == HERB || this == ALLOTMENT;
 	}
 }

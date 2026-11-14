@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.1.4";
+	static final String VERSION = "1.2.0";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -480,7 +480,7 @@ public class HerbRunPanel extends PluginPanel
 			JLabel l;
 			if (pl.isReady(now))
 			{
-				l = label(p.getType() == PatchType.HERB ? "ready to pick" : "fully grown", GREEN, false);
+				l = label(!p.getType().isTreeLike() ? "ready to pick" : "fully grown", GREEN, false);
 			}
 			else
 			{
@@ -856,7 +856,8 @@ public class HerbRunPanel extends PluginPanel
 		body.setOpaque(true);
 		body.setBackground(new Color(34, 34, 34));
 		body.setBorder(new EmptyBorder(8, 3, 10, 2));
-		body.addRow(sectionTitle(type == PatchType.HERB ? "Herbs to plant" : "Trees to plant"), 4);
+		body.addRow(sectionTitle(type == PatchType.HERB ? "Herbs to plant"
+			: type == PatchType.ALLOTMENT ? "Crops to plant (3 seeds each)" : "Trees to plant"), 4);
 		JPanel crops = new JPanel(new GridLayout(0, 4, 6, 6));
 		crops.setOpaque(false);
 		for (Crop c : Crop.values())
@@ -1510,14 +1511,16 @@ public class HerbRunPanel extends PluginPanel
 	{
 		return shortName(p).replace("Troll Stronghold", "Trollheim").replace("Harmony Island", "Harmony")
 			.replace("Tree Gnome Village", "Gnome Village").replace("Gnome Stronghold", "Stronghold")
-			.replace("Farming Guild", "Guild").replace("Fossil Island", "Fossil");
+			.replace("Farming Guild", "Guild").replace("Fossil Island", "Fossil")
+			.replace(" (north-west)", " NW").replace(" (south-east)", " SE").replace(" (north-east)", " NE")
+			.replace(" (south-west)", " SW").replace(" (north)", " N").replace(" (south)", " S");
 	}
 
 	/** Shorter names inside a group that's already labelled by type. */
 	private static String shortName(FarmPatch p)
 	{
 		return p.getDisplayName().replace(" fruit tree", "").replace(" hardwood", "").replace(" herb", "")
-			.replace(" tree", "").replace(" (Ortus Farm)", "");
+			.replace(" tree", "").replace(" (Ortus Farm)", "").replace(" allotment (", " (");
 	}
 
 	private static String esc(String s)

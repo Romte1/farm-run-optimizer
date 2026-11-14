@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>Plan every herb, tree, fruit tree and hardwood run: what to bring, the fastest route, what to do at each patch, and every growth timer.</b><br>
+  <b>Plan every herb, allotment, tree, fruit tree and hardwood run: what to bring, the fastest route, what to do at each patch, and every growth timer.</b><br>
   Made by ToadFx
 </p>
 
@@ -18,14 +18,14 @@
 1. Install **Farm Run Optimizer** from the Plugin Hub.
 2. Click the parchment-map icon in the RuneLite sidebar.
 3. **Open your bank once** so the plugin can see your seeds, saplings, compost and teleports.
-4. Tick the runs you want (Herbs, Trees, Fruit trees, Hardwood) and follow the list.
+4. Tick the runs you want (Herbs, Allotments, Trees, Fruit trees, Hardwood) and follow the list.
 
 Your Farming level, quests and diaries are read automatically, so the plan only uses patches and teleports you've unlocked.
 
 ## Features
 
 ### Plan the run
-- **Four run types** that combine into one route: herbs, trees, fruit trees and hardwood.
+- **Five run types** that combine into one route: herbs, allotments, trees, fruit trees and hardwood. Allotments (potatoes up to snape grass, from level 1) are a great start before herbs and trees unlock.
 - **Only ready patches.** If one herb is ready, the run is just that patch. Growing patches are left off, with the time until the next one is ready.
 - **Pick your crops and patches.** Each run lists every crop (locked ones show the level you need) and every patch. Click to choose what to plant and where to go.
 - **Most profitable herb first.** See the profit per patch for every herb you can grow, at Grand Exchange prices, and plant the best one first.
@@ -78,6 +78,7 @@ Everything can be switched on or off in the panel's **Settings** section or in R
 | Type | Patches |
 |---|---|
 | Herbs | Falador, Catherby, Ardougne, Morytania*, Hosidius, Farming Guild (65), Varlamore*, Troll Stronghold*, Weiss*, Harmony Island* |
+| Allotments | 2 each at Falador, Catherby, Ardougne, Morytania*, Hosidius, Varlamore*, Farming Guild (45) |
 | Trees | Varrock, Lumbridge, Falador, Taverley, Gnome Stronghold, Farming Guild (65), Nemus Retreat* |
 | Fruit trees | Gnome Stronghold, Tree Gnome Village, Catherby, Brimhaven, Lletya*, Farming Guild (85), Kastori* |
 | Hardwood | Fossil Island x3*, Locus Oasis* |

@@ -38,6 +38,12 @@ public interface HerbRunConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(keyName = "includeAllotments", name = "Allotment run", description = "Include allotment patches (potatoes up to snape grass) - great before you unlock herbs and trees", position = 4, section = runSection)
+	default boolean includeAllotments()
+	{
+		return false;
+	}
+
 	@ConfigItem(keyName = "includeHardwood", name = "Hardwood run", description = "Include teak/mahogany patches", position = 3, section = runSection)
 	default boolean includeHardwood()
 	{

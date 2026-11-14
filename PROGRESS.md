@@ -118,3 +118,6 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 - [x] Compost/payment highlight after planting restored
 - [x] Tree path target = walkable tile beside the patch (collision map)
 - [x] Hint arrow off by default
+
+## 2026-11-14 (1.2.0)
+- [x] Allotment run (14 patches verified against RuneLite, 8 crops, 3 seeds/patch, payments)

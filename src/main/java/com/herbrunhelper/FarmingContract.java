@@ -99,7 +99,8 @@ public final class FarmingContract
 
 	private static String kind(PatchType t)
 	{
-		return t == PatchType.HERB ? "herb" : t == PatchType.TREE ? "tree" : t == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
+		return t == PatchType.HERB ? "herb" : t == PatchType.ALLOTMENT ? "allotment" : t == PatchType.TREE ? "tree"
+			: t == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
 	}
 
 	/** Null when there's no contract (or the value is unknown). */
@@ -127,6 +128,8 @@ public final class FarmingContract
 				return FarmPatch.FARMING_GUILD_TREE;
 			case FRUIT_TREE:
 				return FarmPatch.FARMING_GUILD_FRUIT;
+			case ALLOTMENT:
+				return FarmPatch.GUILD_ALLOTMENT_A;
 			default:
 				return null;
 		}

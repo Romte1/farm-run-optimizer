@@ -18,7 +18,7 @@ public final class StopWork
 		boolean ready = planting != null && planting.isReady(now);
 		String seed = step.crop == null ? null : step.crop.getSeedName().toLowerCase();
 
-		if (type == PatchType.HERB)
+		if (!type.isTreeLike())
 		{
 			if (ready)
 			{
@@ -85,10 +85,17 @@ public final class StopWork
 
 		if (seed != null)
 		{
-			String article = type != PatchType.HERB ? "the " : "aeiou".indexOf(seed.charAt(0)) >= 0 ? "an " : "a ";
-			out.add("Plant " + article + seed);
+			if (step.crop.getSeedsPerPatch() > 1)
+			{
+				out.add("Plant " + step.crop.getSeedsPerPatch() + " " + seed + "s");
+			}
+			else
+			{
+				String article = type != PatchType.HERB ? "the " : "aeiou".indexOf(seed.charAt(0)) >= 0 ? "an " : "a ";
+				out.add("Plant " + article + seed);
+			}
 		}
-		else if (type == PatchType.HERB)
+		else if (!type.isTreeLike())
 		{
 			out.add("No seed left to plant here");
 		}

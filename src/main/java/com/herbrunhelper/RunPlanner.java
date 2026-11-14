@@ -178,7 +178,7 @@ public final class RunPlanner
 		{
 			step.crop = crops.get(step.patch);
 			step.done = options.doneThisRun.contains(step.patch);
-			if (step.crop != null && step.patch.getType().isTreeLike() && options.payGardeners
+			if (step.crop != null && step.patch.getType().hasGardenerPayment() && options.payGardeners
 				&& step.crop.getPaymentItem() != null)
 			{
 				step.paymentItem = step.crop.getPaymentItem();
@@ -196,7 +196,8 @@ public final class RunPlanner
 			}
 		}
 
-		List<RunPlan.Withdrawal> fixed = fixedItems(plan, owned, options, bottomless, doing.contains(PatchType.HERB));
+		List<RunPlan.Withdrawal> fixed = fixedItems(plan, owned, options, bottomless,
+			doing.contains(PatchType.HERB) || doing.contains(PatchType.ALLOTMENT));
 		splitIntoTrips(plan, fixed, options);
 		return plan;
 	}
@@ -477,7 +478,7 @@ public final class RunPlanner
 		List<Crop> queue = new ArrayList<>();
 		for (Crop crop : preference)
 		{
-			int have = owned.getOrDefault(crop.getSeedName(), 0);
+			int have = owned.getOrDefault(crop.getSeedName(), 0) / crop.getSeedsPerPatch();
 			for (int n = 0; n < have; n++)
 			{
 				queue.add(crop);
@@ -511,10 +512,11 @@ public final class RunPlanner
 		{
 			FarmPatch guild = type == PatchType.HERB ? FarmPatch.FARMING_GUILD_HERB
 				: type == PatchType.TREE ? FarmPatch.FARMING_GUILD_TREE
-				: type == PatchType.FRUIT_TREE ? FarmPatch.FARMING_GUILD_FRUIT : null;
+				: type == PatchType.FRUIT_TREE ? FarmPatch.FARMING_GUILD_FRUIT
+				: type == PatchType.ALLOTMENT ? FarmPatch.GUILD_ALLOTMENT_A : null;
 			if (guild != null && order.contains(guild))
 			{
-				if (owned.getOrDefault(contract.getSeedName(), 0) > 0 && contract.getLevel() <= plan.farmingLevel)
+				if (owned.getOrDefault(contract.getSeedName(), 0) >= contract.getSeedsPerPatch() && contract.getLevel() <= plan.farmingLevel)
 				{
 					out.put(guild, contract);
 					queue.remove(contract);
@@ -543,13 +545,13 @@ public final class RunPlanner
 		if (unplanted > 0 && !order.isEmpty())
 		{
 			Crop best = plantable.get(plantable.size() - 1);
-			String what = type == PatchType.HERB ? "seeds" : "saplings";
-			String patchName = type == PatchType.HERB ? "herb" : type == PatchType.TREE ? "tree"
+			String what = !type.isTreeLike() ? "seeds" : "saplings";
+			String patchName = type == PatchType.HERB ? "herb" : type == PatchType.ALLOTMENT ? "allotment" : type == PatchType.TREE ? "tree"
 				: type == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
-			String rest = type == PatchType.HERB ? "the others are only harvested"
+			String rest = !type.isTreeLike() ? "the others are only harvested"
 				: "the others are just checked for health if grown (and left standing), or left off";
 			plan.warnings.add((order.size() == unplanted ? "No " + what + " for your " + patchName + " patches: "
-				+ (type == PatchType.HERB ? "patches are only harvested" : "grown trees are just checked for health and left standing")
+				+ (!type.isTreeLike() ? "patches are only harvested" : "grown trees are just checked for health and left standing")
 				: "Only enough " + what + " for " + (order.size() - unplanted) + " of " + order.size()
 				+ " " + patchName + " patches: " + rest) + ". Best you can plant: " + best.getSeedName() + ".");
 		}
@@ -784,7 +786,7 @@ public final class RunPlanner
 		{
 			if (options.diseased.contains(step.patch))
 			{
-				if (step.patch.getType() == PatchType.HERB)
+				if (!step.patch.getType().isTreeLike())
 				{
 					sickHerbs++;
 				}
@@ -907,7 +909,7 @@ public final class RunPlanner
 		{
 			if (s.crop != null && !s.done)
 			{
-				if (s.patch.getType() == PatchType.HERB)
+				if (s.patch.getType().seedsStack())
 				{
 					stackTypes.add(s.crop.getSeedName());
 				}
@@ -991,7 +993,7 @@ public final class RunPlanner
 			}
 			if (s.crop != null)
 			{
-				seeds.merge(s.crop.getSeedName(), 1, Integer::sum);
+				seeds.merge(s.crop.getSeedName(), s.crop.getSeedsPerPatch(), Integer::sum);
 				notes.put(s.crop.getSeedName(), "level " + s.crop.getLevel());
 			}
 			if (s.compost != null && !s.compost.startsWith("Bottomless"))
@@ -1007,7 +1009,20 @@ public final class RunPlanner
 		List<RunPlan.Withdrawal> out = new ArrayList<>();
 		seeds.forEach((k, v) -> out.add(new RunPlan.Withdrawal(k, v, notes.get(k))));
 		compost.forEach((k, v) -> out.add(new RunPlan.Withdrawal(k, v, "")));
-		pay.forEach((k, v) -> out.add(new RunPlan.Withdrawal(k, v, "gardener payment, noted is fine")));
+		pay.forEach((k, v) ->
+		{
+			// Same item used two ways (e.g. compost for potatoes): one line with the total.
+			for (int i = 0; i < out.size(); i++)
+			{
+				RunPlan.Withdrawal w = out.get(i);
+				if (w.itemName.equals(k))
+				{
+					out.set(i, new RunPlan.Withdrawal(k, w.quantity + v, "for the patches and to pay the gardeners"));
+					return;
+				}
+			}
+			out.add(new RunPlan.Withdrawal(k, v, "gardener payment, noted is fine"));
+		});
 		if (coins > 0)
 		{
 			out.add(new RunPlan.Withdrawal("Coins", coins, "gardener clears grown trees, "

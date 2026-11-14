@@ -356,7 +356,7 @@ public class HerbRunPlugin extends Plugin
 			return;
 		}
 		WorldPoint where = player.getWorldLocation();
-		FarmPatch patch = FarmPatch.at(where.getX(), where.getY(), crop.getType());
+		FarmPatch patch = patchAt(where, crop.getType());
 		if (patch == null)
 		{
 			log.debug("Planted {} but no known patch at {}", crop, where);
@@ -679,6 +679,32 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 		return 0;
+	}
+
+	/**
+	 * The patch of this type you're standing at: the closest by its real (loaded) position, so the
+	 * two allotments side by side are told apart.
+	 */
+	private FarmPatch patchAt(WorldPoint where, PatchType type)
+	{
+		int region = FarmPatch.regionOf(where.getX(), where.getY());
+		FarmPatch best = null;
+		int bestDist = Integer.MAX_VALUE;
+		for (FarmPatch p : FarmPatch.values())
+		{
+			if (p.getType() != type || !p.inRegion(region))
+			{
+				continue;
+			}
+			WorldPoint t = tileFor(p);
+			int d = dist(where, t.getX(), t.getY());
+			if (d < bestDist)
+			{
+				bestDist = d;
+				best = p;
+			}
+		}
+		return best;
 	}
 
 	/** The closest patch within a few tiles of you, or null. */
@@ -1229,6 +1255,10 @@ public class HerbRunPlugin extends Plugin
 		{
 			runs.add(PatchType.HARDWOOD);
 		}
+		if (config.includeAllotments())
+		{
+			runs.add(PatchType.ALLOTMENT);
+		}
 		return runs;
 	}
 
@@ -1249,6 +1279,9 @@ public class HerbRunPlugin extends Plugin
 			{
 				case NONE:
 					ok = true;
+					break;
+				case FARMING_45:
+					ok = level >= 45;
 					break;
 				case FARMING_65:
 					ok = level >= 65;
@@ -2059,6 +2092,9 @@ public class HerbRunPlugin extends Plugin
 				break;
 			case FRUIT_TREE:
 				key = "includeFruitTrees";
+				break;
+			case ALLOTMENT:
+				key = "includeAllotments";
 				break;
 			default:
 				key = "includeHardwood";

@@ -1,7 +1,7 @@
 package com.herbrunhelper;
 
 /**
- * Everything the runs plant: herbs, trees, fruit trees and hardwood trees.
+ * Everything the runs plant: herbs, allotments, trees, fruit trees and hardwood trees.
  *
  * Constant names match the crop names in patch-states.tsv. Growth stages follow RuneLite's
  * Time Tracking plugin (Produce.java): a crop finishes after (stages - 1) growth
@@ -26,6 +26,16 @@ public enum Crop
 	LANTADYME(PatchType.HERB, "Lantadyme", 73, "Lantadyme seed", 5, null, 0, 2481),
 	DWARF_WEED(PatchType.HERB, "Dwarf weed", 79, "Dwarf weed seed", 5, null, 0, 267),
 	TORSTOL(PatchType.HERB, "Torstol", 85, "Torstol seed", 5, null, 0, 269),
+
+	// Allotments: 10-minute ticks, 3 seeds per patch
+	POTATO(PatchType.ALLOTMENT, "Potato", 1, "Potato seed", 5, "Compost", 2, 1942),
+	ONION(PatchType.ALLOTMENT, "Onion", 5, "Onion seed", 5, "Potatoes(10)", 1, 1957),
+	CABBAGE(PatchType.ALLOTMENT, "Cabbage", 7, "Cabbage seed", 5, "Onions(10)", 1, 1965),
+	TOMATO(PatchType.ALLOTMENT, "Tomato", 12, "Tomato seed", 5, "Cabbages(10)", 2, 1982),
+	SWEETCORN(PatchType.ALLOTMENT, "Sweetcorn", 20, "Sweetcorn seed", 7, "Jute fibre", 10, 5986),
+	STRAWBERRY(PatchType.ALLOTMENT, "Strawberry", 31, "Strawberry seed", 7, "Apples(5)", 1, 5504),
+	WATERMELON(PatchType.ALLOTMENT, "Watermelon", 47, "Watermelon seed", 9, "Curry leaf", 10, 5982),
+	SNAPE_GRASS(PatchType.ALLOTMENT, "Snape grass", 61, "Snape grass seed", 8, "Jangerberries", 5, 231),
 
 	// Trees: 40-minute ticks
 	OAK(PatchType.TREE, "Oak", 15, "Oak sapling", 5, "Tomatoes(5)", 1, 1521),
@@ -69,6 +79,12 @@ public enum Crop
 		this.stages = stages;
 		this.paymentItem = paymentItem;
 		this.paymentQuantity = paymentQuantity;
+	}
+
+	/** Allotments take 3 seeds; everything else 1 seed or sapling. */
+	public int getSeedsPerPatch()
+	{
+		return type == PatchType.ALLOTMENT ? 3 : 1;
 	}
 
 	public PatchType getType()

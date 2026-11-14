@@ -12,7 +12,7 @@ import re
 import sys
 from pathlib import Path
 
-TYPES = ["HERB", "TREE", "FRUIT_TREE", "HARDWOOD_TREE"]
+TYPES = ["HERB", "ALLOTMENT", "TREE", "FRUIT_TREE", "HARDWOOD_TREE"]
 
 
 def produce_stages(text):
