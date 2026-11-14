@@ -53,7 +53,12 @@
      needs chopping, stump, diseased, dead, weeds), the same way RuneLite's Time Tracking does.
      The plugin also learns your account's farming tick offset so countdowns are exact.
   3. **Time Tracking import**: patches RuneLite's built-in Time Tracking has already seen.
-- **Notifications** when a patch finishes growing.
+- **Only ready patches.** If one herb is ready, the run is just that patch; growing ones are left off with a "next up" time.
+- **Notifications** when a patch finishes growing, and when a patch is diseased or dead (plant cure / secateurs are added to the bank list).
+- **Run-ready box.** A small on-screen box: "Herbs 3 of 6 ready", "Trees in 1h 20m", diseased patches and your contract.
+- **Profit.** Each run's harvest is logged with Grand Exchange prices; the Run history shows profit per run and your average herbs per patch.
+- **Most profitable herb first.** The Herbs run shows profit per patch for each herb you can grow and plants the best one first.
+- **Farming contracts.** Your Farming Guild contract is shown, and the contract crop is planted in the guild patch.
 
 ## Testing it
 
@@ -105,5 +110,5 @@ Progress and what's next: [PROGRESS.md](PROGRESS.md). Changes: [CHANGELOG.md](CH
 - **[Old School RuneScape Wiki](https://oldschool.runescape.wiki/)**: items, payments, growth
   times, teleports, directions and fairy ring codes.
 
-Licenses and full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of
+Farm Run Planner is released under the [BSD 2-Clause License](LICENSE). Licenses and full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of
 Jagex Ltd; this plugin is not affiliated with or endorsed by Jagex.

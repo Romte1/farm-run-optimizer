@@ -30,6 +30,12 @@ public final class RunPlanner
 		public Set<FarmPatch> disabledPatches = EnumSet.noneOf(FarmPatch.class);
 		/** Patches with something of yours growing or ready: always visited, and get seeds first. */
 		public Set<FarmPatch> usedPatches = EnumSet.noneOf(FarmPatch.class);
+		/** Crops in the order to plant them (e.g. most profitable first); empty = highest level first. */
+		public List<Crop> cropRank = new ArrayList<>();
+		/** Farming Guild contract crop to plant in the guild patch, or null. */
+		public Crop contractCrop;
+		/** Patches known to be diseased (bring plant cure / secateurs). */
+		public Set<FarmPatch> diseased = EnumSet.noneOf(FarmPatch.class);
 		/** Only plan the patches that are ready (or were just done this run). */
 		public boolean onlyReady = false;
 		/** Patches with something still growing: millis until ready, or -1 if unknown. */
@@ -447,10 +453,20 @@ public final class RunPlanner
 				+ " ticked to plant. Pick some in the run's section.");
 			return;
 		}
-		List<Crop> queue = new ArrayList<>();
-		for (int i = plantable.size() - 1; i >= 0; i--)
+		List<Crop> preference = new ArrayList<>(plantable);
+		java.util.Collections.reverse(preference);
+		if (!options.cropRank.isEmpty())
 		{
-			Crop crop = plantable.get(i);
+			// Stable sort: ranked crops first in rank order, the rest stay highest level first.
+			preference.sort(java.util.Comparator.comparingInt(c ->
+			{
+				int i = options.cropRank.indexOf(c);
+				return i < 0 ? Integer.MAX_VALUE : i;
+			}));
+		}
+		List<Crop> queue = new ArrayList<>();
+		for (Crop crop : preference)
+		{
 			int have = owned.getOrDefault(crop.getSeedName(), 0);
 			for (int n = 0; n < have; n++)
 			{
@@ -470,6 +486,27 @@ public final class RunPlanner
 			if (p.getType() == type && !options.usedPatches.contains(p))
 			{
 				order.add(p);
+			}
+		}
+		Crop contract = options.contractCrop;
+		if (contract != null && contract.getType() == type)
+		{
+			FarmPatch guild = type == PatchType.HERB ? FarmPatch.FARMING_GUILD_HERB
+				: type == PatchType.TREE ? FarmPatch.FARMING_GUILD_TREE
+				: type == PatchType.FRUIT_TREE ? FarmPatch.FARMING_GUILD_FRUIT : null;
+			if (guild != null && order.contains(guild))
+			{
+				if (owned.getOrDefault(contract.getSeedName(), 0) > 0 && contract.getLevel() <= plan.farmingLevel)
+				{
+					out.put(guild, contract);
+					queue.remove(contract);
+					order.remove(guild);
+				}
+				else
+				{
+					plan.warnings.add("Farming contract: bring " + aOrAn(contract.getSeedName()) + " "
+						+ contract.getSeedName().toLowerCase() + " for the Farming Guild patch.");
+				}
 			}
 		}
 		int next = 0;
@@ -543,6 +580,11 @@ public final class RunPlanner
 		{
 			plan.tips.add("Nothing is ready yet." + next + " This is the full run for when they are.");
 		}
+	}
+
+	private static String aOrAn(String word)
+	{
+		return "AEIOUaeiou".indexOf(word.charAt(0)) >= 0 ? "an" : "a";
 	}
 
 	/** "about 30 min" / "about 2h 10m" - rounded up, so the tip doesn't need to tick. */
@@ -671,6 +713,36 @@ public final class RunPlanner
 		if (herbs && owned.getOrDefault("Magic secateurs", 0) > 0)
 		{
 			out.add(new RunPlan.Withdrawal("Magic secateurs", 1, "+10% herb yield, wield it"));
+		}
+
+		// Diseased patches: plant cure for herbs, secateurs to prune trees.
+		int sickHerbs = 0;
+		boolean sickTree = false;
+		for (RunPlan.RouteStep step : plan.route)
+		{
+			if (options.diseased.contains(step.patch))
+			{
+				if (step.patch.getType() == PatchType.HERB)
+				{
+					sickHerbs++;
+				}
+				else
+				{
+					sickTree = true;
+				}
+			}
+		}
+		if (sickHerbs > 0)
+		{
+			out.add(new RunPlan.Withdrawal("Plant cure", sickHerbs, "for the diseased herb patch"));
+			if (owned.getOrDefault("Plant cure", 0) < sickHerbs)
+			{
+				plan.warnings.add("Buy " + sickHerbs + " plant cure (Farming shops or the GE) for your diseased herbs.");
+			}
+		}
+		if (sickTree && owned.getOrDefault("Magic secateurs", 0) == 0)
+		{
+			requireTool(plan, out, owned, "Secateurs");
 		}
 
 		// Teleport items and tablets

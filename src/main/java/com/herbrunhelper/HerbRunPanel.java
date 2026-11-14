@@ -47,7 +47,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.0.0 (2026-11-13 b5)";
+	static final String VERSION = "1.0.0 (2026-11-13 b6)";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -104,6 +104,14 @@ public class HerbRunPanel extends PluginPanel
 
 	private final Map<PatchType, Boolean> expanded = new EnumMap<>(PatchType.class);
 	private boolean travelExpanded;
+	private boolean historyExpanded;
+	private Map<Crop, Integer> herbProfit = new java.util.EnumMap<>(Crop.class);
+	private double herbYield = HerbPrices.DEFAULT_YIELD;
+	private List<RunHistory.Run> historyRuns = new ArrayList<>();
+	private RunHistory.Run currentRun;
+	private long totalProfit;
+	private FarmingContract contract;
+	private Runnable onClearHistory = () -> { };
 	private boolean showAllTravel;
 	private final Map<PatchType, Boolean> runExpanded = new EnumMap<>(PatchType.class);
 	private Set<Crop> offCrops = EnumSet.noneOf(Crop.class);
@@ -215,6 +223,22 @@ public class HerbRunPanel extends PluginPanel
 		this.useTabs = useTabs;
 		rebuildLive();
 		rebuildPlan();
+	}
+
+	void setOnClearHistory(Runnable r)
+	{
+		this.onClearHistory = r;
+	}
+
+	void setExtras(Map<Crop, Integer> herbProfit, double herbYield, List<RunHistory.Run> runs,
+		RunHistory.Run current, long totalProfit, FarmingContract contract)
+	{
+		this.herbProfit = herbProfit;
+		this.herbYield = herbYield;
+		this.historyRuns = runs;
+		this.currentRun = current;
+		this.totalProfit = totalProfit;
+		this.contract = contract;
 	}
 
 	void setNextPatch(FarmPatch next)
@@ -465,6 +489,20 @@ public class HerbRunPanel extends PluginPanel
 		{
 			col.addRow(wrapped("\u2139 " + esc(tip), new Color(127, 212, 255)), 2);
 		}
+		if (contract != null)
+		{
+			int icon = contract.crop != null ? contract.crop.getIconItemId() : -1;
+			col.addRow(iconCard(icon, "<b>Farming contract</b><br>" + esc(contract.describe()),
+				contract.complete ? GREEN : GOLD, Color.WHITE), 4);
+		}
+		if (currentRun != null && setting("showHistory"))
+		{
+			long profit = currentRun.profit();
+			col.addRow(wrapped("This run: " + currentRun.patches.size() + " patch"
+				+ (currentRun.patches.size() == 1 ? "" : "es") + " • <font color='"
+				+ (profit >= 0 ? "#5ac85a" : "#e65046") + "'>" + (profit >= 0 ? "+" : "")
+				+ HerbPrices.gp(profit) + " gp</font>", Color.WHITE), 4);
+		}
 
 		// Take with you
 		if (!plan.withdrawals.isEmpty())
@@ -556,6 +594,10 @@ public class HerbRunPanel extends PluginPanel
 			col.addRow(travelSection(), 6);
 		}
 
+		if (setting("showHistory"))
+		{
+			col.addRow(historySection(), 6);
+		}
 		col.addRow(settingsSection(), 6);
 
 		replace(planSection, col);
@@ -633,6 +675,11 @@ public class HerbRunPanel extends PluginPanel
 		{"highlightInventory", "Highlight step items", "Outline the seed / compost / payment your current step needs"},
 		{"highlightBank", "Highlight in bank", "Outline what to withdraw when your bank is open"},
 		{"notifyReady", "Notify when ready", "Notification when a patch finishes growing"},
+		{"notifyDisease", "Notify diseased/dead", "Notification when a patch is found diseased or dead"},
+		{"showReadyOverlay", "Run-ready box", "Small on-screen box showing which runs are ready"},
+		{"profitFirst", "Most profitable herb first", "Plant the herb with the best GE profit first"},
+		{"plantContract", "Plant farming contract", "Put your contract crop in the Farming Guild patch"},
+		{"showHistory", "Run history & profit", "Show this run's profit and your run history"},
 		{"chainFairyRings", "Chain fairy rings", "Do fairy-ring patches back to back"},
 		{"payGardeners", "Pay gardeners", "Bring payments so gardeners protect your trees"},
 		{"useCompost", "Bring compost", "Add compost to the bank list"},
@@ -771,7 +818,28 @@ public class HerbRunPanel extends PluginPanel
 			}
 		}
 		body.addRow(crops, 8);
-		body.addRow(wrapped("Click to pick. The best picked seed you own is planted first.", MUTED), 10);
+		body.addRow(wrapped("Click to pick. " + (type == PatchType.HERB && setting("profitFirst")
+			? "The most profitable picked seed you own is planted first." : "The best picked seed you own is planted first."),
+			MUTED), 10);
+		if (type == PatchType.HERB && !herbProfit.isEmpty())
+		{
+			body.addRow(sectionTitle("Profit per patch"), 2);
+			int shown = 0;
+			for (Crop c : HerbPrices.rankByProfit(herbProfit))
+			{
+				if (c.getLevel() > plan.farmingLevel || shown >= 4)
+				{
+					continue;
+				}
+				int pr = herbProfit.get(c);
+				JLabel herbName = label((shown == 0 ? "\u2605 " : "   ") + c.getDisplayName(), shown == 0 ? GOLD : Color.WHITE, shown == 0);
+				JLabel gp = label((pr >= 0 ? "+" : "") + HerbPrices.gp(pr), pr >= 0 ? GREEN : RED, false);
+				body.addRow(row(herbName, gp), 1);
+				shown++;
+			}
+			body.addRow(wrapped(String.format("GE prices, about %.1f herbs a patch%s, minus the seed.", herbYield,
+				herbYield == HerbPrices.DEFAULT_YIELD ? "" : " (your average)"), MUTED), 10);
+		}
 
 		body.addRow(sectionTitle("Patches"), 4);
 		JPanel patches = new JPanel(new GridLayout(0, 2, 4, 4));
@@ -836,7 +904,9 @@ public class HerbRunPanel extends PluginPanel
 		}
 		else
 		{
-			tile.setToolTipText(c.getDisplayName() + " (level " + c.getLevel() + ") - "
+			Integer pr = herbProfit.get(c);
+			tile.setToolTipText(c.getDisplayName() + " (level " + c.getLevel() + ")"
+				+ (pr == null ? "" : ", about " + (pr >= 0 ? "+" : "") + HerbPrices.gp(pr) + " gp a patch") + " - "
 				+ (picked ? "picked, click to stop planting it" : "click to plant it"));
 			tile.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			tile.addMouseListener(new MouseAdapter()
@@ -1019,6 +1089,73 @@ public class HerbRunPanel extends PluginPanel
 			return LAW_RUNE_ICON;
 		}
 		return t.getIconItemId();
+	}
+
+	// ================================================================ history
+
+	private JComponent historySection()
+	{
+		Column col = new Column();
+		JLabel toggle = label((historyExpanded ? "\u25BC  " : "\u25B6  ") + "Run history", Color.WHITE, true);
+		toggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		toggle.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				historyExpanded = !historyExpanded;
+				rebuildPlan();
+			}
+		});
+		JLabel total = label(historyRuns.isEmpty() ? "" : (totalProfit >= 0 ? "+" : "") + HerbPrices.gp(totalProfit),
+			totalProfit >= 0 ? GREEN : RED, false);
+		col.addRow(row(toggle, total), 4);
+		if (!historyExpanded)
+		{
+			return col;
+		}
+		if (historyRuns.isEmpty())
+		{
+			col.addRow(wrapped("No runs logged yet. Harvests and plantings are logged as you farm; "
+				+ "a run ends after 20 minutes without farming.", MUTED), 4);
+			return col;
+		}
+		long avg = totalProfit / historyRuns.size();
+		col.addRow(wrapped(historyRuns.size() + " runs • average " + (avg >= 0 ? "+" : "") + HerbPrices.gp(avg)
+			+ " • " + String.format("%.1f", herbYield) + " herbs a patch", MUTED), 4);
+		java.text.SimpleDateFormat when = new java.text.SimpleDateFormat("EEE h:mma");
+		int shown = 0;
+		for (RunHistory.Run r : historyRuns)
+		{
+			if (shown++ >= 10)
+			{
+				break;
+			}
+			long p = r.profit();
+			JLabel left = label(when.format(new java.util.Date(r.start)).replace("AM", "am").replace("PM", "pm")
+				+ "  " + r.patches.size() + "p", Color.WHITE, false);
+			JLabel right = label((p >= 0 ? "+" : "") + HerbPrices.gp(p), p >= 0 ? GREEN : RED, false);
+			JPanel line = row(left, right);
+			StringBuilder tip = new StringBuilder("<html>");
+			r.produce.forEach((name, qty) -> tip.append(esc(name)).append(" x ").append(qty).append("<br>"));
+			tip.append("Value ").append(HerbPrices.gp(r.value)).append(", seeds ").append(HerbPrices.gp(r.cost)).append("</html>");
+			line.setToolTipText(tip.toString());
+			left.setToolTipText(tip.toString());
+			col.addRow(line, 1);
+		}
+		JButton clear = new JButton("Clear history");
+		clear.setFont(FontManager.getRunescapeSmallFont());
+		clear.setFocusPainted(false);
+		clear.addActionListener(e ->
+		{
+			if (JOptionPane.showConfirmDialog(this, "Delete your run history?", "Run history",
+				JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
+			{
+				onClearHistory.run();
+			}
+		});
+		col.addRow(clear, 4);
+		return col;
 	}
 
 	// ================================================================ travel

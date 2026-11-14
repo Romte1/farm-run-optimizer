@@ -62,6 +62,36 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(keyName = "profitFirst", name = "Most profitable herb first", description = "Plant the herb seed with the best GE profit per patch first, instead of the highest level", position = 7, section = runSection)
+	default boolean profitFirst()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "plantContract", name = "Plant farming contract", description = "Put your Farming Guild contract crop in the guild patch", position = 8, section = runSection)
+	default boolean plantContract()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "notifyDisease", name = "Notify diseased/dead", description = "Notification when a patch is found diseased or dead", position = 9, section = runSection)
+	default boolean notifyDisease()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "showReadyOverlay", name = "Run-ready box", description = "Small on-screen box showing which runs are ready", position = 10, section = runSection)
+	default boolean showReadyOverlay()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "showHistory", name = "Show run history", description = "Show the run history and profit section", position = 11, section = runSection)
+	default boolean showHistory()
+	{
+		return true;
+	}
+
 	@ConfigItem(keyName = "bringRake", name = "Bring rake", description = "Include a rake for weedy patches", position = 5, section = runSection)
 	default boolean bringRake()
 	{

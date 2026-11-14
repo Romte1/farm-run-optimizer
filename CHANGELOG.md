@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0 b6 (2026-11-13)
+- Run history & profit: harvests logged at GE prices, profit per run, average herbs per patch.
+- Herb profit per patch, and "Most profitable herb first" planting (setting, on by default).
+- Diseased/dead notifications; plant cure or secateurs added to the bank list for diseased patches.
+- On-screen run-ready box (ready counts, next timer, diseased patches, contract).
+- Farming Guild contract card; contract crop planted in the guild patch.
+- BSD 2-Clause LICENSE and Plugin Hub submission guide (docs/PLUGIN_HUB.md).
+
 ## 1.0.0 b5 (2026-11-13)
 - Only ready patches are planned: if 1 herb is ready, the run is just that patch (and only 1 seed to bring). Growing patches are left off with a "next up" tip.
 - When nothing is ready, the full run is shown so you can prep.

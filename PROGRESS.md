@@ -65,3 +65,13 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 
 ## 2026-11-13 (b5)
 - [x] Plan only ready patches (setting, default on), done patches kept green, auto-replan when ready
+
+## 2026-11-13 (b6)
+- [x] Run history + profit
+- [x] Seed profit picker (most profitable first)
+- [x] Disease/dead alerts + plant cure
+- [x] Run-ready overlay
+- [x] Farming contract
+- [x] LICENSE + Plugin Hub prep (docs/PLUGIN_HUB.md)
+- [ ] In-game test run (Todd)
+- [ ] Submit to Plugin Hub (Todd, following docs/PLUGIN_HUB.md)

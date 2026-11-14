@@ -1,7 +1,10 @@
 package com.herbrunhelper;
 
 import com.google.inject.Provides;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -103,6 +106,18 @@ public class HerbRunPlugin extends Plugin
 	@Inject
 	private HerbRunInventoryOverlay inventoryOverlay;
 
+	@Inject
+	private RunReadyOverlay readyOverlay;
+
+	private static final String HISTORY_KEY = "runHistory";
+	private final RunHistory history = new RunHistory();
+	private volatile FarmingContract contract;
+	private final Map<FarmPatch, PatchTimers.Status> lastStatus = new EnumMap<>(FarmPatch.class);
+	private boolean statusesPrimed;
+	private int lastBankTick = -10;
+	private final Map<Crop, Integer> herbProfit = new EnumMap<>(Crop.class);
+	private volatile List<RunReadyOverlay.Line> readyLines = Collections.emptyList();
+
 	private HerbRunPanel panel;
 	private NavigationButton navButton;
 
@@ -159,6 +174,7 @@ public class HerbRunPlugin extends Plugin
 		panel = new HerbRunPanel(itemManager, timers, this::resetTimers, this::setRun,
 			this::toggleTeleport, this::setUseSpells, this::setUseTabs, this::toggleCrop, this::togglePatch,
 			this::setSetting);
+		panel.setOnClearHistory(this::clearHistory);
 		BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
 		navButton = NavigationButton.builder()
 			.tooltip("Farm Run Planner")
@@ -170,6 +186,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(bankOverlay);
 		overlayManager.add(navigationOverlay);
 		overlayManager.add(inventoryOverlay);
+		overlayManager.add(readyOverlay);
 		dirty = true;
 		timersLoaded = false;
 		ticksSinceQuestCheck = QUEST_CHECK_INTERVAL_TICKS;
@@ -183,6 +200,14 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(bankOverlay);
 		overlayManager.remove(navigationOverlay);
 		overlayManager.remove(inventoryOverlay);
+		overlayManager.remove(readyOverlay);
+		if (history.finish())
+		{
+			saveHistory();
+		}
+		lastStatus.clear();
+		statusesPrimed = false;
+		contract = null;
 		progress.clear();
 		stepItem = null;
 		panel.stop();
@@ -244,12 +269,15 @@ public class HerbRunPlugin extends Plugin
 		if (id == BANK)
 		{
 			snapshot(event.getItemContainer(), bankItems, bankNameToId);
+			lastBankTick = client.getTickCount();
 			bankSeen = true;
 			dirty = true;
 		}
 		else if (id == INVENTORY)
 		{
+			Map<String, Integer> before = new HashMap<>(inventoryItems);
 			snapshot(event.getItemContainer(), inventoryItems, inventoryNameToId);
+			noticeHarvest(before);
 			noticeItemsUsed();
 			dirty = true;
 		}
@@ -291,6 +319,10 @@ public class HerbRunPlugin extends Plugin
 			return;
 		}
 		timers.planted(patch, crop, System.currentTimeMillis());
+		int seedId = HerbPrices.seedId(crop) > 0 ? HerbPrices.seedId(crop)
+			: inventoryNameToId.getOrDefault(crop.getSeedName(), -1);
+		history.planted(patch, seedId > 0 ? itemManager.getItemPrice(itemManager.canonicalize(seedId)) : 0,
+			System.currentTimeMillis());
 		RunPlan.RouteStep step = stepFor(patch);
 		progress.clear();
 		progress.put(patch, new StepItems.Progress(System.currentTimeMillis(),
@@ -391,6 +423,17 @@ public class HerbRunPlugin extends Plugin
 		}
 		checkReadyNotifications();
 		trackReadyPatches();
+		if (timersLoaded)
+		{
+			checkDiseaseNotifications();
+			readContract();
+			if (history.tick(System.currentTimeMillis()))
+			{
+				saveHistory();
+				dirty = true;
+			}
+			updateReadyLines();
+		}
 		if (dirty)
 		{
 			dirty = false;
@@ -398,6 +441,226 @@ public class HerbRunPlugin extends Plugin
 		}
 		updateNavigation();
 		updateStepItem();
+	}
+
+	// ================================================================ harvest log, disease, contract, overlay
+
+	/** Counts produce that lands in your inventory while you're standing at a patch. */
+	private void noticeHarvest(Map<String, Integer> before)
+	{
+		if (!timersLoaded || client.getTickCount() - lastBankTick <= 1)
+		{
+			return; // bank withdrawals aren't harvests
+		}
+		FarmPatch patch = patchNearPlayer();
+		if (patch == null)
+		{
+			return;
+		}
+		Set<Integer> produceIds = new HashSet<>();
+		for (Crop c : Crop.values())
+		{
+			if (c.getType() == patch.getType())
+			{
+				produceIds.add(HerbPrices.produceId(c));
+			}
+		}
+		long now = System.currentTimeMillis();
+		boolean changed = false;
+		for (Map.Entry<String, Integer> e : inventoryItems.entrySet())
+		{
+			int gained = e.getValue() - before.getOrDefault(e.getKey(), 0);
+			Integer id = inventoryNameToId.get(e.getKey());
+			if (gained <= 0 || id == null)
+			{
+				continue;
+			}
+			int canonical = itemManager.canonicalize(id);
+			if (produceIds.contains(canonical))
+			{
+				history.harvested(patch, e.getKey(), gained, itemManager.getItemPrice(canonical),
+					patch.getType() == PatchType.HERB, now);
+				changed = true;
+			}
+		}
+		if (changed)
+		{
+			dirty = true;
+		}
+	}
+
+	/** The closest patch within a few tiles of you, or null. */
+	private FarmPatch patchNearPlayer()
+	{
+		Player player = client.getLocalPlayer();
+		if (player == null)
+		{
+			return null;
+		}
+		WorldPoint me = player.getWorldLocation();
+		int region = FarmPatch.regionOf(me.getX(), me.getY());
+		FarmPatch best = null;
+		int bestDist = 8;
+		for (FarmPatch p : FarmPatch.values())
+		{
+			if (!p.inRegion(region))
+			{
+				continue;
+			}
+			WorldPoint t = tileFor(p);
+			int d = Math.max(Math.abs(t.getX() - me.getX()), Math.abs(t.getY() - me.getY()));
+			if (d <= bestDist)
+			{
+				bestDist = d;
+				best = p;
+			}
+		}
+		return best;
+	}
+
+	private void checkDiseaseNotifications()
+	{
+		for (FarmPatch p : FarmPatch.values())
+		{
+			PatchTimers.Status st = timers.getStatus(p);
+			PatchTimers.Status was = lastStatus.get(p);
+			if (statusesPrimed && st != was && config.notifyDisease()
+				&& (st == PatchTimers.Status.DISEASED || st == PatchTimers.Status.DEAD))
+			{
+				Crop crop = timers.getStatusCrop(p);
+				notifier.notify(p.getDisplayName() + (crop == null ? "" : " (" + crop.getDisplayName() + ")")
+					+ (st == PatchTimers.Status.DISEASED ? " is diseased! Cure it before it dies." : " has died."));
+			}
+			if (st == null)
+			{
+				lastStatus.remove(p);
+			}
+			else
+			{
+				lastStatus.put(p, st);
+			}
+		}
+		statusesPrimed = true;
+	}
+
+	private void readContract()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+		{
+			return;
+		}
+		FarmingContract now = FarmingContract.of(client.getVarbitValue(FarmingContract.TYPE_VARBIT),
+			client.getVarbitValue(FarmingContract.COMPLETE_VARBIT));
+		FarmingContract was = contract;
+		boolean same = was == null ? now == null : now != null && was.value == now.value && was.complete == now.complete;
+		if (!same)
+		{
+			contract = now;
+			dirty = true;
+		}
+	}
+
+	FarmingContract getContract()
+	{
+		return contract;
+	}
+
+	List<RunReadyOverlay.Line> getReadyLines()
+	{
+		return readyLines;
+	}
+
+	boolean showReadyOverlay()
+	{
+		return config.showReadyOverlay();
+	}
+
+	/** What the on-screen "run now?" box says: ready counts per run, disease, contract. */
+	private void updateReadyLines()
+	{
+		long now = System.currentTimeMillis();
+		List<RunReadyOverlay.Line> lines = new ArrayList<>();
+		Set<PatchType> runs = runs();
+		Set<FarmPatch> off = readSet(config.disabledPatches(), FarmPatch.class);
+		int sick = 0;
+		for (PatchType type : PatchType.values())
+		{
+			int ready = 0;
+			int tracked = 0;
+			long soonest = Long.MAX_VALUE;
+			for (FarmPatch p : FarmPatch.values())
+			{
+				if (p.getType() != type || off.contains(p))
+				{
+					continue;
+				}
+				PatchTimers.Planting pl = timers.get(p);
+				PatchTimers.Status st = timers.getStatus(p);
+				if (st == PatchTimers.Status.DISEASED || st == PatchTimers.Status.DEAD)
+				{
+					sick++;
+				}
+				if (pl == null)
+				{
+					continue;
+				}
+				tracked++;
+				if (pl.isReady(now))
+				{
+					ready++;
+				}
+				else
+				{
+					soonest = Math.min(soonest, pl.millisLeft(now));
+				}
+			}
+			if (!runs.contains(type) || tracked == 0)
+			{
+				continue;
+			}
+			if (ready > 0)
+			{
+				lines.add(new RunReadyOverlay.Line(type.getDisplayName(), ready + " of " + tracked + " ready",
+					new Color(90, 200, 90)));
+			}
+			else if (soonest != Long.MAX_VALUE)
+			{
+				lines.add(new RunReadyOverlay.Line(type.getDisplayName(), "in " + shortTime(soonest), Color.WHITE));
+			}
+		}
+		if (sick > 0)
+		{
+			lines.add(new RunReadyOverlay.Line("Diseased/dead", String.valueOf(sick), new Color(230, 80, 70)));
+		}
+		FarmingContract c = contract;
+		if (c != null)
+		{
+			lines.add(new RunReadyOverlay.Line("Contract", c.complete ? "claim reward" : c.name,
+				c.complete ? new Color(90, 200, 90) : new Color(255, 200, 60)));
+		}
+		readyLines = lines;
+	}
+
+	private static String shortTime(long ms)
+	{
+		long min = Math.max(1, (ms + 59_999) / 60_000);
+		return min < 60 ? min + "m" : (min / 60) + "h " + (min % 60) + "m";
+	}
+
+	private void saveHistory()
+	{
+		if (configManager.getRSProfileKey() != null)
+		{
+			configManager.setRSProfileConfiguration(HerbRunConfig.GROUP, HISTORY_KEY, history.serialize());
+		}
+	}
+
+	/** Called from the panel (Swing thread). */
+	private void clearHistory()
+	{
+		history.clear();
+		saveHistory();
+		dirty = true;
 	}
 
 	private static final long DONE_KEEP_MS = 30 * 60_000L;
@@ -763,6 +1026,34 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 		options.doneThisRun.addAll(doneAt.keySet());
+		for (FarmPatch p : FarmPatch.values())
+		{
+			if (timers.getStatus(p) == PatchTimers.Status.DISEASED)
+			{
+				options.diseased.add(p);
+			}
+		}
+		FarmingContract c = contract;
+		options.contractCrop = c != null && !c.complete && config.plantContract() ? c.crop : null;
+		double herbYield = history.averageHerbYield();
+		herbProfit.clear();
+		for (Crop crop : Crop.values())
+		{
+			int herb = HerbPrices.grimyId(crop);
+			if (herb > 0)
+			{
+				int herbPrice = itemManager.getItemPrice(herb);
+				int seedPrice = itemManager.getItemPrice(HerbPrices.seedId(crop));
+				if (herbPrice > 0)
+				{
+					herbProfit.put(crop, HerbPrices.profitPerPatch(herbYield, herbPrice, seedPrice));
+				}
+			}
+		}
+		if (config.profitFirst())
+		{
+			options.cropRank = HerbPrices.rankByProfit(herbProfit);
+		}
 		options.bankKnown = bankSeen;
 		options.disabledCrops = readSet(config.disabledCrops(), Crop.class);
 		options.disabledPatches = readSet(config.disabledPatches(), FarmPatch.class);
@@ -814,6 +1105,12 @@ public class HerbRunPlugin extends Plugin
 		boolean useTabs = ctx.useTabs;
 		Set<Crop> offCrops = options.disabledCrops;
 		Set<FarmPatch> offPatches = options.disabledPatches;
+		Map<Crop, Integer> profitCopy = new EnumMap<>(Crop.class);
+		profitCopy.putAll(herbProfit);
+		List<RunHistory.Run> historyRuns = history.runs();
+		RunHistory.Run currentRun = history.current();
+		long totalProfit = history.totalProfit();
+		FarmingContract contractNow = contract;
 		Map<String, Boolean> settings = new java.util.LinkedHashMap<>();
 		settings.put("useShortestPath", config.useShortestPath());
 		settings.put("highlightPatch", config.highlightPatch());
@@ -825,6 +1122,11 @@ public class HerbRunPlugin extends Plugin
 		settings.put("payGardeners", config.payGardeners());
 		settings.put("useCompost", config.useCompost());
 		settings.put("onlyReady", config.onlyReady());
+		settings.put("profitFirst", config.profitFirst());
+		settings.put("plantContract", config.plantContract());
+		settings.put("notifyDisease", config.notifyDisease());
+		settings.put("showReadyOverlay", config.showReadyOverlay());
+		settings.put("showHistory", config.showHistory());
 		settings.put("bringRake", config.bringRake());
 		settings.put("importTimeTracking", config.importTimeTracking());
 		settings.put("useBoostedLevel", config.useBoostedLevel());
@@ -837,6 +1139,7 @@ public class HerbRunPlugin extends Plugin
 			panel.setSettings(settings);
 			panel.setRuns(runs);
 			panel.setPicks(offCrops, offPatches);
+			panel.setExtras(profitCopy, herbYield, historyRuns, currentRun, totalProfit, contractNow);
 			panel.setPlan(plan, carried, worn, nameToId, disabled, useSpells, useTabs);
 		});
 	}
@@ -1137,6 +1440,7 @@ public class HerbRunPlugin extends Plugin
 			return; // profile not known yet; try again next tick
 		}
 		timers.load(configManager.getRSProfileConfiguration(HerbRunConfig.GROUP, TIMERS_KEY));
+		history.load(configManager.getRSProfileConfiguration(HerbRunConfig.GROUP, HISTORY_KEY));
 		clock.load(configManager.getRSProfileConfiguration(HerbRunConfig.GROUP, CLOCK_KEY));
 		timersLoaded = true;
 		importTimeTracking();
