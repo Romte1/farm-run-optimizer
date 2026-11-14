@@ -54,7 +54,7 @@ import net.runelite.client.util.ImageUtil;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Farm Run Planner",
+	name = "Farm Run Optimizer",
 	description = "Plans herb, tree, fruit tree and hardwood farm runs: what to bring, the fastest route, what to do at each patch, and every growth timer",
 	tags = {"farming", "farm run", "herb run", "tree run", "fruit tree", "hardwood", "herbs", "patches", "timers", "fairy ring", "route", "planner"}
 )
@@ -192,7 +192,7 @@ public class HerbRunPlugin extends Plugin
 		panel.setSpriteManager(spriteManager);
 		BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
 		navButton = NavigationButton.builder()
-			.tooltip("Farm Run Planner")
+			.tooltip("Farm Run Optimizer")
 			.icon(icon)
 			.priority(7)
 			.panel(panel)

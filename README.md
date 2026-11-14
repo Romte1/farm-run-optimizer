@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/banner.png" alt="Farm Run Planner - a farming companion for RuneLite" width="100%">
+  <img src="images/banner.png" alt="Farm Run Optimizer - a farming companion for RuneLite" width="100%">
 </p>
 
 <p align="center">
@@ -71,7 +71,7 @@ the project.
    Launcher, close it. Keep `.runelite/credentials.properties` private and delete it when done.
 3. Open this folder in IntelliJ (File > Open > `build.gradle` > Open as Project).
    Set File > Project Structure > SDK to 17 and Settings > Gradle > Gradle JVM to 17.
-4. Gradle tab (elephant, right edge) > farm-run-planner > Tasks > application > **run**.
+4. Gradle tab (elephant, right edge) > farm-run-optimizer > Tasks > application > **run**.
 5. Log in, click the logo in the sidebar, and **open your bank once**.
 
 ## Patches
@@ -110,5 +110,5 @@ Progress and what's next: [PROGRESS.md](PROGRESS.md). Changes: [CHANGELOG.md](CH
 - **[Old School RuneScape Wiki](https://oldschool.runescape.wiki/)**: items, payments, growth
   times, teleports, directions and fairy ring codes.
 
-Farm Run Planner is released under the [BSD 2-Clause License](LICENSE). Licenses and full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of
+Farm Run Optimizer is released under the [BSD 2-Clause License](LICENSE). Licenses and full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of
 Jagex Ltd; this plugin is not affiliated with or endorsed by Jagex.

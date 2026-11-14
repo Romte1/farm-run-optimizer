@@ -86,3 +86,8 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 
 ## 2026-11-13 (b9)
 - [x] Highlight the gardener to pay
+
+## 2026-11-13 (b10)
+- [x] Renamed to Farm Run Optimizer (name clash on the Plugin Hub)
+- [ ] New GitHub banner with the new name (Todd)
+- [ ] Plugin Hub pull request (Todd)

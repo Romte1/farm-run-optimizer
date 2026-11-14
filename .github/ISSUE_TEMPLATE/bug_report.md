@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Something in Farm Run Planner isn't working right
+about: Something in Farm Run Optimizer isn't working right
 labels: bug
 ---
 

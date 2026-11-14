@@ -1,4 +1,4 @@
-# Submitting Farm Run Planner to the RuneLite Plugin Hub
+# Submitting Farm Run Optimizer to the RuneLite Plugin Hub
 
 ## Checklist (done in this repo)
 
@@ -23,20 +23,20 @@
 
 1. Go to https://github.com/runelite/plugin-hub and click **Fork**.
 2. In your fork, click **Add file > Create new file**.
-3. Name it `plugins/farm-run-planner` (no extension) with exactly these two lines:
+3. Name it `plugins/farm-run-optimizer` (no extension) with exactly these two lines:
 
    ```
    repository=https://github.com/triggleman/farm-run-planner.git
    commit=PASTE_THE_40_CHARACTER_HASH_HERE
    ```
 
-4. Choose **Create a new branch** (e.g. `farm-run-planner`) and commit.
+4. Choose **Create a new branch** (e.g. `farm-run-optimizer`) and commit.
 5. Click **Contribute > Open pull request** (base: `runelite/plugin-hub` master).
-   Title: `Add Farm Run Planner`. Description: one or two lines on what it does.
+   Title: `Add Farm Run Optimizer`. Description: one or two lines on what it does.
 6. Wait for the checks:
    - **build (pull_request)**: if it fails, click Details and send me the log.
    - **RuneLite Plugin Hub Checks**: if it says changes are needed, send me the list.
-7. To update after a fix: push to this repo, then edit `plugins/farm-run-planner` in the
+7. To update after a fix: push to this repo, then edit `plugins/farm-run-optimizer` in the
    same pull request with the new commit hash. Don't open a new pull request.
 
 ## Updating later (after it's live)

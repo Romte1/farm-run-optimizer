@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.0 b10 (2026-11-13)
+- Renamed to **Farm Run Optimizer**: "Farm Run Planner" is already taken on the Plugin Hub by another author.
+
 ## 1.0.0 b9 (2026-11-13)
 - The gardener you need to pay is outlined in gold, with what to give them ("Pay: Oranges(5)" or "Pay 200 coins to chop it down"). Setting: "Highlight gardener to pay".
 

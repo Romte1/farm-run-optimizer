@@ -34,7 +34,7 @@ tasks.withType(JavaCompile).configureEach {
 // ./gradlew run  -> launches RuneLite in developer mode with this plugin loaded
 tasks.register('run', JavaExec) {
 	group = 'application'
-	description = 'Launch RuneLite with Farm Run Planner loaded'
+	description = 'Launch RuneLite with Farm Run Optimizer loaded'
 	classpath = sourceSets.test.runtimeClasspath
 	mainClass = 'com.herbrunhelper.HerbRunPluginTest'
 	jvmArgs '-ea'
