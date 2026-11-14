@@ -570,6 +570,10 @@ public class HerbRunPlugin extends Plugin
 		{
 			clearShortestPath();
 		}
+		if ("pathMinigameTeleports".equals(event.getKey()))
+		{
+			shortestPathTarget = null; // send the route again with the new setting
+		}
 		if (!config.hintArrow())
 		{
 			clearHintArrow();
@@ -1417,6 +1421,7 @@ public class HerbRunPlugin extends Plugin
 		FarmingContract contractNow = contract;
 		Map<String, Boolean> settings = new java.util.LinkedHashMap<>();
 		settings.put("useShortestPath", config.useShortestPath());
+		settings.put("pathMinigameTeleports", config.pathMinigameTeleports());
 		settings.put("highlightPatch", config.highlightPatch());
 		settings.put("highlightGardener", config.highlightGardener());
 		settings.put("hintArrow", config.hintArrow());
@@ -1726,6 +1731,11 @@ public class HerbRunPlugin extends Plugin
 			{
 				Map<String, Object> data = new HashMap<>();
 				data.put("target", target);
+				// Our own settings for the line, applied by Shortest Path to this route only
+				// (cleared again when we clear the path).
+				Map<String, Object> overrides = new HashMap<>();
+				overrides.put("useTeleportationMinigames", config.pathMinigameTeleports());
+				data.put("config", overrides);
 				eventBus.post(new PluginMessage("shortestpath", "path", data));
 				shortestPathTarget = target;
 			}

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.1 (2026-11-14)
+- New setting "Path: minigame teleports" (off by default): the Shortest Path line no longer routes through minigame teleports like Rat Pits. Applies only to the routes this plugin asks for; your own Shortest Path settings are untouched.
+
 ## 1.2.0 (2026-11-14)
 - **New: Allotment run.** 14 allotments (2 each at Falador, Catherby, Ardougne, Morytania, Hosidius, Varlamore and the Farming Guild at 45 Farming), all 8 crops from potatoes (level 1) to snape grass (61), 3 seeds per patch, compost, and the gardener's protection payment. Great for new players before herbs and trees unlock. Combines with the herb run (the allotments are right next to the herb patches).
 - Farming Guild allotment contracts plant in the guild allotment.
