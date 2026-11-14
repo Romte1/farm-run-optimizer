@@ -30,6 +30,12 @@ public final class RunPlanner
 		public Set<FarmPatch> disabledPatches = EnumSet.noneOf(FarmPatch.class);
 		/** Patches with something of yours growing or ready: always visited, and get seeds first. */
 		public Set<FarmPatch> usedPatches = EnumSet.noneOf(FarmPatch.class);
+		/** Only plan the patches that are ready (or were just done this run). */
+		public boolean onlyReady = false;
+		/** Patches with something still growing: millis until ready, or -1 if unknown. */
+		public Map<FarmPatch, Long> notReady = new java.util.EnumMap<>(FarmPatch.class);
+		/** Patches you've just harvested/planted on this run, kept on the list as done. */
+		public Set<FarmPatch> doneThisRun = EnumSet.noneOf(FarmPatch.class);
 		/** Levels, quests, spellbook, disabled teleports, spells/tabs, fairy chaining. */
 		public Teleport.Context teleports = new Teleport.Context();
 	}
@@ -111,6 +117,11 @@ public final class RunPlanner
 				continue;
 			}
 			included.add(patch);
+		}
+
+		if (options.onlyReady)
+		{
+			keepReadyPatches(plan, included, options);
 		}
 
 		// Decide what goes in each patch first: seeds go to the patches you use, then the rest.
@@ -486,6 +497,61 @@ public final class RunPlanner
 	}
 
 	/** Remind you to pot and water tree seeds, so you have saplings for later runs. */
+	/**
+	 * Leaves growing patches off the run when at least one patch is ready, so one ready herb
+	 * doesn't turn into a full run. When nothing is ready the full run is shown for planning.
+	 */
+	static void keepReadyPatches(RunPlan plan, Set<FarmPatch> included, Options options)
+	{
+		List<FarmPatch> waiting = new ArrayList<>();
+		boolean anyReady = false;
+		for (FarmPatch p : included)
+		{
+			if (options.doneThisRun.contains(p) || !options.notReady.containsKey(p))
+			{
+				anyReady = true;
+			}
+			else
+			{
+				waiting.add(p);
+			}
+		}
+		if (waiting.isEmpty())
+		{
+			return;
+		}
+		FarmPatch soonest = null;
+		long soonestMs = Long.MAX_VALUE;
+		for (FarmPatch p : waiting)
+		{
+			long ms = options.notReady.get(p);
+			if (ms >= 0 && ms < soonestMs)
+			{
+				soonestMs = ms;
+				soonest = p;
+			}
+		}
+		String next = soonest == null ? "" : " Next up: " + soonest.getDisplayName() + " in "
+			+ roughTime(soonestMs) + ".";
+		if (anyReady)
+		{
+			included.removeAll(waiting);
+			plan.tips.add(waiting.size() + (waiting.size() == 1 ? " patch is" : " patches are")
+				+ " still growing, so only the ready ones are on this run." + next);
+		}
+		else
+		{
+			plan.tips.add("Nothing is ready yet." + next + " This is the full run for when they are.");
+		}
+	}
+
+	/** "about 30 min" / "about 2h 10m" - rounded up, so the tip doesn't need to tick. */
+	private static String roughTime(long ms)
+	{
+		long min = Math.max(1, (ms + 59_999) / 60_000);
+		return "about " + (min < 60 ? min + " min" : (min / 60) + "h " + (min % 60) + "m");
+	}
+
 	static void addSeedlingTips(RunPlan plan, PatchType type, Map<String, Integer> owned, Options options)
 	{
 		for (Crop c : Crop.values())

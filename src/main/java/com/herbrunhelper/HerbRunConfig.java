@@ -56,6 +56,12 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(keyName = "onlyReady", name = "Only ready patches", description = "When some patches are ready, leave the still-growing ones off the run", position = 6, section = runSection)
+	default boolean onlyReady()
+	{
+		return true;
+	}
+
 	@ConfigItem(keyName = "bringRake", name = "Bring rake", description = "Include a rake for weedy patches", position = 5, section = runSection)
 	default boolean bringRake()
 	{

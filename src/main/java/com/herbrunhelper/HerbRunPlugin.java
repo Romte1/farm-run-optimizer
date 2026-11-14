@@ -390,6 +390,7 @@ public class HerbRunPlugin extends Plugin
 			syncNearbyPatches();
 		}
 		checkReadyNotifications();
+		trackReadyPatches();
 		if (dirty)
 		{
 			dirty = false;
@@ -397,6 +398,50 @@ public class HerbRunPlugin extends Plugin
 		}
 		updateNavigation();
 		updateStepItem();
+	}
+
+	private static final long DONE_KEEP_MS = 30 * 60_000L;
+	private final Map<FarmPatch, Long> doneAt = new EnumMap<>(FarmPatch.class);
+	private Set<FarmPatch> lastReady = null;
+
+	/**
+	 * Replans when a patch becomes ready, and remembers patches you've just done so they stay
+	 * on the list (green) instead of the plan jumping back to a full run.
+	 */
+	private void trackReadyPatches()
+	{
+		if (!timersLoaded)
+		{
+			return;
+		}
+		long now = System.currentTimeMillis();
+		Set<FarmPatch> ready = EnumSet.noneOf(FarmPatch.class);
+		for (FarmPatch p : FarmPatch.values())
+		{
+			if (timers.needsVisit(p, now))
+			{
+				ready.add(p);
+			}
+		}
+		if (lastReady != null)
+		{
+			for (FarmPatch p : lastReady)
+			{
+				if (!ready.contains(p))
+				{
+					doneAt.put(p, now);
+				}
+			}
+			if (!lastReady.equals(ready))
+			{
+				dirty = true;
+			}
+		}
+		if (doneAt.entrySet().removeIf(e -> ready.contains(e.getKey()) || now - e.getValue() > DONE_KEEP_MS))
+		{
+			dirty = true;
+		}
+		lastReady = ready;
 	}
 
 	// ================================================================ accessors for overlays
@@ -707,6 +752,17 @@ public class HerbRunPlugin extends Plugin
 		options.payGardeners = config.payGardeners();
 		options.useCompost = config.useCompost();
 		options.bringRake = config.bringRake();
+		options.onlyReady = config.onlyReady();
+		long nowMs = System.currentTimeMillis();
+		for (FarmPatch p : FarmPatch.values())
+		{
+			if (!timers.needsVisit(p, nowMs))
+			{
+				PatchTimers.Planting pl = timers.get(p);
+				options.notReady.put(p, pl == null ? -1L : pl.millisLeft(nowMs));
+			}
+		}
+		options.doneThisRun.addAll(doneAt.keySet());
 		options.bankKnown = bankSeen;
 		options.disabledCrops = readSet(config.disabledCrops(), Crop.class);
 		options.disabledPatches = readSet(config.disabledPatches(), FarmPatch.class);
@@ -768,6 +824,7 @@ public class HerbRunPlugin extends Plugin
 		settings.put("chainFairyRings", config.chainFairyRings());
 		settings.put("payGardeners", config.payGardeners());
 		settings.put("useCompost", config.useCompost());
+		settings.put("onlyReady", config.onlyReady());
 		settings.put("bringRake", config.bringRake());
 		settings.put("importTimeTracking", config.importTimeTracking());
 		settings.put("useBoostedLevel", config.useBoostedLevel());

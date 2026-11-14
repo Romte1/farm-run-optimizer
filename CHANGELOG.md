@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 b5 (2026-11-13)
+- Only ready patches are planned: if 1 herb is ready, the run is just that patch (and only 1 seed to bring). Growing patches are left off with a "next up" tip.
+- When nothing is ready, the full run is shown so you can prep.
+- Patches you just did stay on the list (green) for 30 minutes.
+- Replans automatically when a patch becomes ready.
+- New setting: "Only ready patches" (on by default).
+
 ## 1.0.0 b4 (2026-11-13)
 - Timers moved to the top, Runs underneath.
 - Timers show what's growing in each patch (e.g. "Catherby / Ranarr weed").

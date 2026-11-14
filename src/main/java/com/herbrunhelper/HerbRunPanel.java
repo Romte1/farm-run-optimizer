@@ -47,7 +47,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.0.0 (2026-11-13 b4)";
+	static final String VERSION = "1.0.0 (2026-11-13 b5)";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -636,6 +636,7 @@ public class HerbRunPanel extends PluginPanel
 		{"chainFairyRings", "Chain fairy rings", "Do fairy-ring patches back to back"},
 		{"payGardeners", "Pay gardeners", "Bring payments so gardeners protect your trees"},
 		{"useCompost", "Bring compost", "Add compost to the bank list"},
+		{"onlyReady", "Only ready patches", "When some patches are ready, leave the growing ones off the run"},
 		{"bringRake", "Bring a rake", "Add a rake to the bank list"},
 		{"importTimeTracking", "Import Time Tracking", "Use timers RuneLite's Time Tracking already saved"},
 		{"useBoostedLevel", "Use boosted Farming", "Plan with your boosted level (e.g. garden pie)"},

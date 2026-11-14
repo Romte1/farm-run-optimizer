@@ -62,3 +62,6 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 - [x] Travel tiles dimmed + padlock (not greyscale)
 - [x] Item pictures for every jewellery/item teleport and spirit tree
 - [x] Dramen staff fairy ring toggle
+
+## 2026-11-13 (b5)
+- [x] Plan only ready patches (setting, default on), done patches kept green, auto-replan when ready
