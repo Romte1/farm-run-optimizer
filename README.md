@@ -47,9 +47,17 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 - **On the ground**: the next patch is outlined with a hint arrow; on fairy ring stops the ring is marked with the code to dial. If you have the **Shortest Path** plugin, it draws the walking line.
 - **Gardeners** you need to pay are outlined, with what to give them.
 
+<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/walking-path-ardougne.png" alt="Walking path to the Ardougne herb patch with the run-ready box" width="100%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/tree-run-nemus.png" alt="Tree run at Nemus Retreat: patch outlined, gardener highlighted, path and stop card" width="100%"></p>
+
 ### At each patch
 - **A to-do card for every stop**: harvest, check health, pay the gardener, dig up a stump, plant, compost, pay for protection. The next stop is gold and finished stops turn green.
 - **The item you need right now** (seed, compost, payment) is highlighted in your inventory.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/herb-patch-outline.png" alt="Falador herb patch outlined with the hint arrow" width="49%">
+  <img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/gardener-highlight.png" alt="Gardener outlined with what to pay" width="49%">
+</p>
 
 ### Timers and alerts
 - **Exact timers** for every patch, read from the game when you're nearby, from your plantings, and from RuneLite's Time Tracking.
