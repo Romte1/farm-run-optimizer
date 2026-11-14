@@ -4,7 +4,7 @@ package com.herbrunhelper;
  * Everything the runs plant: herbs, trees, fruit trees and hardwood trees.
  *
  * Constant names match the crop names in patch-states.tsv. Growth stages follow RuneLite's
- * Time Tracking plugin (via Larry: Farming Runs): a crop finishes after (stages - 1) growth
+ * Time Tracking plugin (Produce.java): a crop finishes after (stages - 1) growth
  * ticks of its patch type's tick length. Gardener payments are from the OSRS Wiki and can be
  * handed over noted.
  */
@@ -55,7 +55,7 @@ public enum Crop
 	private final int stages;
 	private final String paymentItem;
 	private final int paymentQuantity;
-	/** Item id of the produce, used as the crop's picture (ids from RuneLite's ItemID via Larry). */
+	/** Item id of the produce, used as the crop's picture (game item ids, as in RuneLite's ItemID). */
 	private final int iconItemId;
 
 	Crop(PatchType type, String displayName, int level, String seedName, int stages,

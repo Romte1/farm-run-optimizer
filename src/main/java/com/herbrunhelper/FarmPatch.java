@@ -1,8 +1,7 @@
 /*
- * Patch regions and varbit ids are derived from RuneLite's Time Tracking plugin
- * (FarmingWorld), Copyright (c) 2018, NotFoxtrot and Copyright (c) 2018 Abex, via Larry:
- * Farming Runs, Copyright (c) 2026, agrahamlincoln. Both BSD 2-Clause; see NOTICE.
- * Directions follow the OSRS Wiki farming run guide and Larry's route notes.
+ * Patch regions and varbit ids match RuneLite's Time Tracking plugin (FarmingWorld),
+ * Copyright (c) 2018, NotFoxtrot and Copyright (c) 2018 Abex, BSD 2-Clause; see NOTICE.
+ * Checked by scripts/verify_patches.py. Directions follow the OSRS Wiki farming guides.
  */
 package com.herbrunhelper;
 
@@ -47,27 +46,27 @@ public enum FarmPatch
 		via(Teleport.ROYAL_SEED_POD, "Grand Tree, run south-west"),
 		via(Teleport.SPIRIT_TREE, "to the Grand Tree, run south-west")),
 	GNOME_FRUIT("Gnome Stronghold fruit tree", PatchType.FRUIT_TREE, Requirement.NONE, 2475, 3446, r(9781, 9525, 9526, 9782), 4772, null, "Grand Tree bank",
-		walk("Run north-east across the Stronghold to the fruit tree", "GNOME_TREE"),
-		via(Teleport.ROYAL_SEED_POD, "Grand Tree, the fruit tree is just east"),
-		via(Teleport.SPIRIT_TREE, "to the Grand Tree, the fruit tree is just east")),
+		walk("Head north-east through the Stronghold to the fruit tree patch", "GNOME_TREE"),
+		via(Teleport.ROYAL_SEED_POD, "Grand Tree, fruit tree patch beside it"),
+		via(Teleport.SPIRIT_TREE, "to the Grand Tree, fruit tree patch beside it")),
 	TREE_GNOME_VILLAGE_FRUIT("Tree Gnome Village fruit tree", PatchType.FRUIT_TREE, Requirement.NONE, 2490, 3180, r(9777, 10033), 4771, null, "Grand Tree bank",
-		walk("Ride the Stronghold spirit tree to the Tree Gnome Village, ask Elkoy to lead you out of the maze, run north-west", "GNOME_FRUIT"),
-		walk("Ride the Stronghold spirit tree to the Tree Gnome Village, ask Elkoy to lead you out of the maze, run north-west", "GNOME_TREE"),
-		via(Teleport.FAIRY_CIQ, "run north-west"),
-		via(Teleport.SPIRIT_TREE, "to the Tree Gnome Village, ask Elkoy to lead you out, run north-west")),
+		walk("Spirit tree to Tree Gnome Village, get Elkoy to guide you out of the maze", "GNOME_FRUIT"),
+		walk("Spirit tree to Tree Gnome Village, get Elkoy to guide you out of the maze", "GNOME_TREE"),
+		via(Teleport.FAIRY_CIQ, "head north-west to the patch"),
+		via(Teleport.SPIRIT_TREE, "to Tree Gnome Village, get Elkoy to guide you out")),
 
 	// ---- Catherby / Brimhaven / Ardougne
 	CATHERBY_HERB("Catherby herb", PatchType.HERB, Requirement.NONE, 2813, 3463, r(11062, 11061, 11317, 11318), 4774, null, "Catherby bank",
 		via(Teleport.CAMELOT_TAB, "run east to Catherby"),
 		via(Teleport.CAMELOT_SPELL, "run east to Catherby")),
 	CATHERBY_FRUIT("Catherby fruit tree", PatchType.FRUIT_TREE, Requirement.NONE, 2860, 3433, r(11317), 4771, null, "Catherby bank",
-		walk("Walk east along the beach to the fruit tree", "CATHERBY_HERB"),
-		via(Teleport.CAMELOT_TAB, "run south-east past Catherby"),
-		via(Teleport.CAMELOT_SPELL, "run south-east past Catherby")),
+		walk("Follow the beach east to the fruit tree patch", "CATHERBY_HERB"),
+		via(Teleport.CAMELOT_TAB, "head through Catherby to the fruit tree patch"),
+		via(Teleport.CAMELOT_SPELL, "head through Catherby to the fruit tree patch")),
 	BRIMHAVEN_FRUIT("Brimhaven fruit tree", PatchType.FRUIT_TREE, Requirement.NONE, 2764, 3212, r(11058, 11057), 4771, null, "Ardougne South bank",
-		via(Teleport.BRIMHAVEN_TAB, "run north"),
-		via(Teleport.ARDOUGNE_TAB, "Captain Barnaby's ferry to Brimhaven (30 coins), run north-west"),
-		via(Teleport.ARDOUGNE_SPELL, "Captain Barnaby's ferry to Brimhaven (30 coins), run north-west")),
+		via(Teleport.BRIMHAVEN_TAB, "patch is just north"),
+		via(Teleport.ARDOUGNE_TAB, "boat from Ardougne docks to Brimhaven (30 coins), patch north-west"),
+		via(Teleport.ARDOUGNE_SPELL, "boat from Ardougne docks to Brimhaven (30 coins), patch north-west")),
 	ARDOUGNE_HERB("Ardougne herb", PatchType.HERB, Requirement.NONE, 2670, 3374, r(10548), 4774, "BLR", "Ardougne North bank",
 		beatsFairy(Teleport.ARDOUGNE_CLOAK, "farm teleport (cloak 2+)"),
 		beatsFairy(Teleport.ARDOUGNE_TAB, "run north-east"),
@@ -94,11 +93,11 @@ public enum FarmPatch
 		via(Teleport.SKILLS_NECKLACE, "Farming Guild, run west"),
 		via(Teleport.FAIRY_CIR, "run south-west")),
 	FARMING_GUILD_FRUIT("Farming Guild fruit tree", PatchType.FRUIT_TREE, Requirement.FARMING_85, 1243, 3759, r(4922, 4665, 4666, 4667, 4921, 4923, 5177, 5178, 5179), 7909, "CIR", "Farming Guild bank",
-		walk("Walk north into the guild's advanced section", "FARMING_GUILD_HERB"),
-		walk("Walk north into the guild's advanced section", "FARMING_GUILD_TREE"),
+		walk("Into the guild's top tier, north side", "FARMING_GUILD_HERB"),
+		walk("Into the guild's top tier, north side", "FARMING_GUILD_TREE"),
 		beatsFairy(Teleport.FARMING_CAPE, "run north"),
 		via(Teleport.SKILLS_NECKLACE, "Farming Guild, run north"),
-		via(Teleport.FAIRY_CIR, "run south-west, then north through the guild")),
+		via(Teleport.FAIRY_CIR, "head into the guild, top tier")),
 
 	// ---- Varlamore
 	VARLAMORE_HERB("Varlamore herb (Ortus Farm)", PatchType.HERB, Requirement.CHILDREN_OF_THE_SUN, 1585, 3100,
@@ -108,19 +107,19 @@ public enum FarmPatch
 		via(Teleport.FAIRY_AJP, "run north-west"),
 		via(Teleport.CIVITAS_SPELL, "quetzal to the Hunter Guild, run north")),
 	LOCUS_OASIS_HARDWOOD("Locus Oasis hardwood", PatchType.HARDWOOD, Requirement.CHILDREN_OF_THE_SUN, 1687, 2972, r(6702, 6446), 4771, "AJP", null,
-		via(Teleport.FAIRY_AJP, "to the Avium Savannah, run south-east")),
+		via(Teleport.FAIRY_AJP, "Avium Savannah, patch at the oasis")),
 	KASTORI_FRUIT("Kastori fruit tree", PatchType.FRUIT_TREE, Requirement.CHILDREN_OF_THE_SUN, 1370, 3040, r(5423, 5167, 5424), 4772, null, null,
-		via(Teleport.PENDANT_OF_ATES, "statue north of Kastori, run south-west"),
-		via(Teleport.QUETZAL_WHISTLE, "Kastori landing site, run north-east"),
-		walk("Run south from Ortus Farm to the Hunter Guild landing site, ride Renu to Kastori, run north-east", "VARLAMORE_HERB")),
+		via(Teleport.PENDANT_OF_ATES, "Kastori"),
+		via(Teleport.QUETZAL_WHISTLE, "Kastori"),
+		walk("Quetzal from the Hunter Guild to Kastori", "VARLAMORE_HERB")),
 	NEMUS_RETREAT_TREE("Nemus Retreat tree", PatchType.TREE, Requirement.CHILDREN_OF_THE_SUN, 1370, 3300, r(5427, 5428, 5684), 4771, null, null,
 		via(Teleport.PENDANT_OF_ATES, "Nemus Retreat"),
-		via(Teleport.QUETZAL_WHISTLE, "Quetzacalli Gorge, then the mountain guide"),
-		via(Teleport.FAIRY_AIS, "to Auburn Valley, run west to Nemus Retreat")),
+		via(Teleport.QUETZAL_WHISTLE, "then head to Nemus Retreat"),
+		via(Teleport.FAIRY_AIS, "Auburnvale, then west to Nemus Retreat")),
 
 	// ---- Elsewhere
 	LLETYA_FRUIT("Lletya fruit tree", PatchType.FRUIT_TREE, Requirement.MOURNINGS_END, 2347, 3162, r(9265, 11103), 4771, null, "Lletya bank",
-		via(Teleport.TELEPORT_CRYSTAL, "Lletya, run east")),
+		via(Teleport.TELEPORT_CRYSTAL, "Lletya")),
 	TROLL_HERB("Troll Stronghold herb", PatchType.HERB, Requirement.MY_ARMS_BIG_ADVENTURE, 2826, 3694, r(11321), 4771, null, null,
 		via(Teleport.STONY_BASALT, null),
 		via(Teleport.TROLLHEIM_TAB, "climb to the stronghold roof"),
@@ -130,13 +129,13 @@ public enum FarmPatch
 	HARMONY_HERB("Harmony Island herb", PatchType.HERB, Requirement.MORYTANIA_ELITE, 3789, 2837, r(15148), 4772, null, null,
 		via(Teleport.HARMONY_TAB, null)),
 	FOSSIL_HARDWOOD_EAST("Fossil Island hardwood (east)", PatchType.HARDWOOD, Requirement.BONE_VOYAGE, 3715, 3835, r(14651, 14650, 14652, 14906, 14907, 14908, 15162, 15163, 15164), 4771, null, "Museum Camp bank",
-		via(Teleport.DIGSITE_PENDANT, "Fossil Island, then run to the patches north of the camp")),
+		via(Teleport.DIGSITE_PENDANT, "Fossil Island, patches by the camp")),
 	FOSSIL_HARDWOOD_MIDDLE("Fossil Island hardwood (middle)", PatchType.HARDWOOD, Requirement.BONE_VOYAGE, 3708, 3833, r(14651, 14650, 14652, 14906, 14907, 14908, 15162, 15163, 15164), 4772, null, "Museum Camp bank",
 		walk("Next patch along", "FOSSIL_HARDWOOD_EAST"),
-		via(Teleport.DIGSITE_PENDANT, "Fossil Island, then run to the patches north of the camp")),
+		via(Teleport.DIGSITE_PENDANT, "Fossil Island, patches by the camp")),
 	FOSSIL_HARDWOOD_WEST("Fossil Island hardwood (west)", PatchType.HARDWOOD, Requirement.BONE_VOYAGE, 3702, 3837, r(14651, 14650, 14652, 14906, 14907, 14908, 15162, 15163, 15164), 4773, null, "Museum Camp bank",
 		walk("Next patch along", "FOSSIL_HARDWOOD_MIDDLE"),
-		via(Teleport.DIGSITE_PENDANT, "Fossil Island, then run to the patches north of the camp"));
+		via(Teleport.DIGSITE_PENDANT, "Fossil Island, patches by the camp"));
 
 	private static int[] r(int... regions)
 	{

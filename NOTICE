@@ -1,49 +1,16 @@
 Farm Run Planner
 Made by ToadFx
 
-This plugin includes data derived from the works below. Each keeps its own license.
-
-Larry: Farming Runs
--------------------
-https://github.com/agrahamlincoln/larry-farming-runs-plugin
-
-The farming patch state table (src/main/resources/com/herbrunhelper/patch-states.tsv) and the
-patch regions and varbit ids in FarmPatch.java come from Larry's data files. Ideas borrowed
-from Larry: per-stop work lists, finished stops dropping off, bank stops when a run won't fit
-in one inventory, and learning the account's farming tick offset.
-
-BSD 2-Clause License
-
-Copyright (c) 2026, agrahamlincoln
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+This plugin includes data taken from the work below, which keeps its own license.
 
 RuneLite
 --------
 https://github.com/runelite/runelite
 
-Larry's patch states, regions and varbits are themselves derived from RuneLite's Time Tracking
-plugin (PatchImplementation, FarmingWorld):
+The farming patch state table (src/main/resources/com/herbrunhelper/patch-states.tsv) is generated
+by scripts/generate_patch_states.py from RuneLite's Time Tracking plugin (PatchImplementation.java).
+The patch regions and varbit ids in FarmPatch.java match its FarmingWorld.java (checked by
+scripts/verify_patches.py), and crop growth stages match its Produce.java.
 
   Copyright (c) 2019 Abex
   Copyright (c) 2018 Abex
@@ -81,7 +48,7 @@ RuneLite's own license:
 Old School RuneScape Wiki
 -------------------------
 https://oldschool.runescape.wiki/
-Item names, gardener payments, growth times, teleports and fairy ring codes.
+Item names, gardener payments, growth times, teleports, directions and fairy ring codes.
 
 Old School RuneScape and RuneScape are trademarks of Jagex Ltd. This plugin is not affiliated
 with or endorsed by Jagex.

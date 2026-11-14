@@ -73,13 +73,11 @@ in settings).
 
 ## Credits
 
-- **[Larry: Farming Runs](https://github.com/agrahamlincoln/larry-farming-runs-plugin)** by
-  agrahamlincoln: the patch state table, patch regions and varbit ids come from Larry's data,
-  and the stop cards, drop-off, bank stops and tick-offset ideas were inspired by Larry.
-- **[RuneLite](https://github.com/runelite/runelite)**: Larry's patch data derives from
-  RuneLite's Time Tracking plugin.
+- **[RuneLite](https://github.com/runelite/runelite)**: patch states, regions, varbits and growth
+  stages come from RuneLite's Time Tracking plugin. `scripts/generate_patch_states.py` rebuilds
+  the table from RuneLite's source and `scripts/verify_patches.py` checks every patch against it.
 - **[Old School RuneScape Wiki](https://oldschool.runescape.wiki/)**: items, payments, growth
-  times, teleports and fairy ring codes.
+  times, teleports, directions and fairy ring codes.
 
 Licenses and full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of
 Jagex Ltd; this plugin is not affiliated with or endorsed by Jagex.
