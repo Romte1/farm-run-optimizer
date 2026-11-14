@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.1 (2026-11-14)
+- Spirit tree travel tile and stop cards show a spirit tree instead of a spirit seed.
+
 ## 1.1.0 (2026-11-14) - big update
 Everything since the first Plugin Hub version (1.0.1 + 1.0.2), plus:
 - **Fairy rings everywhere**: on any fairy ring step ("From any fairy ring, dial AIS" too), the nearest ring is outlined with the code, and a big "Dial AIS for Nemus Retreat tree" box shows at the top of the screen while the fairy ring interface is open.

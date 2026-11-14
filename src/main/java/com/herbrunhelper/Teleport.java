@@ -68,7 +68,7 @@ public enum Teleport
 	FAIRY_CIQ(Kind.FAIRY_RING, "Fairy ring CIQ", -1, 0, null, "CIQ", null),
 
 	// ---- Other
-	SPIRIT_TREE(Kind.OTHER, "Spirit tree", 5317, 0, null, null, null);
+	SPIRIT_TREE(Kind.OTHER, "Spirit tree", 6063, 0, null, null, null);
 
 	public enum Kind
 	{
