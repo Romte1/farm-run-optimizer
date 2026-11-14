@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.2 (2026-11-14)
+- On the way to the next stop, the teleport is highlighted: the spell in your spellbook (e.g. Falador Teleport), or the teleport item/tab in your inventory. The NOW banner says "Cast Falador Teleport" / "Teleport".
+
 ## 1.1.1 (2026-11-14)
 - Spirit tree travel tile and stop cards show a spirit tree instead of a spirit seed.
 

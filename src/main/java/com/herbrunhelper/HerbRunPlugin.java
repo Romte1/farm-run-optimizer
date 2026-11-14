@@ -117,6 +117,9 @@ public class HerbRunPlugin extends Plugin
 	private LeadHintOverlay leadHintOverlay;
 
 	@Inject
+	private SpellHighlightOverlay spellHighlightOverlay;
+
+	@Inject
 	private net.runelite.client.game.SpriteManager spriteManager;
 
 	private static final String HISTORY_KEY = "runHistory";
@@ -216,6 +219,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(inventoryOverlay);
 		overlayManager.add(readyOverlay);
 		overlayManager.add(leadHintOverlay);
+		overlayManager.add(spellHighlightOverlay);
 		dirty = true;
 		timersLoaded = false;
 		ticksSinceQuestCheck = QUEST_CHECK_INTERVAL_TICKS;
@@ -232,6 +236,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(inventoryOverlay);
 		overlayManager.remove(readyOverlay);
 		overlayManager.remove(leadHintOverlay);
+		overlayManager.remove(spellHighlightOverlay);
 		saveHistory(); // keeps the run in progress for next time
 		lastStatus.clear();
 		statusesPrimed = false;
@@ -1014,13 +1019,33 @@ public class HerbRunPlugin extends Plugin
 				focus = s;
 			}
 		}
+		boolean travelling = false;
 		if (focus == null && nextPatch != null)
 		{
 			focus = stepFor(nextPatch);
+			// Not at the next patch yet: the first thing to do is the teleport.
+			WorldPoint t = tileFor(nextPatch);
+			travelling = focus != null && focus.teleport != null && dist(wp, t.getX(), t.getY()) > 25;
 		}
 
 		StepItems.Next next = focus == null ? null
 			: StepItems.next(focus, timers.get(focus.patch), timers.getStatus(focus.patch), progress.get(focus.patch), now);
+		String spell = null;
+		if (travelling)
+		{
+			Teleport.Kind kind = focus.teleport.getKind();
+			if (kind == Teleport.Kind.SPELL)
+			{
+				spell = focus.teleport.getLabel();
+				next = new StepItems.Next(null, "Cast " + spell);
+			}
+			else if ((kind == Teleport.Kind.ITEM || kind == Teleport.Kind.TABLET) && focus.teleportItem != null
+)
+			{
+				next = new StepItems.Next(focus.teleportItem, "Teleport");
+			}
+		}
+		spellToHighlight = config.highlightInventory() ? spell : null;
 		String item = next == null ? null : next.item;
 		String action = next == null ? null : next.action;
 		FarmPatch patch = next == null ? null : focus.patch;
@@ -1042,6 +1067,14 @@ public class HerbRunPlugin extends Plugin
 			stepAction = action;
 			SwingUtilities.invokeLater(() -> panel.setStepHint(patch, action, item));
 		}
+	}
+
+	private volatile String spellToHighlight;
+
+	/** The teleport spell to outline in the spellbook (e.g. "Falador Teleport"), or null. */
+	String getSpellToHighlight()
+	{
+		return spellToHighlight;
 	}
 
 	// ================================================================ items, quests, planning
