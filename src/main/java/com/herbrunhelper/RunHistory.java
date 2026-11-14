@@ -159,6 +159,50 @@ public final class RunHistory
 		StringBuilder sb = new StringBuilder();
 		for (Run r : runs)
 		{
+			line(sb, r);
+		}
+		return sb.toString();
+	}
+
+	/** The run in progress, so it survives closing the client mid-run. Empty when there's none. */
+	public synchronized String serializeCurrent()
+	{
+		StringBuilder sb = new StringBuilder();
+		if (current != null && !current.isEmpty())
+		{
+			line(sb, current);
+		}
+		return sb.toString();
+	}
+
+	/** Restores the run in progress; one that's been idle too long is filed into the history. */
+	public synchronized void loadCurrent(String raw, long now)
+	{
+		current = null;
+		List<Run> parsed = parse(raw);
+		if (parsed.isEmpty())
+		{
+			return;
+		}
+		Run r = parsed.get(0);
+		if (now - r.end > IDLE_END_MS)
+		{
+			runs.add(0, r);
+			while (runs.size() > MAX_RUNS)
+			{
+				runs.remove(runs.size() - 1);
+			}
+		}
+		else
+		{
+			current = r;
+			lastActivity = r.end;
+		}
+	}
+
+	private static void line(StringBuilder sb, Run r)
+	{
+		{
 			sb.append(r.start).append('|').append(r.end).append('|').append(r.value).append('|').append(r.cost)
 				.append('|').append(r.herbsPicked).append('|').append(r.herbPatches).append('|');
 			boolean first = true;
@@ -177,15 +221,20 @@ public final class RunHistory
 			}
 			sb.append('\n');
 		}
-		return sb.toString();
 	}
 
 	public synchronized void load(String raw)
 	{
 		runs.clear();
+		runs.addAll(parse(raw));
+	}
+
+	private static List<Run> parse(String raw)
+	{
+		List<Run> out = new ArrayList<>();
 		if (raw == null)
 		{
-			return;
+			return out;
 		}
 		for (String line : raw.split("\n"))
 		{
@@ -225,12 +274,13 @@ public final class RunHistory
 						r.produce.put(kv.substring(0, eq), Integer.parseInt(kv.substring(eq + 1)));
 					}
 				}
-				runs.add(r);
+				out.add(r);
 			}
 			catch (NumberFormatException ignored)
 			{
 				// skip a damaged line
 			}
 		}
+		return out;
 	}
 }

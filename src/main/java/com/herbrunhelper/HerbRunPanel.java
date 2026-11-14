@@ -1156,16 +1156,33 @@ public class HerbRunPanel extends PluginPanel
 				rebuildPlan();
 			}
 		});
-		JLabel total = label(historyRuns.isEmpty() ? "" : (totalProfit >= 0 ? "+" : "") + HerbPrices.gp(totalProfit),
-			totalProfit >= 0 ? GREEN : RED, false);
+		long shownTotal = totalProfit + (currentRun == null ? 0 : currentRun.profit());
+		boolean anything = !historyRuns.isEmpty() || currentRun != null;
+		JLabel total = label(anything ? (shownTotal >= 0 ? "+" : "") + HerbPrices.gp(shownTotal) : "",
+			shownTotal >= 0 ? GREEN : RED, false);
 		col.addRow(row(toggle, total), 4);
 		if (!historyExpanded)
 		{
 			return col;
 		}
+		if (currentRun != null)
+		{
+			long p = currentRun.profit();
+			JLabel left = label("This run (" + currentRun.patches.size() + "p)", GOLD, true);
+			JLabel right = label((p >= 0 ? "+" : "") + HerbPrices.gp(p), p >= 0 ? GREEN : RED, false);
+			JPanel line = row(left, right);
+			StringBuilder tip = new StringBuilder("<html>");
+			currentRun.produce.forEach((name, qty) -> tip.append(esc(name)).append(" x ").append(qty).append("<br>"));
+			tip.append("Value ").append(HerbPrices.gp(currentRun.value)).append(", seeds ")
+				.append(HerbPrices.gp(currentRun.cost)).append("<br>Saved to history 20 min after your last harvest or planting</html>");
+			left.setToolTipText(tip.toString());
+			col.addRow(line, 2);
+		}
 		if (historyRuns.isEmpty())
 		{
-			col.addRow(wrapped("No runs logged yet. Harvests and plantings are logged as you farm; "
+			col.addRow(wrapped(currentRun != null
+				? "Your run is being logged. It moves into the history 20 minutes after your last harvest or planting."
+				: "No runs logged yet. Harvests and plantings are logged as you farm; "
 				+ "a run ends after 20 minutes without farming.", MUTED), 4);
 			return col;
 		}

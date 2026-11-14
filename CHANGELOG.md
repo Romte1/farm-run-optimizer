@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0 b12 (2026-11-13)
+- Fix: the run in progress is saved as you go, so closing the client mid-run no longer loses it.
+- Run history shows "This run" straight away instead of only after the run ends.
+- Harvests are picked up from a bit further from the patch.
+
 ## 1.0.0 b11 (2026-11-13)
 - Plugin Hub review: added `build=standard`, rewrote the README for players and removed the developer testing section.
 

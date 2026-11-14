@@ -117,6 +117,7 @@ public class HerbRunPlugin extends Plugin
 	private net.runelite.client.game.SpriteManager spriteManager;
 
 	private static final String HISTORY_KEY = "runHistory";
+	private static final String CURRENT_RUN_KEY = "currentRun";
 	private final RunHistory history = new RunHistory();
 	private volatile FarmingContract contract;
 	private final Map<FarmPatch, PatchTimers.Status> lastStatus = new EnumMap<>(FarmPatch.class);
@@ -216,10 +217,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(navigationOverlay);
 		overlayManager.remove(inventoryOverlay);
 		overlayManager.remove(readyOverlay);
-		if (history.finish())
-		{
-			saveHistory();
-		}
+		saveHistory(); // keeps the run in progress for next time
 		lastStatus.clear();
 		statusesPrimed = false;
 		contract = null;
@@ -339,6 +337,7 @@ public class HerbRunPlugin extends Plugin
 			: inventoryNameToId.getOrDefault(crop.getSeedName(), -1);
 		history.planted(patch, seedId > 0 ? (long) itemManager.getItemPrice(itemManager.canonicalize(seedId)) : 0L,
 			System.currentTimeMillis());
+		saveHistory();
 		RunPlan.RouteStep step = stepFor(patch);
 		progress.clear();
 		progress.put(patch, new StepItems.Progress(System.currentTimeMillis(),
@@ -567,6 +566,7 @@ public class HerbRunPlugin extends Plugin
 		}
 		if (changed)
 		{
+			saveHistory();
 			dirty = true;
 		}
 	}
@@ -582,7 +582,7 @@ public class HerbRunPlugin extends Plugin
 		WorldPoint me = player.getWorldLocation();
 		int region = FarmPatch.regionOf(me.getX(), me.getY());
 		FarmPatch best = null;
-		int bestDist = 8;
+		int bestDist = 12;
 		for (FarmPatch p : FarmPatch.values())
 		{
 			if (!p.inRegion(region))
@@ -734,6 +734,7 @@ public class HerbRunPlugin extends Plugin
 		if (configManager.getRSProfileKey() != null)
 		{
 			configManager.setRSProfileConfiguration(HerbRunConfig.GROUP, HISTORY_KEY, history.serialize());
+			configManager.setRSProfileConfiguration(HerbRunConfig.GROUP, CURRENT_RUN_KEY, history.serializeCurrent());
 		}
 	}
 
@@ -1570,6 +1571,8 @@ public class HerbRunPlugin extends Plugin
 		}
 		timers.load(configManager.getRSProfileConfiguration(HerbRunConfig.GROUP, TIMERS_KEY));
 		history.load(configManager.getRSProfileConfiguration(HerbRunConfig.GROUP, HISTORY_KEY));
+		history.loadCurrent(configManager.getRSProfileConfiguration(HerbRunConfig.GROUP, CURRENT_RUN_KEY),
+			System.currentTimeMillis());
 		clock.load(configManager.getRSProfileConfiguration(HerbRunConfig.GROUP, CLOCK_KEY));
 		timersLoaded = true;
 		importTimeTracking();
