@@ -46,6 +46,7 @@ public final class RunHistory
 	private Run current;
 	private long lastActivity;
 	private final Set<FarmPatch> harvestedHerbs = EnumSet.noneOf(FarmPatch.class);
+	private final Set<FarmPatch> paidFor = EnumSet.noneOf(FarmPatch.class);
 
 	public synchronized Run current()
 	{
@@ -64,16 +65,25 @@ public final class RunHistory
 			current = new Run();
 			current.start = now;
 			harvestedHerbs.clear();
+			paidFor.clear();
 		}
 		lastActivity = now;
 		current.end = now;
 		return current;
 	}
 
-	/** You picked some produce at a patch. */
-	public synchronized void harvested(FarmPatch patch, String name, int qty, long unitPrice, boolean herb, long now)
+	/**
+	 * You picked some produce at a patch. The seed that grew it is counted once per patch, so a
+	 * run's profit is what you harvested minus what those crops cost to plant.
+	 */
+	public synchronized void harvested(FarmPatch patch, String name, int qty, long unitPrice, boolean herb,
+		long seedPrice, long now)
 	{
 		Run r = active(now);
+		if (paidFor.add(patch))
+		{
+			r.cost += Math.max(0L, seedPrice);
+		}
 		r.patches.add(patch);
 		r.produce.merge(name, qty, Integer::sum);
 		r.value += qty * Math.max(0L, unitPrice);
@@ -87,13 +97,11 @@ public final class RunHistory
 		}
 	}
 
-	/** You planted a seed or sapling. */
-	public synchronized void planted(FarmPatch patch, long seedPrice, long now)
+	/** You planted a seed or sapling (its cost is counted when you harvest what it grew). */
+	public synchronized void planted(FarmPatch patch, long now)
 	{
 		Run r = active(now);
 		r.patches.add(patch);
-		r.cost += Math.max(0L, seedPrice);
-		harvestedHerbs.remove(patch);
 	}
 
 	/** Ends the current run if you've stopped farming. Returns true if a run was saved. */

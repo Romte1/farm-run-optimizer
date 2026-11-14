@@ -97,3 +97,7 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 
 ## 2026-11-13 (b12)
 - [x] Run history: run in progress saved/restored, shown live in the section
+
+## 2026-11-14 (b13)
+- [x] Outline the real fairy ring object
+- [x] Profit = harvest value minus the seeds that grew it

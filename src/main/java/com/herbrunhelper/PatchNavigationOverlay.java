@@ -60,10 +60,24 @@ public class PatchNavigationOverlay extends Overlay
 			{
 				return null;
 			}
-			Polygon tile = Perspective.getCanvasTilePoly(client, lp);
-			if (tile != null)
+			GameObject ringObj = plugin.getNavRingObject();
+			Shape ringHull = ringObj == null ? null : ringObj.getConvexHull();
+			if (ringHull != null)
 			{
-				OverlayUtil.renderPolygon(graphics, tile, color);
+				graphics.setColor(fill);
+				graphics.fill(ringHull);
+				graphics.setColor(color);
+				graphics.setStroke(new BasicStroke(2));
+				graphics.draw(ringHull);
+				lp = ringObj.getLocalLocation();
+			}
+			else
+			{
+				Polygon tile = Perspective.getCanvasTilePoly(client, lp);
+				if (tile != null)
+				{
+					OverlayUtil.renderPolygon(graphics, tile, color);
+				}
 			}
 			String text = plugin.getNavRingLabel();
 			Point textLoc = Perspective.getCanvasTextLocation(client, graphics, lp, text, 150);

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0 b13 (2026-11-14)
+- Fairy ring stops outline the real fairy ring (like patches), and the path and arrow go to it.
+- Run profit now counts the seed that grew what you harvested, instead of the seed you planted for next time, so a run is no longer negative just because you planted pricier seeds.
+
 ## 1.0.0 b12 (2026-11-13)
 - Fix: the run in progress is saved as you go, so closing the client mid-run no longer loses it.
 - Run history shows "This run" straight away instead of only after the run ends.

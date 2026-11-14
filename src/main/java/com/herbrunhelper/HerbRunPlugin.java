@@ -168,6 +168,8 @@ public class HerbRunPlugin extends Plugin
 	private final Set<NPC> gardeners = java.util.concurrent.ConcurrentHashMap.newKeySet();
 	private volatile FarmPatch payPatch;
 	private volatile String payLabel;
+	/** Fairy ring objects currently loaded, to outline the real ring. */
+	private final Set<GameObject> fairyRingObjects = java.util.concurrent.ConcurrentHashMap.newKeySet();
 	private boolean ourHintArrow;
 	private RunPlan lastPlan;
 
@@ -233,6 +235,7 @@ public class HerbRunPlugin extends Plugin
 		equipmentNameToId.clear();
 		patchObjects.clear();
 		gardeners.clear();
+		fairyRingObjects.clear();
 		lastSeenValue.clear();
 		bankSeen = false;
 		highlightIds = Collections.emptySet();
@@ -333,10 +336,7 @@ public class HerbRunPlugin extends Plugin
 			return;
 		}
 		timers.planted(patch, crop, System.currentTimeMillis());
-		int seedId = HerbPrices.seedId(crop) > 0 ? HerbPrices.seedId(crop)
-			: inventoryNameToId.getOrDefault(crop.getSeedName(), -1);
-		history.planted(patch, seedId > 0 ? (long) itemManager.getItemPrice(itemManager.canonicalize(seedId)) : 0L,
-			System.currentTimeMillis());
+		history.planted(patch, System.currentTimeMillis());
 		saveHistory();
 		RunPlan.RouteStep step = stepFor(patch);
 		progress.clear();
@@ -419,6 +419,11 @@ public class HerbRunPlugin extends Plugin
 	{
 		GameObject obj = event.getGameObject();
 		ObjectComposition def = client.getObjectDefinition(obj.getId());
+		if (def != null && "Fairy ring".equalsIgnoreCase(def.getName()))
+		{
+			fairyRingObjects.add(obj);
+			return;
+		}
 		if (def == null || !FARMING_VARBITS.contains(def.getVarbitId()))
 		{
 			return;
@@ -460,6 +465,7 @@ public class HerbRunPlugin extends Plugin
 	public void onGameObjectDespawned(GameObjectDespawned event)
 	{
 		patchObjects.remove(event.getGameObject());
+		fairyRingObjects.remove(event.getGameObject());
 	}
 
 	@Subscribe
@@ -560,7 +566,7 @@ public class HerbRunPlugin extends Plugin
 			if (produceIds.contains(canonical))
 			{
 				history.harvested(patch, e.getKey(), gained, itemManager.getItemPrice(canonical),
-					patch.getType() == PatchType.HERB, now);
+					patch.getType() == PatchType.HERB, seedPriceForProduce(canonical), now);
 				changed = true;
 			}
 		}
@@ -569,6 +575,21 @@ public class HerbRunPlugin extends Plugin
 			saveHistory();
 			dirty = true;
 		}
+	}
+
+	/** GE price of the seed that grew this produce (herb seeds; saplings if you hold one). */
+	private long seedPriceForProduce(int produceId)
+	{
+		for (Crop c : Crop.values())
+		{
+			if (HerbPrices.produceId(c) == produceId)
+			{
+				int seedId = HerbPrices.seedId(c) > 0 ? HerbPrices.seedId(c)
+					: inventoryNameToId.getOrDefault(c.getSeedName(), bankNameToId.getOrDefault(c.getSeedName(), -1));
+				return seedId > 0 ? itemManager.getItemPrice(itemManager.canonicalize(seedId)) : 0;
+			}
+		}
+		return 0;
 	}
 
 	/** The closest patch within a few tiles of you, or null. */
@@ -1454,7 +1475,8 @@ public class HerbRunPlugin extends Plugin
 				&& (dest == null || dist(me, dest[0], dest[1]) > 20)
 				&& dist(me, target.getX(), target.getY()) > 25)
 			{
-				target = new WorldPoint(ring[0], ring[1], 0);
+				GameObject ringObj = ringObjectNear(ring[0], ring[1]);
+				target = ringObj != null ? ringObj.getWorldLocation() : new WorldPoint(ring[0], ring[1], 0);
 				ringLabel = "Fairy ring: dial " + step.teleport.getFairyCode();
 			}
 		}
@@ -1503,6 +1525,31 @@ public class HerbRunPlugin extends Plugin
 	private static int dist(WorldPoint p, int x, int y)
 	{
 		return Math.max(Math.abs(p.getX() - x), Math.abs(p.getY() - y));
+	}
+
+	/** The loaded fairy ring object near a ring's map position, or null. */
+	private GameObject ringObjectNear(int x, int y)
+	{
+		GameObject best = null;
+		int bestDist = 8;
+		for (GameObject o : fairyRingObjects)
+		{
+			WorldPoint w = o.getWorldLocation();
+			int d = Math.max(Math.abs(w.getX() - x), Math.abs(w.getY() - y));
+			if (w.getPlane() == 0 && d <= bestDist)
+			{
+				bestDist = d;
+				best = o;
+			}
+		}
+		return best;
+	}
+
+	/** The real fairy ring to outline, when heading to one and it's loaded. */
+	GameObject getNavRingObject()
+	{
+		WorldPoint t = getNavRing();
+		return t == null ? null : ringObjectNear(t.getX(), t.getY());
 	}
 
 	/** The fairy ring to walk to first, or null when heading straight for the patch. */
