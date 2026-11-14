@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0 b3 (2026-11-13)
+- Runs list moved to the top of the panel, with an on/off box per run; active runs open automatically.
+- Tree runs: reminders to plant tree seeds in plant pots and water the seedlings when you have no saplings.
+- Hint arrow now points at the real patch object (matches the outline).
+- Version shown in the footer so you can tell which build is running.
+
 ## Unreleased
 
 - Seeds and saplings go to the patches you use first; patches with nothing to plant and nothing of

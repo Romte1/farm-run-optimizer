@@ -121,6 +121,13 @@ public final class RunPlanner
 			allocateCrops(plan, t, included, owned, options, crops);
 		}
 		included.removeIf(p -> !crops.containsKey(p) && !options.usedPatches.contains(p));
+		for (PatchType t : doing)
+		{
+			if (t.isTreeLike())
+			{
+				addSeedlingTips(plan, t, owned, options);
+			}
+		}
 
 		List<RunPlan.RouteStep> picked = new ArrayList<>();
 		for (FarmPatch patch : included)
@@ -475,6 +482,38 @@ public final class RunPlanner
 				: type == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
 			plan.warnings.add("Only enough " + what + " for " + (order.size() - unplanted) + " of " + order.size()
 				+ " " + patchName + " patches, so the rest are left off. Best you can plant: " + best.getSeedName() + ".");
+		}
+	}
+
+	/** Remind you to pot and water tree seeds, so you have saplings for later runs. */
+	static void addSeedlingTips(RunPlan plan, PatchType type, Map<String, Integer> owned, Options options)
+	{
+		for (Crop c : Crop.values())
+		{
+			if (c.getType() != type || c.getLevel() > plan.farmingLevel || options.disabledCrops.contains(c))
+			{
+				continue;
+			}
+			String name = c.getDisplayName().toLowerCase();
+			int seeds = owned.getOrDefault(c.getTreeSeedName(), 0);
+			int seedlings = owned.getOrDefault(c.getSeedlingName(), 0);
+			int watered = owned.getOrDefault(c.getWateredSeedlingName(), 0);
+			if (seeds > 0)
+			{
+				plan.tips.add("You have " + seeds + " " + c.getTreeSeedName().toLowerCase() + (seeds > 1 ? "s" : "")
+					+ ": plant them in plant pots filled with soil (use a gardening trowel) and water them."
+					+ " They grow into " + name + " saplings for later runs.");
+			}
+			if (seedlings > 0)
+			{
+				plan.tips.add("Water your " + seedlings + " " + name + " seedling" + (seedlings > 1 ? "s" : "")
+					+ " with a watering can so they grow into saplings.");
+			}
+			if (watered > 0)
+			{
+				plan.tips.add(watered + " watered " + name + " seedling" + (watered > 1 ? "s are" : " is")
+					+ " growing into saplings. Keep them in your bank or inventory.");
+			}
 		}
 	}
 

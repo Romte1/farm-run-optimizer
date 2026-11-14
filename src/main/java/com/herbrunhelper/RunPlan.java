@@ -85,6 +85,8 @@ public final class RunPlan
 	public final List<Withdrawal> withdrawals = new ArrayList<>();
 	public final List<BankStop> bankStops = new ArrayList<>();
 	public final List<String> warnings = new ArrayList<>();
+	/** Friendly reminders, e.g. pot your tree seeds for later runs. */
+	public final List<String> tips = new ArrayList<>();
 	/** Availability of every teleport, for the Travel section. */
 	public final Map<Teleport, Teleport.Availability> availability = new EnumMap<>(Teleport.class);
 	/** Inventory slots the first leg needs (for the "fits" line). */

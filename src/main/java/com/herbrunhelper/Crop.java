@@ -108,6 +108,58 @@ public enum Crop
 		return iconItemId;
 	}
 
+	/** Tree seed (before potting), or null for herbs. From the OSRS Wiki. */
+	public String getTreeSeedName()
+	{
+		switch (this)
+		{
+			case OAK:
+				return "Acorn";
+			case WILLOW:
+				return "Willow seed";
+			case MAPLE:
+				return "Maple seed";
+			case YEW:
+				return "Yew seed";
+			case MAGIC:
+				return "Magic seed";
+			case APPLE:
+				return "Apple tree seed";
+			case BANANA:
+				return "Banana tree seed";
+			case ORANGE:
+				return "Orange tree seed";
+			case CURRY:
+				return "Curry tree seed";
+			case PINEAPPLE:
+				return "Pineapple seed";
+			case PAPAYA:
+				return "Papaya tree seed";
+			case PALM:
+				return "Palm tree seed";
+			case DRAGONFRUIT:
+				return "Dragonfruit tree seed";
+			case TEAK:
+				return "Teak seed";
+			case MAHOGANY:
+				return "Mahogany seed";
+			default:
+				return null;
+		}
+	}
+
+	/** Seedling in a plant pot before watering, e.g. "Maple seedling". Null for herbs. */
+	public String getSeedlingName()
+	{
+		return type == PatchType.HERB ? null : displayName + " seedling";
+	}
+
+	/** Watered seedling, growing into a sapling, e.g. "Maple seedling (w)". Null for herbs. */
+	public String getWateredSeedlingName()
+	{
+		return type == PatchType.HERB ? null : displayName + " seedling (w)";
+	}
+
 	public String getPaymentItem()
 	{
 		return paymentItem;

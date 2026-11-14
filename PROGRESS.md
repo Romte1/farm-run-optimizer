@@ -49,3 +49,9 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 - [ ] On-screen "run ready" box
 - [ ] Profit estimate per run
 - [ ] Submit to the RuneLite Plugin Hub
+
+## 2026-11-13 (b3)
+- [x] Runs list at top, on/off per run, auto-expanded
+- [x] Seed pot / watering reminders for tree runs
+- [x] Hint arrow uses the loaded patch object
+- [x] Build version in footer

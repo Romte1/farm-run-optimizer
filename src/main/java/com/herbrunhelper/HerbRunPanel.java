@@ -47,7 +47,9 @@ import net.runelite.client.util.ImageUtil;
  */
 public class HerbRunPanel extends PluginPanel
 {
-	private static final String CREDIT = "Made by ToadFx";
+	/** Shown in the footer so it's easy to tell which build is running. */
+	static final String VERSION = "1.0.0 (2026-11-13 b3)";
+	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
 	private static final Color YELLOW = new Color(255, 210, 70);
@@ -86,11 +88,11 @@ public class HerbRunPanel extends PluginPanel
 	private String hintAction;
 	private String hintItem;
 
-	private final Map<PatchType, JCheckBox> runBoxes = new EnumMap<>(PatchType.class);
+	private final JPanel runsSection = new JPanel();
 	private final JPanel liveSection = new JPanel();
+	private BiConsumer<PatchType, Boolean> onRunChanged;
 	private final JPanel planSection = new JPanel();
 	private final Timer refresh;
-	private boolean updatingBoxes;
 
 	private RunPlan plan;
 	private Map<String, Integer> carried = Collections.emptyMap();
@@ -115,6 +117,7 @@ public class HerbRunPanel extends PluginPanel
 		Consumer<FarmPatch> onTogglePatch, BiConsumer<String, Boolean> onSetting)
 	{
 		this.onSetting = onSetting;
+		this.onRunChanged = onRunChanged;
 		this.onToggleCrop = onToggleCrop;
 		this.onTogglePatch = onTogglePatch;
 		this.itemManager = itemManager;
@@ -126,7 +129,7 @@ public class HerbRunPanel extends PluginPanel
 		for (PatchType t : PatchType.values())
 		{
 			expanded.put(t, true);
-			runExpanded.put(t, false);
+			// no entry = automatic: open while the run is on
 		}
 
 		setLayout(new BorderLayout());
@@ -142,26 +145,8 @@ public class HerbRunPanel extends PluginPanel
 		title.setIconTextGap(6);
 		root.addRow(title, 2);
 
-		JPanel toggles = new JPanel(new GridLayout(2, 2, 0, 0));
-		toggles.setOpaque(false);
-		String[] labels = {"Herbs", "Trees", "Fruit trees", "Hardwood"};
-		for (PatchType t : PatchType.values())
-		{
-			JCheckBox box = new JCheckBox(labels[t.ordinal()]);
-			box.setOpaque(false);
-			box.setFocusPainted(false);
-			box.setFont(FontManager.getRunescapeSmallFont());
-			box.addActionListener(e ->
-			{
-				if (!updatingBoxes)
-				{
-					onRunChanged.accept(t, box.isSelected());
-				}
-			});
-			runBoxes.put(t, box);
-			toggles.add(box);
-		}
-		root.addRow(toggles, 6);
+		runsSection.setOpaque(false);
+		root.addRow(runsSection, 4);
 
 		liveSection.setOpaque(false);
 		planSection.setOpaque(false);
@@ -218,9 +203,6 @@ public class HerbRunPanel extends PluginPanel
 	void setRuns(Set<PatchType> runs)
 	{
 		this.runs = runs;
-		updatingBoxes = true;
-		runBoxes.forEach((t, box) -> box.setSelected(runs.contains(t)));
-		updatingBoxes = false;
 	}
 
 	void setPlan(RunPlan plan, Map<String, Integer> carried, Set<String> worn, Map<String, Integer> nameToId,
@@ -468,6 +450,10 @@ public class HerbRunPanel extends PluginPanel
 		{
 			col.addRow(wrapped("⚠ " + esc(w), ORANGE), 2);
 		}
+		for (String tip : plan.tips)
+		{
+			col.addRow(wrapped("\u2139 " + esc(tip), new Color(127, 212, 255)), 2);
+		}
 
 		// Take with you
 		if (!plan.withdrawals.isEmpty())
@@ -553,12 +539,6 @@ public class HerbRunPanel extends PluginPanel
 		}
 		col.addRow(spacer(), 4);
 
-		col.addRow(sectionTitle("Runs"), 2);
-		for (PatchType t : PatchType.values())
-		{
-			col.addRow(runSection(t, now), 4);
-		}
-		col.addRow(spacer(), 4);
 
 		if (setting("showTravel"))
 		{
@@ -568,6 +548,14 @@ public class HerbRunPanel extends PluginPanel
 		col.addRow(settingsSection(), 6);
 
 		replace(planSection, col);
+
+		Column runsCol = new Column();
+		runsCol.addRow(sectionTitle("Runs"), 2);
+		for (PatchType t : PatchType.values())
+		{
+			runsCol.addRow(runSection(t, now), 3);
+		}
+		replace(runsSection, runsCol);
 	}
 
 	private JComponent stopCard(RunPlan.RouteStep step, int number, boolean first, long now)
@@ -708,8 +696,8 @@ public class HerbRunPanel extends PluginPanel
 	private JComponent runSection(PatchType type, long now)
 	{
 		Column col = new Column();
-		boolean open = runExpanded.get(type);
 		boolean on = runs.contains(type);
+		boolean open = runExpanded.containsKey(type) ? runExpanded.get(type) : on;
 		Crop first = null;
 		for (Crop c : Crop.values())
 		{
@@ -722,14 +710,17 @@ public class HerbRunPanel extends PluginPanel
 		boolean levelOk = first != null && plan.farmingLevel >= first.getLevel();
 		String status = !levelOk ? "needs " + first.getLevel() + " Farming" : on ? "on" : "off";
 
-		JLabel left = label((open ? "\u25BC  " : "\u25B6  ") + type.getDisplayName() + " run", on ? Color.WHITE : MUTED, true);
-		JLabel right = label(status, !levelOk ? MUTED : on ? GREEN : MUTED, false);
-		JPanel header = row(left, right);
-		header.setOpaque(true);
-		header.setBackground(CARD);
-		header.setBorder(new EmptyBorder(6, 6, 6, 6));
-		header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		header.addMouseListener(new MouseAdapter()
+		JCheckBox onBox = new JCheckBox();
+		onBox.setSelected(on);
+		onBox.setOpaque(false);
+		onBox.setFocusPainted(false);
+		onBox.setEnabled(levelOk);
+		onBox.setToolTipText(on ? "Click to leave this run out" : "Click to include this run");
+		onBox.addActionListener(e -> onRunChanged.accept(type, onBox.isSelected()));
+		JLabel name = label((open ? "\u25BC " : "\u25B6 ") + type.getDisplayName() + " run", on ? Color.WHITE : MUTED, true);
+		name.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		name.setToolTipText(open ? "Hide crops and patches" : "Show crops and patches");
+		name.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
@@ -738,6 +729,15 @@ public class HerbRunPanel extends PluginPanel
 				rebuildPlan();
 			}
 		});
+		JPanel leftSide = new JPanel(new BorderLayout(2, 0));
+		leftSide.setOpaque(false);
+		leftSide.add(onBox, BorderLayout.WEST);
+		leftSide.add(name, BorderLayout.CENTER);
+		JLabel right = label(status, !levelOk ? MUTED : on ? GREEN : MUTED, false);
+		JPanel header = row(leftSide, right);
+		header.setOpaque(true);
+		header.setBackground(CARD);
+		header.setBorder(new EmptyBorder(3, 2, 3, 6));
 		col.addRow(header, 0);
 		if (!open)
 		{

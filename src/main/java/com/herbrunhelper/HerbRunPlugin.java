@@ -424,9 +424,17 @@ public class HerbRunPlugin extends Plugin
 		return null;
 	}
 
-	/** Best known tile for a patch: learned from the game if seen, else the built-in tile. */
+	/**
+	 * Best known tile for a patch: the patch object itself when it's loaded, else the tile
+	 * learned from the game earlier, else the built-in tile.
+	 */
 	WorldPoint tileFor(FarmPatch patch)
 	{
+		GameObject obj = objectFor(patch);
+		if (obj != null)
+		{
+			return obj.getWorldLocation();
+		}
 		WorldPoint learned = learnedTiles.get(patch);
 		return learned != null ? learned : new WorldPoint(patch.getX(), patch.getY(), 0);
 	}
