@@ -60,9 +60,13 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 </p>
 
 ### Timers and alerts
+<img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/timers-three-runs.png" alt="Timers for herbs, allotments and trees" align="right" height="520">
+
 - **Exact timers** for every patch, read from the game when you're nearby, from your plantings, and from RuneLite's Time Tracking.
 - **Notifications** when a patch is ready, and when a patch is diseased or dead.
 - **Run-ready box**: a small on-screen box like "Herbs 3 of 6 ready" or "Trees in 1h 20m".
+
+<br clear="right">
 
 ### Profit
 - **Run history**: every harvest is logged at Grand Exchange prices, minus the seeds you planted, with profit per run and your average herbs per patch.
