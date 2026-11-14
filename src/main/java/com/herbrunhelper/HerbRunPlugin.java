@@ -1432,6 +1432,7 @@ public class HerbRunPlugin extends Plugin
 		settings.put("payGardeners", config.payGardeners());
 		settings.put("useCompost", config.useCompost());
 		settings.put("onlyReady", config.onlyReady());
+		settings.put("activeTimersOnly", config.activeTimersOnly());
 		settings.put("profitFirst", config.profitFirst());
 		settings.put("plantContract", config.plantContract());
 		settings.put("notifyDisease", config.notifyDisease());

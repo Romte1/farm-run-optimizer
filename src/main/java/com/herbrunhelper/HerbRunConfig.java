@@ -62,6 +62,12 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(keyName = "activeTimersOnly", name = "Timers: planted patches only", description = "Hide empty and weedy patches from the timer list", position = 5, section = runSection)
+	default boolean activeTimersOnly()
+	{
+		return true;
+	}
+
 	@ConfigItem(keyName = "onlyReady", name = "Only ready patches", description = "When some patches are ready, leave the still-growing ones off the run", position = 6, section = runSection)
 	default boolean onlyReady()
 	{

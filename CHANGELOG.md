@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.2 (2026-11-14)
+- Timers only list patches with something in them (growing, ready, diseased, dead, stump); empty and weedy patches are hidden with a "+6 empty patches hidden" note. Setting: "Timers: planted patches only" (on by default).
+
 ## 1.2.1 (2026-11-14)
 - New setting "Path: minigame teleports" (off by default): the Shortest Path line no longer routes through minigame teleports like Rat Pits. Applies only to the routes this plugin asks for; your own Shortest Path settings are untouched.
 

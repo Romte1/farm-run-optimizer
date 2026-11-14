@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.2.1";
+	static final String VERSION = "1.2.2";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -414,9 +414,23 @@ public class HerbRunPanel extends PluginPanel
 		return row(label(type.getDisplayName() + ":", Color.WHITE, false), label(status, color, false));
 	}
 
-	private JComponent timerGroup(PatchType type, List<FarmPatch> patches,
+	private JComponent timerGroup(PatchType type, List<FarmPatch> allPatches,
 		Map<FarmPatch, PatchTimers.Planting> planted, long now)
 	{
+		// Only patches with something in them (growing, ready, diseased, dead, a stump), unless
+		// the setting says to show them all.
+		List<FarmPatch> patches = new ArrayList<>();
+		for (FarmPatch p : allPatches)
+		{
+			PatchTimers.Status st = timers.getStatus(p);
+			boolean active = planted.get(p) != null || (st != null && st != PatchTimers.Status.WEEDS
+				&& st != PatchTimers.Status.EMPTY);
+			if (active || !setting("activeTimersOnly"))
+			{
+				patches.add(p);
+			}
+		}
+		int hidden = allPatches.size() - patches.size();
 		int due = 0;
 		for (FarmPatch p : patches)
 		{
@@ -454,6 +468,11 @@ public class HerbRunPanel extends PluginPanel
 			{
 				rows.addRow(row(patchNameLabel(p, planted.get(p)),
 					patchStatus(p, planted.get(p), now)), 2);
+			}
+			if (hidden > 0)
+			{
+				rows.addRow(label(patches.isEmpty() ? "Nothing planted yet" : "+" + hidden + " empty patch"
+					+ (hidden == 1 ? "" : "es") + " hidden", MUTED, false), 0);
 			}
 			group.addRow(rows, 0);
 		}
@@ -733,6 +752,7 @@ public class HerbRunPanel extends PluginPanel
 		{"chainFairyRings", "Chain fairy rings", "Do fairy-ring patches back to back"},
 		{"payGardeners", "Pay gardeners", "Bring payments so gardeners protect your trees"},
 		{"useCompost", "Bring compost", "Add compost to the bank list"},
+		{"activeTimersOnly", "Timers: planted patches only", "Hide empty and weedy patches from the timer list"},
 		{"onlyReady", "Only ready patches", "When some patches are ready, leave the growing ones off the run"},
 		{"bringRake", "Bring a rake", "Add a rake to the bank list"},
 		{"importTimeTracking", "Import Time Tracking", "Use timers RuneLite's Time Tracking already saved"},
