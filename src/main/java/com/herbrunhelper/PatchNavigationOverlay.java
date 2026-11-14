@@ -41,6 +41,7 @@ public class PatchNavigationOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		renderGardener(graphics);
 		FarmPatch next = plugin.getNextPatch();
 		if (!config.highlightPatch() || next == null)
 		{
@@ -114,5 +115,35 @@ public class PatchNavigationOverlay extends Overlay
 			}
 		}
 		return null;
+	}
+
+	/** Outlines the gardener you need to pay, with what to give them. */
+	private void renderGardener(Graphics2D graphics)
+	{
+		net.runelite.api.NPC npc = plugin.getGardenerToPay();
+		String text = plugin.getPayLabel();
+		if (npc == null || text == null)
+		{
+			return;
+		}
+		Color gold = new Color(255, 200, 60);
+		Shape hull = npc.getConvexHull();
+		if (hull != null)
+		{
+			graphics.setColor(new Color(255, 200, 60, 40));
+			graphics.fill(hull);
+			graphics.setColor(gold);
+			graphics.setStroke(new BasicStroke(2));
+			graphics.draw(hull);
+		}
+		LocalPoint lp = npc.getLocalLocation();
+		if (lp != null)
+		{
+			Point textLoc = Perspective.getCanvasTextLocation(client, graphics, lp, text, npc.getLogicalHeight() + 40);
+			if (textLoc != null)
+			{
+				OverlayUtil.renderTextLocation(graphics, textLoc, text, gold);
+			}
+		}
 	}
 }

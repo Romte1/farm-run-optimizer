@@ -19,6 +19,8 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
+import net.runelite.api.NPC;
+import net.runelite.api.NPCComposition;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ObjectComposition;
@@ -33,6 +35,8 @@ import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.NpcDespawned;
+import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.StatChanged;
 import net.runelite.client.Notifier;
 import net.runelite.client.config.ConfigManager;
@@ -159,6 +163,10 @@ public class HerbRunPlugin extends Plugin
 	/** Where to go right now: the patch, or the fairy ring to use first. */
 	private volatile WorldPoint navTarget;
 	private volatile String navRingLabel;
+	/** Gardeners (NPCs with a "Pay" option) currently loaded. */
+	private final Set<NPC> gardeners = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	private volatile FarmPatch payPatch;
+	private volatile String payLabel;
 	private boolean ourHintArrow;
 	private RunPlan lastPlan;
 
@@ -226,6 +234,7 @@ public class HerbRunPlugin extends Plugin
 		inventoryNameToId.clear();
 		equipmentNameToId.clear();
 		patchObjects.clear();
+		gardeners.clear();
 		lastSeenValue.clear();
 		bankSeen = false;
 		highlightIds = Collections.emptySet();
@@ -338,6 +347,72 @@ public class HerbRunPlugin extends Plugin
 		notifiedReady.remove(patch);
 		saveTimers();
 		dirty = true;
+	}
+
+	@Subscribe
+	public void onNpcSpawned(NpcSpawned event)
+	{
+		NPC npc = event.getNpc();
+		if (hasPayOption(npc))
+		{
+			gardeners.add(npc);
+		}
+	}
+
+	@Subscribe
+	public void onNpcDespawned(NpcDespawned event)
+	{
+		gardeners.remove(event.getNpc());
+	}
+
+	private static boolean hasPayOption(NPC npc)
+	{
+		NPCComposition comp = npc.getComposition();
+		if (comp == null || comp.getActions() == null)
+		{
+			return false;
+		}
+		for (String a : comp.getActions())
+		{
+			if (a != null && a.startsWith("Pay"))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The gardener to pay right now (closest one with a Pay option to the patch), or null. */
+	NPC getGardenerToPay()
+	{
+		FarmPatch patch = payPatch;
+		if (patch == null)
+		{
+			return null;
+		}
+		WorldPoint t = tileFor(patch);
+		NPC best = null;
+		int bestDist = 20;
+		for (NPC npc : gardeners)
+		{
+			WorldPoint w = npc.getWorldLocation();
+			if (w == null || w.getPlane() != t.getPlane())
+			{
+				continue;
+			}
+			int d = dist(w, t.getX(), t.getY());
+			if (d <= bestDist)
+			{
+				bestDist = d;
+				best = npc;
+			}
+		}
+		return best;
+	}
+
+	String getPayLabel()
+	{
+		return payLabel;
 	}
 
 	@Subscribe
@@ -877,6 +952,17 @@ public class HerbRunPlugin extends Plugin
 		String action = next == null ? null : next.action;
 		FarmPatch patch = next == null ? null : focus.patch;
 		stepItem = item;
+		if (action != null && action.startsWith("Pay the gardener") && config.highlightGardener())
+		{
+			payPatch = patch;
+			payLabel = action.contains("clear") ? "Pay " + RunPlanner.TREE_REMOVAL_COINS + " coins to chop it down"
+				: "Pay: " + (focus.paymentQuantity > 1 ? focus.paymentQuantity + " x " : "") + focus.paymentItem;
+		}
+		else
+		{
+			payPatch = null;
+			payLabel = null;
+		}
 		if (patch != stepPatch || !java.util.Objects.equals(action, stepAction))
 		{
 			stepPatch = patch;
@@ -1121,6 +1207,7 @@ public class HerbRunPlugin extends Plugin
 		Map<String, Boolean> settings = new java.util.LinkedHashMap<>();
 		settings.put("useShortestPath", config.useShortestPath());
 		settings.put("highlightPatch", config.highlightPatch());
+		settings.put("highlightGardener", config.highlightGardener());
 		settings.put("hintArrow", config.hintArrow());
 		settings.put("highlightInventory", config.highlightInventory());
 		settings.put("highlightBank", config.highlightBank());

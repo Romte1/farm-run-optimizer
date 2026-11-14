@@ -83,3 +83,6 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 ## 2026-11-13 (b8)
 - [x] Half-done tree run kept Taverley/Stronghold off (just-planted patches were taking the saplings)
 - [x] Spellbook icons for teleport spells
+
+## 2026-11-13 (b9)
+- [x] Highlight the gardener to pay

@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.0.0 (2026-11-13 b8)";
+	static final String VERSION = "1.0.0 (2026-11-13 b9)";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -719,6 +719,7 @@ public class HerbRunPanel extends PluginPanel
 	private static final String[][] SETTINGS = {
 		{"useShortestPath", "Walking path line", "Draw the route to the next patch (needs the Shortest Path plugin)"},
 		{"highlightPatch", "Highlight next patch", "Outline the next patch on the ground"},
+		{"highlightGardener", "Highlight gardener to pay", "Outline the gardener when you need to pay them"},
 		{"hintArrow", "Hint arrow", "Yellow arrow over the next patch when it's nearby"},
 		{"highlightInventory", "Highlight step items", "Outline the seed / compost / payment your current step needs"},
 		{"highlightBank", "Highlight in bank", "Outline what to withdraw when your bank is open"},

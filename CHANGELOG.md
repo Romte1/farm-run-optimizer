@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.0 b9 (2026-11-13)
+- The gardener you need to pay is outlined in gold, with what to give them ("Pay: Oranges(5)" or "Pay 200 coins to chop it down"). Setting: "Highlight gardener to pay".
+
 ## 1.0.0 b8 (2026-11-13)
 - Fix: patches you just planted no longer use up saplings in the plan, so the rest of the run (e.g. Taverley, Gnome Stronghold) stays on the list.
 - Teleport spells show their spellbook picture (Varrock, Camelot, Ardougne...) instead of a law rune, on stop cards and in Travel.

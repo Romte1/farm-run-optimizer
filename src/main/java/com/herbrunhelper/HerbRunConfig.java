@@ -174,6 +174,12 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(keyName = "highlightGardener", name = "Highlight gardener to pay", description = "Outline the gardener when the next step is paying them", position = 2, section = navSection)
+	default boolean highlightGardener()
+	{
+		return true;
+	}
+
 	@ConfigItem(keyName = "highlightPatch", name = "Highlight next patch", description = "Outline the next patch on the ground", position = 1, section = navSection)
 	default boolean highlightPatch()
 	{
