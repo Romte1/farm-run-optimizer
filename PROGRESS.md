@@ -105,3 +105,6 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 ## 2026-11-14 - LIVE on the Plugin Hub (first version: commit 5f83a39)
 - [x] 1.0.1 update: b12 + b13 fixes, support link, README screenshots
 - [ ] Remaining screenshots: ground highlight, fairy ring, gardener, stop cards, run history
+
+## 2026-11-14 (1.0.2)
+- [x] Tree run fixes: health check only without sapling, coins only when replanting, no compost for empty stops

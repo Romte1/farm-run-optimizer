@@ -137,7 +137,12 @@ public final class RunPlanner
 		{
 			allocateCrops(plan, t, included, owned, options, crops);
 		}
-		included.removeIf(p -> !crops.containsKey(p) && !options.usedPatches.contains(p));
+		// Drop patches with nothing to plant, unless there's still something to do there:
+		// harvesting herbs, checking a grown tree's health (XP), or curing a diseased tree.
+		included.removeIf(p -> !crops.containsKey(p)
+			&& (!options.usedPatches.contains(p)
+				|| (p.getType().isTreeLike() && options.notReady.containsKey(p)
+					&& !options.doneThisRun.contains(p) && !options.diseased.contains(p))));
 		for (PatchType t : doing)
 		{
 			if (t.isTreeLike())
@@ -181,7 +186,8 @@ public final class RunPlanner
 		String bottomless = assignCompost(plan, owned, options);
 		for (RunPlan.RouteStep s : plan.route)
 		{
-			if (s.patch.getType().isTreeLike())
+			// Only pay to clear a tree you're replacing; with no sapling, leave it standing.
+			if (s.patch.getType().isTreeLike() && s.crop != null && !options.doneThisRun.contains(s.patch))
 			{
 				s.coins = TREE_REMOVAL_COINS;
 			}
@@ -529,8 +535,12 @@ public final class RunPlanner
 			String what = type == PatchType.HERB ? "seeds" : "saplings";
 			String patchName = type == PatchType.HERB ? "herb" : type == PatchType.TREE ? "tree"
 				: type == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
-			plan.warnings.add("Only enough " + what + " for " + (order.size() - unplanted) + " of " + order.size()
-				+ " " + patchName + " patches, so the rest are left off. Best you can plant: " + best.getSeedName() + ".");
+			String rest = type == PatchType.HERB ? "the others are only harvested"
+				: "the others are just checked for health if grown (and left standing), or left off";
+			plan.warnings.add((order.size() == unplanted ? "No " + what + " for your " + patchName + " patches: "
+				+ (type == PatchType.HERB ? "patches are only harvested" : "grown trees are just checked for health and left standing")
+				: "Only enough " + what + " for " + (order.size() - unplanted) + " of " + order.size()
+				+ " " + patchName + " patches: " + rest) + ". Best you can plant: " + best.getSeedName() + ".");
 		}
 	}
 
@@ -659,7 +669,10 @@ public final class RunPlanner
 			{
 				for (RunPlan.RouteStep s : plan.route)
 				{
-					s.compost = name;
+					if (s.crop != null)
+					{
+						s.compost = name;
+					}
 				}
 				return name;
 			}
@@ -672,6 +685,10 @@ public final class RunPlanner
 		int missing = 0;
 		for (RunPlan.RouteStep s : plan.route)
 		{
+			if (s.crop == null)
+			{
+				continue; // nothing being planted here (done already, or no seed)
+			}
 			for (String c : COMPOST_BEST_FIRST)
 			{
 				if (left.get(c) > 0)

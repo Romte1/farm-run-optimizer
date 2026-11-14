@@ -51,7 +51,14 @@ public final class StopWork
 				{
 					out.add("Pick the fruit if you want it (note at the leprechaun)");
 				}
-				out.add("Pay the gardener " + RunPlanner.TREE_REMOVAL_COINS + " coins to chop it down");
+				if (seed != null)
+				{
+					out.add("Pay the gardener " + RunPlanner.TREE_REMOVAL_COINS + " coins to chop it down");
+				}
+				else
+				{
+					out.add("Leave it standing: no sapling to replant (it won't die)");
+				}
 			}
 			else if (status == PatchTimers.Status.STUMP)
 			{
@@ -71,8 +78,8 @@ public final class StopWork
 			}
 			else if (planting == null && status == null)
 			{
-				out.add("If a grown tree is there: check health, pay "
-					+ RunPlanner.TREE_REMOVAL_COINS + " coins to clear it");
+				out.add(seed != null ? "If a grown tree is there: check health, pay "
+					+ RunPlanner.TREE_REMOVAL_COINS + " coins to clear it" : "If a grown tree is there: check its health");
 			}
 		}
 
@@ -81,9 +88,9 @@ public final class StopWork
 			String article = type != PatchType.HERB ? "the " : "aeiou".indexOf(seed.charAt(0)) >= 0 ? "an " : "a ";
 			out.add("Plant " + article + seed);
 		}
-		else
+		else if (type == PatchType.HERB)
 		{
-			out.add(type == PatchType.HERB ? "No seed left to plant here" : "No sapling left to plant here");
+			out.add("No seed left to plant here");
 		}
 		if (step.compost != null && seed != null)
 		{

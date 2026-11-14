@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 (2026-11-14)
+Tree run fixes:
+- No sapling for a grown tree: just check its health (XP) and leave it standing, instead of paying 200 coins to chop it with nothing to replant.
+- Growing trees with no sapling are left off the run.
+- Coins (200 each) only for trees you're replacing.
+- Compost is no longer packed for stops where nothing is planted (no sapling, or already done this run). Also applies to herbs.
+- Clearer sapling shortage warning.
+
 ## 1.0.1 (2026-11-14) - first Plugin Hub update
 - Includes b12 and b13: run in progress saved, live "This run" in history, real fairy ring outline, fairer run profit.
 - Support link on the Plugin Hub page; screenshots in the README.

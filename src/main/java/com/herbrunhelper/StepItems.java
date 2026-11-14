@@ -81,7 +81,8 @@ public final class StepItems
 		}
 		if (ready && type.isTreeLike())
 		{
-			return new Next("Coins", "Pay the gardener to clear it");
+			// No sapling to replant: just check health, don't pay to clear it.
+			return step.crop == null ? null : new Next("Coins", "Pay the gardener to clear it");
 		}
 		if (step.crop != null)
 		{
