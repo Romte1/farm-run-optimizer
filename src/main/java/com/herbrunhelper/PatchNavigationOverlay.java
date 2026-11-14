@@ -24,9 +24,6 @@ import net.runelite.client.ui.overlay.OverlayUtil;
  */
 public class PatchNavigationOverlay extends Overlay
 {
-	/** A patch object in the patch's region and this close (tiles) to its stored tile counts as it. */
-	private static final int SNAP_DISTANCE = 40;
-
 	private final Client client;
 	private final HerbRunPlugin plugin;
 	private final HerbRunConfig config;
@@ -49,26 +46,12 @@ public class PatchNavigationOverlay extends Overlay
 		{
 			return null;
 		}
-		WorldPoint target = new WorldPoint(next.getX(), next.getY(), 0);
+		WorldPoint target = plugin.tileFor(next);
 		Color color = config.patchColor();
 		Color fill = new Color(color.getRed(), color.getGreen(), color.getBlue(), 50);
 
-		GameObject best = null;
-		int bestDist = Integer.MAX_VALUE;
-		for (GameObject obj : plugin.getPatchObjects())
-		{
-			WorldPoint loc = obj.getWorldLocation();
-			if (!next.inRegion(FarmPatch.regionOf(loc.getX(), loc.getY())))
-			{
-				continue;
-			}
-			int d = loc.distanceTo(target);
-			if (d <= SNAP_DISTANCE && d < bestDist)
-			{
-				best = obj;
-				bestDist = d;
-			}
-		}
+		// The real patch object (matched by its farming varbit), when it's loaded.
+		GameObject best = plugin.objectFor(next);
 
 		LocalPoint labelPoint;
 		if (best != null)

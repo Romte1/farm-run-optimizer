@@ -127,7 +127,14 @@ public class HerbRunPlugin extends Plugin
 	private final Map<FarmPatch, Integer> lastSeenValue = new EnumMap<>(FarmPatch.class);
 	private final Set<FarmPatch> notifiedReady = EnumSet.noneOf(FarmPatch.class);
 
-	private final Set<GameObject> patchObjects = new HashSet<>();
+	/** Farming patch objects in the loaded area, with the varbit each one shows. */
+	private final Map<GameObject, Integer> patchObjects = new HashMap<>();
+	/** Exact patch tiles learned from the game (saved, so the arrow/path are exact next time). */
+	private final Map<FarmPatch, WorldPoint> learnedTiles = new EnumMap<>(FarmPatch.class);
+	private static final String TILES_KEY = "patchTiles";
+	/** The game's farming patch varbits (FARMING_TRANSMIT_A..N). */
+	private static final Set<Integer> FARMING_VARBITS = new HashSet<>(java.util.Arrays.asList(
+		4771, 4772, 4773, 4774, 4775, 7904, 7905, 7906, 7907, 7908, 7909, 7910, 7911, 7912));
 	private volatile Set<Integer> highlightIds = Collections.emptySet();
 	private volatile FarmPatch nextPatch;
 	private FarmPatch shortestPathTarget;
@@ -166,6 +173,7 @@ public class HerbRunPlugin extends Plugin
 		dirty = true;
 		timersLoaded = false;
 		ticksSinceQuestCheck = QUEST_CHECK_INTERVAL_TICKS;
+		loadTiles();
 	}
 
 	@Override
@@ -297,10 +305,42 @@ public class HerbRunPlugin extends Plugin
 	public void onGameObjectSpawned(GameObjectSpawned event)
 	{
 		GameObject obj = event.getGameObject();
-		if (isFarmPatchObject(obj.getId()))
+		ObjectComposition def = client.getObjectDefinition(obj.getId());
+		if (def == null || !FARMING_VARBITS.contains(def.getVarbitId()))
 		{
-			patchObjects.add(obj);
+			return;
 		}
+		int varbit = def.getVarbitId();
+		patchObjects.put(obj, varbit);
+		WorldPoint loc = obj.getWorldLocation();
+		FarmPatch patch = patchFor(loc, varbit);
+		if (patch != null && !loc.equals(learnedTiles.get(patch)))
+		{
+			learnedTiles.put(patch, loc);
+			saveTiles();
+		}
+	}
+
+	/** The patch an object belongs to: same varbit and one of the patch's regions. */
+	private static FarmPatch patchFor(WorldPoint loc, int varbit)
+	{
+		int region = FarmPatch.regionOf(loc.getX(), loc.getY());
+		FarmPatch best = null;
+		int bestDist = Integer.MAX_VALUE;
+		for (FarmPatch p : FarmPatch.values())
+		{
+			if (p.getVarbit() != varbit || !p.inRegion(region))
+			{
+				continue;
+			}
+			int d = Math.max(Math.abs(p.getX() - loc.getX()), Math.abs(p.getY() - loc.getY()));
+			if (d < bestDist)
+			{
+				best = p;
+				bestDist = d;
+			}
+		}
+		return best;
 	}
 
 	@Subscribe
@@ -312,8 +352,8 @@ public class HerbRunPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!HerbRunConfig.GROUP.equals(event.getGroup())
-			|| TIMERS_KEY.equals(event.getKey()) || CLOCK_KEY.equals(event.getKey()))
+		if (!HerbRunConfig.GROUP.equals(event.getGroup()) || TIMERS_KEY.equals(event.getKey())
+			|| CLOCK_KEY.equals(event.getKey()) || TILES_KEY.equals(event.getKey()))
 		{
 			return;
 		}
@@ -371,9 +411,55 @@ public class HerbRunPlugin extends Plugin
 		return nextPatch;
 	}
 
-	Set<GameObject> getPatchObjects()
+	/** The loaded game object for this patch, or null if it isn't in view. */
+	GameObject objectFor(FarmPatch patch)
 	{
-		return patchObjects;
+		for (Map.Entry<GameObject, Integer> e : patchObjects.entrySet())
+		{
+			if (patchFor(e.getKey().getWorldLocation(), e.getValue()) == patch)
+			{
+				return e.getKey();
+			}
+		}
+		return null;
+	}
+
+	/** Best known tile for a patch: learned from the game if seen, else the built-in tile. */
+	WorldPoint tileFor(FarmPatch patch)
+	{
+		WorldPoint learned = learnedTiles.get(patch);
+		return learned != null ? learned : new WorldPoint(patch.getX(), patch.getY(), 0);
+	}
+
+	private void loadTiles()
+	{
+		learnedTiles.clear();
+		String raw = configManager.getConfiguration(HerbRunConfig.GROUP, TILES_KEY);
+		if (raw == null || raw.isEmpty())
+		{
+			return;
+		}
+		for (String part : raw.split(";"))
+		{
+			String[] c = part.split(":");
+			try
+			{
+				learnedTiles.put(FarmPatch.valueOf(c[0]),
+					new WorldPoint(Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3])));
+			}
+			catch (RuntimeException ignored)
+			{
+				// old or bad entry
+			}
+		}
+	}
+
+	private void saveTiles()
+	{
+		StringBuilder sb = new StringBuilder();
+		learnedTiles.forEach((p, w) -> sb.append(sb.length() > 0 ? ";" : "").append(p.name()).append(':')
+			.append(w.getX()).append(':').append(w.getY()).append(':').append(w.getPlane()));
+		configManager.setConfiguration(HerbRunConfig.GROUP, TILES_KEY, sb.toString());
 	}
 
 	String getStepItem()
@@ -477,35 +563,6 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	// ================================================================ items, quests, planning
-
-	private boolean isFarmPatchObject(int objectId)
-	{
-		ObjectComposition def = client.getObjectDefinition(objectId);
-		if (def == null)
-		{
-			return false;
-		}
-		if (isPatchName(def.getName()))
-		{
-			return true;
-		}
-		if (def.getImpostorIds() != null)
-		{
-			ObjectComposition imp = def.getImpostor();
-			return imp != null && isPatchName(imp.getName());
-		}
-		return false;
-	}
-
-	private static boolean isPatchName(String name)
-	{
-		if (name == null)
-		{
-			return false;
-		}
-		String n = name.toLowerCase();
-		return n.equals("herbs") || (n.endsWith("patch") && (n.contains("herb") || n.contains("tree")));
-	}
 
 	private void snapshot(ItemContainer container, Map<String, Integer> target, Map<String, Integer> nameToId)
 	{
@@ -919,7 +976,7 @@ public class HerbRunPlugin extends Plugin
 			else
 			{
 				Map<String, Object> data = new HashMap<>();
-				data.put("target", new WorldPoint(next.getX(), next.getY(), 0));
+				data.put("target", tileFor(next));
 				eventBus.post(new PluginMessage("shortestpath", "path", data));
 				shortestPathTarget = next;
 			}
@@ -933,12 +990,13 @@ public class HerbRunPlugin extends Plugin
 			if (next != null && player != null)
 			{
 				WorldPoint p = player.getWorldLocation();
-				near = p.getPlane() == 0
-					&& Math.max(Math.abs(p.getX() - next.getX()), Math.abs(p.getY() - next.getY())) <= HINT_ARROW_RANGE;
+				WorldPoint t = tileFor(next);
+				near = p.getPlane() == t.getPlane()
+					&& Math.max(Math.abs(p.getX() - t.getX()), Math.abs(p.getY() - t.getY())) <= HINT_ARROW_RANGE;
 			}
 			if (near)
 			{
-				WorldPoint target = new WorldPoint(next.getX(), next.getY(), 0);
+				WorldPoint target = tileFor(next);
 				if (!ourHintArrow || !target.equals(client.getHintArrowPoint()))
 				{
 					client.setHintArrow(target);
