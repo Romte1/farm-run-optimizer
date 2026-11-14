@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0 b8 (2026-11-13)
+- Fix: patches you just planted no longer use up saplings in the plan, so the rest of the run (e.g. Taverley, Gnome Stronghold) stays on the list.
+- Teleport spells show their spellbook picture (Varrock, Camelot, Ardougne...) instead of a law rune, on stop cards and in Travel.
+
 ## 1.0.0 b7 (2026-11-13)
 - Walking path now goes to the real patch: it's re-sent whenever the target tile changes (e.g. when the patch loads in), instead of once per patch using the rough map tile.
 - Fairy ring steps lead you to the ring first ("Fairy ring: dial AKR" on the ring, path and arrow), then on to the patch after you teleport.

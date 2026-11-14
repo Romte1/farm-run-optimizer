@@ -30,6 +30,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.game.ItemManager;
@@ -47,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.0.0 (2026-11-13 b7)";
+	static final String VERSION = "1.0.0 (2026-11-13 b8)";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -112,6 +113,7 @@ public class HerbRunPanel extends PluginPanel
 	private long totalProfit;
 	private FarmingContract contract;
 	private Runnable onClearHistory = () -> { };
+	private net.runelite.client.game.SpriteManager spriteManager;
 	private boolean showAllTravel;
 	private final Map<PatchType, Boolean> runExpanded = new EnumMap<>(PatchType.class);
 	private Set<Crop> offCrops = EnumSet.noneOf(Crop.class);
@@ -223,6 +225,52 @@ public class HerbRunPanel extends PluginPanel
 		this.useTabs = useTabs;
 		rebuildLive();
 		rebuildPlan();
+	}
+
+	void setSpriteManager(net.runelite.client.game.SpriteManager sm)
+	{
+		this.spriteManager = sm;
+	}
+
+	/** The spellbook picture for a teleport spell (RuneLite SpriteID), or -1. */
+	private static int spellSprite(Teleport t)
+	{
+		if (t == null)
+		{
+			return -1;
+		}
+		switch (t)
+		{
+			case VARROCK_SPELL:
+				return 27;
+			case LUMBRIDGE_SPELL:
+				return 30;
+			case FALADOR_SPELL:
+				return 33;
+			case CAMELOT_SPELL:
+				return 37;
+			case ARDOUGNE_SPELL:
+				return 54;
+			case TROLLHEIM_SPELL:
+				return 323;
+			case KOUREND_SPELL:
+				return 360;
+			case CIVITAS_SPELL:
+				return 367;
+			default:
+				return -1;
+		}
+	}
+
+	/** Loads a spell picture into a label (sprites load on the client thread). */
+	private void setSprite(JLabel label, int spriteId, float alpha, boolean lock)
+	{
+		if (spriteManager == null || spriteId < 0)
+		{
+			return;
+		}
+		spriteManager.getSpriteAsync(spriteId, 0, img ->
+			SwingUtilities.invokeLater(() -> label.setIcon(new ImageIcon(dimIcon(img, alpha, 0, lock)))));
 	}
 
 	void setOnClearHistory(Runnable r)
@@ -627,7 +675,7 @@ public class HerbRunPanel extends PluginPanel
 			html.append("<br><font color='#ffb040'>• ").append(esc(line)).append("</font>");
 		}
 
-		JPanel card = (JPanel) iconCard(iconIdFor(step.teleport, step.teleportItem), html.toString(),
+		JPanel card = (JPanel) iconCard(iconIdFor(step.teleport, step.teleportItem), spellSprite(step.teleport), html.toString(),
 			first ? GOLD : null, Color.WHITE);
 
 		// Items used at this stop
@@ -1251,7 +1299,12 @@ public class HerbRunPanel extends PluginPanel
 
 		boolean textOnly = t.getKind() == Teleport.Kind.FAIRY_RING || t.getKind() == Teleport.Kind.SPELL;
 		int iconId = textOnly ? -1 : iconIdFor(t, av == null ? null : av.ownedItem);
-		if (iconId > 0)
+		int sprite = spellSprite(t);
+		if (sprite >= 0 && spriteManager != null)
+		{
+			setSprite(tile, sprite, used ? 1f : usable ? 0.8f : available ? 0.45f : 0.3f, !available);
+		}
+		else if (iconId > 0)
 		{
 			AsyncBufferedImage img = itemManager.getImage(iconId);
 			float alpha = used ? 1f : usable ? 0.8f : available ? 0.45f : 0.3f;
@@ -1345,13 +1398,28 @@ public class HerbRunPanel extends PluginPanel
 	/** A dark card with an optional item icon on the left and HTML text. */
 	private JComponent iconCard(int iconId, String html, Color accent, Color textColor)
 	{
+		return iconCard(iconId, -1, html, accent, textColor);
+	}
+
+	/** Like iconCard, but shows a spellbook picture instead of the item when spriteId is set. */
+	private JComponent iconCard(int iconId, int spriteId, String html, Color accent, Color textColor)
+	{
 		JPanel card = new JPanel(new BorderLayout(6, 2));
 		card.setBackground(CARD);
 		EmptyBorder pad = new EmptyBorder(5, 6, 5, 6);
 		card.setBorder(accent == null ? pad
 			: BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, accent), pad));
 
-		if (iconId > 0)
+		if (spriteId >= 0 && spriteManager != null)
+		{
+			JLabel icon = new JLabel();
+			icon.setPreferredSize(new Dimension(36, 32));
+			icon.setVerticalAlignment(SwingConstants.TOP);
+			setSprite(icon, spriteId, 1f, false);
+			card.add(icon, BorderLayout.WEST);
+			iconId = Math.max(iconId, 1); // keep the text width for an icon
+		}
+		else if (iconId > 0)
 		{
 			JLabel icon = new JLabel();
 			icon.setPreferredSize(new Dimension(36, 32));

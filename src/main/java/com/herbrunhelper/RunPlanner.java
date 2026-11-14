@@ -473,17 +473,18 @@ public final class RunPlanner
 				queue.add(crop);
 			}
 		}
+		// Patches you've just planted on this run don't need another seed.
 		List<FarmPatch> order = new ArrayList<>();
 		for (FarmPatch p : included)
 		{
-			if (p.getType() == type && options.usedPatches.contains(p))
+			if (p.getType() == type && options.usedPatches.contains(p) && !options.doneThisRun.contains(p))
 			{
 				order.add(p);
 			}
 		}
 		for (FarmPatch p : included)
 		{
-			if (p.getType() == type && !options.usedPatches.contains(p))
+			if (p.getType() == type && !options.usedPatches.contains(p) && !options.doneThisRun.contains(p))
 			{
 				order.add(p);
 			}

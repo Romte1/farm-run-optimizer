@@ -79,3 +79,7 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 ## 2026-11-13 (b7)
 - [x] Path line follows the real patch tile (Hosidius / Varlamore were pointing past the patch)
 - [x] Lead to the fairy ring first on fairy ring steps
+
+## 2026-11-13 (b8)
+- [x] Half-done tree run kept Taverley/Stronghold off (just-planted patches were taking the saplings)
+- [x] Spellbook icons for teleport spells

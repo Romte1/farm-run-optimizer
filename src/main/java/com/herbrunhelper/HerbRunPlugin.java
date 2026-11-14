@@ -109,6 +109,9 @@ public class HerbRunPlugin extends Plugin
 	@Inject
 	private RunReadyOverlay readyOverlay;
 
+	@Inject
+	private net.runelite.client.game.SpriteManager spriteManager;
+
 	private static final String HISTORY_KEY = "runHistory";
 	private final RunHistory history = new RunHistory();
 	private volatile FarmingContract contract;
@@ -178,6 +181,7 @@ public class HerbRunPlugin extends Plugin
 			this::toggleTeleport, this::setUseSpells, this::setUseTabs, this::toggleCrop, this::togglePatch,
 			this::setSetting);
 		panel.setOnClearHistory(this::clearHistory);
+		panel.setSpriteManager(spriteManager);
 		BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
 		navButton = NavigationButton.builder()
 			.tooltip("Farm Run Planner")
