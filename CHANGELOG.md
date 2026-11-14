@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.0 b11 (2026-11-13)
+- Plugin Hub review: added `build=standard`, rewrote the README for players and removed the developer testing section.
+
 ## 1.0.0 b10 (2026-11-13)
 - Renamed to **Farm Run Optimizer**: "Farm Run Planner" is already taken on the Plugin Hub by another author.
 

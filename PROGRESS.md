@@ -91,3 +91,6 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 - [x] Renamed to Farm Run Optimizer (name clash on the Plugin Hub)
 - [ ] New GitHub banner with the new name (Todd)
 - [ ] Plugin Hub pull request (Todd)
+
+## 2026-11-13 (b11)
+- [x] Plugin Hub review fixes: build=standard, player-focused README, removed testing section
