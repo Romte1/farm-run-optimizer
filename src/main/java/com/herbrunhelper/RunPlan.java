@@ -22,6 +22,8 @@ public final class RunPlan
 
 		/** What to plant here, or null if you're out of seeds/saplings. */
 		public Crop crop;
+		/** Planted already on this run: still shows compost/payment, but nothing to bring for it. */
+		public boolean done;
 		/** Compost to use here (an item name, or a bottomless bucket), or null. */
 		public String compost;
 		/** Gardener payment for this stop (trees), or null. */

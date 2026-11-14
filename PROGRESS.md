@@ -113,3 +113,8 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 - [x] Nearest fairy ring outlined + on-screen "Dial XXX" box (also for "any fairy ring" steps)
 - [x] Spirit tree outlined + "pick Gnome Stronghold"
 - [x] Tree path goes to a walkable tile (gardener spot)
+
+## 2026-11-14 (1.1.4)
+- [x] Compost/payment highlight after planting restored
+- [x] Tree path target = walkable tile beside the patch (collision map)
+- [x] Hint arrow off by default

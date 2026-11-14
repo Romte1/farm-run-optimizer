@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.4 (2026-11-14)
+- Fix: after planting, the compost (and the gardener payment on tree runs) is highlighted again. Since 1.0.2 a just-planted stop lost its compost/payment step.
+- Tree patches: the walking path aims at a walkable tile right beside the patch, worked out from the game's collision map (fixes "Destination could not be reached" at Varrock, Falador park, Nemus Retreat and others).
+- The blinking yellow hint arrow is off by default (turn it back on in Settings if you like it).
+
 ## 1.1.3 (2026-11-14)
 - Shortest Path is aimed at the patch again (not the fairy ring), so it plans and draws the whole trip including the ring, like before. The ring itself is still outlined with the code.
 - "Dial AKR for Hosidius herb" box shows more reliably when the fairy ring interface is open, and is wide enough for the full text.

@@ -42,6 +42,8 @@ public final class RunPlanner
 		public Map<FarmPatch, Long> notReady = new java.util.EnumMap<>(FarmPatch.class);
 		/** Patches you've just harvested/planted on this run, kept on the list as done. */
 		public Set<FarmPatch> doneThisRun = EnumSet.noneOf(FarmPatch.class);
+		/** What was just planted in each done patch (so compost / payment steps still show). */
+		public Map<FarmPatch, Crop> plantedCrops = new java.util.EnumMap<>(FarmPatch.class);
 		/** Levels, quests, spellbook, disabled teleports, spells/tabs, fairy chaining. */
 		public Teleport.Context teleports = new Teleport.Context();
 	}
@@ -175,6 +177,7 @@ public final class RunPlanner
 		for (RunPlan.RouteStep step : plan.route)
 		{
 			step.crop = crops.get(step.patch);
+			step.done = options.doneThisRun.contains(step.patch);
 			if (step.crop != null && step.patch.getType().isTreeLike() && options.payGardeners
 				&& step.crop.getPaymentItem() != null)
 			{
@@ -496,6 +499,13 @@ public final class RunPlanner
 				order.add(p);
 			}
 		}
+		for (FarmPatch p : included)
+		{
+			if (p.getType() == type && options.doneThisRun.contains(p) && options.plantedCrops.containsKey(p))
+			{
+				out.put(p, options.plantedCrops.get(p));
+			}
+		}
 		Crop contract = options.contractCrop;
 		if (contract != null && contract.getType() == type)
 		{
@@ -662,7 +672,7 @@ public final class RunPlanner
 		Map<String, Integer> need = new LinkedHashMap<>();
 		for (RunPlan.RouteStep s : plan.route)
 		{
-			if (s.paymentItem != null)
+			if (s.paymentItem != null && !s.done)
 			{
 				need.merge(s.paymentItem, s.paymentQuantity, Integer::sum);
 			}
@@ -708,7 +718,20 @@ public final class RunPlanner
 		{
 			if (s.crop == null)
 			{
-				continue; // nothing being planted here (done already, or no seed)
+				continue; // nothing being planted here
+			}
+			if (s.done)
+			{
+				// Just planted: point at the best compost you're carrying, without reserving it.
+				for (String c : COMPOST_BEST_FIRST)
+				{
+					if (owned.getOrDefault(c, 0) > 0)
+					{
+						s.compost = c;
+						break;
+					}
+				}
+				continue;
 			}
 			for (String c : COMPOST_BEST_FIRST)
 			{
@@ -882,7 +905,7 @@ public final class RunPlanner
 		int slots = 0;
 		for (RunPlan.RouteStep s : leg)
 		{
-			if (s.crop != null)
+			if (s.crop != null && !s.done)
 			{
 				if (s.patch.getType() == PatchType.HERB)
 				{
@@ -962,6 +985,10 @@ public final class RunPlanner
 		int coins = 0;
 		for (RunPlan.RouteStep s : leg)
 		{
+			if (s.done)
+			{
+				continue; // planted already: nothing more to bring for it
+			}
 			if (s.crop != null)
 			{
 				seeds.merge(s.crop.getSeedName(), 1, Integer::sum);

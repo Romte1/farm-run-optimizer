@@ -31,6 +31,7 @@ import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameObjectDespawned;
@@ -189,7 +190,7 @@ public class HerbRunPlugin extends Plugin
 	private volatile String navLeadHint;
 	/** A walkable tile beside each tree patch (where the gardener stands), for the walking path. */
 	private final Map<FarmPatch, WorldPoint> approachTiles = new EnumMap<>(FarmPatch.class);
-	private static final String APPROACH_KEY = "approachTiles";
+	private static final String APPROACH_KEY = "patchApproachTiles";
 	private boolean ourHintArrow;
 	private RunPlan lastPlan;
 
@@ -1288,6 +1289,14 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 		options.doneThisRun.addAll(doneAt.keySet());
+		for (FarmPatch p : doneAt.keySet())
+		{
+			PatchTimers.Planting pl = timers.get(p);
+			if (pl != null && pl.crop != null)
+			{
+				options.plantedCrops.put(p, pl.crop);
+			}
+		}
 		for (FarmPatch p : FarmPatch.values())
 		{
 			if (timers.getStatus(p) == PatchTimers.Status.DISEASED)
@@ -1748,27 +1757,66 @@ public class HerbRunPlugin extends Plugin
 		}
 	}
 
-	/** Remembers where the gardener stands beside a tree patch, as a walkable tile to path to. */
+	/**
+	 * Works out a walkable tile right beside a tree patch (the patch itself can't be walked on),
+	 * from the game's collision map, once the patch is loaded. Learned once per patch and saved.
+	 */
 	private void learnApproach(FarmPatch patch)
 	{
-		GameObject obj = objectFor(patch);
-		if (obj == null)
+		if (approachTiles.containsKey(patch))
 		{
 			return;
 		}
-		WorldPoint p = obj.getWorldLocation();
-		for (NPC npc : gardeners)
+		GameObject obj = objectFor(patch);
+		net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
+		Player player = client.getLocalPlayer();
+		if (obj == null || maps == null || player == null)
 		{
-			WorldPoint w = npc.getWorldLocation();
-			if (w != null && w.getPlane() == p.getPlane() && dist(w, p.getX(), p.getY()) <= 10)
+			return;
+		}
+		WorldPoint centre = obj.getWorldLocation();
+		if (centre.getPlane() >= maps.length || maps[centre.getPlane()] == null)
+		{
+			return;
+		}
+		int[][] flags = maps[centre.getPlane()].getFlags();
+		WorldPoint me = player.getWorldLocation();
+		WorldPoint best = null;
+		int bestScore = Integer.MAX_VALUE;
+		for (int r = 1; r <= 4 && best == null; r++)
+		{
+			for (int dx = -r; dx <= r; dx++)
 			{
-				if (!w.equals(approachTiles.get(patch)))
+				for (int dy = -r; dy <= r; dy++)
 				{
-					approachTiles.put(patch, w);
-					saveTileMap(APPROACH_KEY, approachTiles);
+					if (Math.max(Math.abs(dx), Math.abs(dy)) != r)
+					{
+						continue; // only the ring at distance r
+					}
+					WorldPoint w = new WorldPoint(centre.getX() + dx, centre.getY() + dy, centre.getPlane());
+					LocalPoint lp = LocalPoint.fromWorld(client, w);
+					if (lp == null)
+					{
+						continue;
+					}
+					int f = flags[lp.getSceneX()][lp.getSceneY()];
+					if ((f & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL) != 0)
+					{
+						continue;
+					}
+					int score = dist(me, w.getX(), w.getY());
+					if (score < bestScore)
+					{
+						bestScore = score;
+						best = w;
+					}
 				}
-				return;
 			}
+		}
+		if (best != null)
+		{
+			approachTiles.put(patch, best);
+			saveTileMap(APPROACH_KEY, approachTiles);
 		}
 	}
 
