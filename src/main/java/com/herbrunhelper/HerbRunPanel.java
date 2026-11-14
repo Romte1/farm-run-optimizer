@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
-import javax.swing.GrayFilter;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -48,7 +47,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.0.0 (2026-11-13 b3)";
+	static final String VERSION = "1.0.0 (2026-11-13 b4)";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -145,12 +144,11 @@ public class HerbRunPanel extends PluginPanel
 		title.setIconTextGap(6);
 		root.addRow(title, 2);
 
-		runsSection.setOpaque(false);
-		root.addRow(runsSection, 4);
-
 		liveSection.setOpaque(false);
+		runsSection.setOpaque(false);
 		planSection.setOpaque(false);
-		root.addRow(liveSection, 0);
+		root.addRow(liveSection, 4);
+		root.addRow(runsSection, 4);
 		root.addRow(planSection, 0);
 
 		root.addRow(new JSeparator(), 4);
@@ -382,12 +380,25 @@ public class HerbRunPanel extends PluginPanel
 			rows.setBorder(new EmptyBorder(3, 8, 3, 6));
 			for (FarmPatch p : patches)
 			{
-				rows.addRow(row(label(shortName(p), p == nextPatch ? GOLD : Color.WHITE, false),
-					patchStatus(p, planted.get(p), now)), 1);
+				rows.addRow(row(patchNameLabel(p, planted.get(p)),
+					patchStatus(p, planted.get(p), now)), 2);
 			}
 			group.addRow(rows, 0);
 		}
 		return group;
+	}
+
+	/** Patch name with what's growing there on a second, dimmer line. */
+	private JLabel patchNameLabel(FarmPatch p, PatchTimers.Planting pl)
+	{
+		Crop crop = pl != null ? pl.crop : timers.getStatusCrop(p);
+		String color = p == nextPatch ? "#ffc83c" : "#ffffff";
+		String html = "<html><font color='" + color + "'>" + esc(shortName(p)) + "</font>"
+			+ (crop == null ? "" : "<br><font color='#8fbf8f'>" + esc(crop.getDisplayName()) + "</font>")
+			+ "</html>";
+		JLabel l = new JLabel(html);
+		l.setFont(FontManager.getRunescapeSmallFont());
+		return l;
 	}
 
 	private JLabel patchStatus(FarmPatch p, PatchTimers.Planting pl, long now)
@@ -842,15 +853,25 @@ public class HerbRunPanel extends PluginPanel
 	/** The crop picture at the given opacity; locked crops get a padlock and their level. */
 	private static java.awt.image.BufferedImage cropIcon(java.awt.image.BufferedImage img, float alpha, int lockedLevel)
 	{
+		return dimIcon(img, alpha, lockedLevel, lockedLevel > 0);
+	}
+
+	/** An item picture at the given opacity, with an optional padlock (and level number when > 0). */
+	private static java.awt.image.BufferedImage dimIcon(java.awt.image.BufferedImage img, float alpha, int lockedLevel,
+		boolean showLock)
+	{
 		java.awt.image.BufferedImage out = new java.awt.image.BufferedImage(36, 36, java.awt.image.BufferedImage.TYPE_INT_ARGB);
 		java.awt.Graphics2D g = out.createGraphics();
 		g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, alpha));
 		g.drawImage(img, (36 - img.getWidth()) / 2, (36 - img.getHeight()) / 2, null);
 		g.setComposite(java.awt.AlphaComposite.SrcOver);
-		if (lockedLevel > 0)
+		if (showLock)
 		{
 			g.drawImage(lockIcon(), 24, 0, null);
+		}
+		if (lockedLevel > 0)
+		{
 			g.setFont(FontManager.getRunescapeSmallFont());
 			String lvl = String.valueOf(lockedLevel);
 			g.setColor(Color.BLACK);
@@ -1036,8 +1057,8 @@ public class HerbRunPanel extends PluginPanel
 			rebuildPlan();
 		});
 		col.addRow(all, 4);
-		col.addRow(wrapped("Bright green = used on this run. Dim green = available. Grey = not unlocked/owned yet "
-			+ "(hover to see why). Red = turned off. Click to turn off/on.", MUTED), 4);
+		col.addRow(wrapped("Bright + green = used on this run. Green edge = available. Faded with a lock = not "
+			+ "unlocked/owned yet (hover to see why). Red = turned off. Click to turn off/on.", MUTED), 4);
 
 		Teleport.Kind[] kinds = showAllTravel ? Teleport.Kind.values()
 			: new Teleport.Kind[]{Teleport.Kind.ITEM, Teleport.Kind.OTHER};
@@ -1051,6 +1072,10 @@ public class HerbRunPanel extends PluginPanel
 				{
 					grid.add(teleportTile(t));
 				}
+			}
+			if (kind == Teleport.Kind.OTHER)
+			{
+				grid.add(fairyRingTile());
 			}
 			col.addRow(sectionTitle(kind.getTitle()), 1);
 			col.addRow(grid, 4);
@@ -1091,23 +1116,18 @@ public class HerbRunPanel extends PluginPanel
 		if (iconId > 0)
 		{
 			AsyncBufferedImage img = itemManager.getImage(iconId);
-			if (usable)
-			{
-				img.addTo(tile);
-			}
-			else
-			{
-				Runnable grey = () -> tile.setIcon(new ImageIcon(GrayFilter.createDisabledImage(img)));
-				grey.run();
-				img.onLoaded(grey);
-			}
+			float alpha = used ? 1f : usable ? 0.8f : available ? 0.45f : 0.3f;
+			Runnable paint = () -> tile.setIcon(new ImageIcon(dimIcon(img, alpha, 0, !available)));
+			paint.run();
+			img.onLoaded(paint);
 		}
 		else
 		{
 			boolean code = t.getFairyCode() != null;
 			tile.setText(t.getShortLabel());
 			tile.setFont(code ? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-			tile.setForeground(!usable ? MUTED : code ? new Color(127, 212, 255) : Color.WHITE);
+			Color fg = code ? new Color(127, 212, 255) : Color.WHITE;
+			tile.setForeground(usable ? fg : new Color(fg.getRed(), fg.getGreen(), fg.getBlue(), available ? 120 : 80));
 		}
 
 		String reason = av == null ? "" : av.reason;
@@ -1121,6 +1141,62 @@ public class HerbRunPanel extends PluginPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				onToggleTeleport.accept(t);
+			}
+		});
+		return tile;
+	}
+
+	/** One dramen staff tile that turns every fairy ring on or off together. */
+	private JComponent fairyRingTile()
+	{
+		List<Teleport> rings = new ArrayList<>();
+		for (Teleport t : Teleport.values())
+		{
+			if (t.getKind() == Teleport.Kind.FAIRY_RING)
+			{
+				rings.add(t);
+			}
+		}
+		Teleport.Availability av = plan.availability.get(rings.get(0));
+		boolean available = rings.stream().anyMatch(t -> plan.availability.get(t) != null && plan.availability.get(t).available);
+		boolean off = rings.stream().allMatch(disabled::contains);
+		boolean usable = available && !off;
+		boolean used = plan.route.stream().anyMatch(s -> s.teleport != null && s.teleport.getKind() == Teleport.Kind.FAIRY_RING);
+
+		JLabel tile = new JLabel();
+		tile.setPreferredSize(new Dimension(42, 38));
+		tile.setHorizontalAlignment(SwingConstants.CENTER);
+		tile.setOpaque(true);
+		tile.setBackground(usable ? CARD : ColorScheme.DARK_GRAY_COLOR);
+		Color border = used ? GREEN : usable ? new Color(70, 110, 70) : off && available ? RED : new Color(70, 70, 70);
+		tile.setBorder(BorderFactory.createLineBorder(border, used ? 2 : 1));
+		tile.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		AsyncBufferedImage img = itemManager.getImage(DRAMEN_STAFF_ICON);
+		float alpha = used ? 1f : usable ? 0.8f : available ? 0.45f : 0.3f;
+		Runnable paint = () -> tile.setIcon(new ImageIcon(dimIcon(img, alpha, 0, !available)));
+		paint.run();
+		img.onLoaded(paint);
+
+		String reason = rings.stream().map(plan.availability::get)
+			.filter(a -> a != null && a.available == available).map(a -> a.reason)
+			.findFirst().orElse(av == null ? "" : av.reason);
+		tile.setToolTipText("<html><b>Fairy rings</b><br>"
+			+ (available ? esc(reason) : "<font color='#e65046'>" + esc(reason) + "</font>") + "<br>"
+			+ (used ? "<font color='#5ac85a'>Used on this run - codes are on each stop</font><br>" : "")
+			+ (off ? "Turned OFF - click to turn on" : "Click to turn off") + "</html>");
+		tile.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				for (Teleport t : rings)
+				{
+					// Turning off: flip the ones that are on. Turning on: flip the ones that are off.
+					if (off == disabled.contains(t))
+					{
+						onToggleTeleport.accept(t);
+					}
+				}
 			}
 		});
 		return tile;

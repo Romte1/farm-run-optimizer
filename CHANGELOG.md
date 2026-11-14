@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 b4 (2026-11-13)
+- Timers moved to the top, Runs underneath.
+- Timers show what's growing in each patch (e.g. "Catherby / Ranarr weed").
+- Travel tiles are faded with a padlock instead of greyed out.
+- Pictures for the spirit tree, Kharedst's memoirs, quetzal whistle, hunter cape, pendant of ates, teleport crystal, digsite pendant and the Trollheim/Fenkenstrain/Brimhaven tabs.
+- Dramen staff tile under Other turns all fairy rings on/off.
+
 ## 1.0.0 b3 (2026-11-13)
 - Runs list moved to the top of the panel, with an on/off box per run; active runs open automatically.
 - Tree runs: reminders to plant tree seeds in plant pots and water the seedlings when you have no saplings.

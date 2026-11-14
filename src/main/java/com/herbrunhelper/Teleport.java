@@ -22,19 +22,19 @@ public enum Teleport
 		"Ardougne cloak 2", "Ardougne cloak 3", "Ardougne cloak 4"),
 	ECTOPHIAL(Kind.ITEM, "Ectophial", 4251, 0, null, null, null, "Ectophial"),
 	XERICS_TALISMAN(Kind.ITEM, "Xeric's talisman", 13393, 0, null, null, null, "Xeric's talisman"),
-	KHAREDSTS_MEMOIRS(Kind.ITEM, "Kharedst's memoirs / Book of the dead", -1, 0, null, null, null,
+	KHAREDSTS_MEMOIRS(Kind.ITEM, "Kharedst's memoirs / Book of the dead", 21760, 0, null, null, null,
 		"Kharedst's memoirs", "Book of the dead"),
 	SKILLS_NECKLACE(Kind.ITEM, "Skills necklace", 11105, 0, null, null, null, "Skills necklace("),
 	FARMING_CAPE(Kind.ITEM, "Farming cape", 9810, 0, null, null, null, "Farming cape"),
 	STONY_BASALT(Kind.ITEM, "Stony basalt", 22601, 0, null, null, null, "Stony basalt"),
 	ICY_BASALT(Kind.ITEM, "Icy basalt", 22599, 0, null, null, null, "Icy basalt"),
 	ROYAL_SEED_POD(Kind.ITEM, "Royal seed pod", 19564, 0, null, null, null, "Royal seed pod"),
-	QUETZAL_WHISTLE(Kind.ITEM, "Quetzal whistle (Hunter Guild)", -1, 0, null, null, null,
+	QUETZAL_WHISTLE(Kind.ITEM, "Quetzal whistle (Hunter Guild)", 29271, 0, null, null, null,
 		"Basic quetzal whistle", "Enhanced quetzal whistle", "Perfected quetzal whistle"),
-	HUNTER_CAPE(Kind.ITEM, "Hunter cape (Hunter Guild)", -1, 0, null, null, null, "Hunter cape"),
-	PENDANT_OF_ATES(Kind.ITEM, "Pendant of ates", -1, 0, null, null, null, "Pendant of ates"),
-	TELEPORT_CRYSTAL(Kind.ITEM, "Teleport crystal", -1, 0, null, null, null, "Teleport crystal"),
-	DIGSITE_PENDANT(Kind.ITEM, "Digsite pendant", -1, 0, null, null, null, "Digsite pendant"),
+	HUNTER_CAPE(Kind.ITEM, "Hunter cape (Hunter Guild)", 9948, 0, null, null, null, "Hunter cape"),
+	PENDANT_OF_ATES(Kind.ITEM, "Pendant of ates", 29893, 0, null, null, null, "Pendant of ates"),
+	TELEPORT_CRYSTAL(Kind.ITEM, "Teleport crystal", 6099, 0, null, null, null, "Teleport crystal"),
+	DIGSITE_PENDANT(Kind.ITEM, "Digsite pendant", 11194, 0, null, null, null, "Digsite pendant"),
 
 	// ---- Teleport tablets
 	VARROCK_TAB(Kind.TABLET, "Varrock teleport tablet", 8007, 0, null, null, null, "Varrock teleport"),
@@ -42,10 +42,10 @@ public enum Teleport
 	FALADOR_TAB(Kind.TABLET, "Falador teleport tablet", 8009, 0, null, null, null, "Falador teleport"),
 	CAMELOT_TAB(Kind.TABLET, "Camelot teleport tablet", 8010, 0, null, null, null, "Camelot teleport"),
 	ARDOUGNE_TAB(Kind.TABLET, "Ardougne teleport tablet", 8011, 0, null, null, null, "Ardougne teleport"),
-	TROLLHEIM_TAB(Kind.TABLET, "Trollheim teleport tablet", -1, 0, null, null, null, "Trollheim teleport"),
-	FENKENSTRAIN_TAB(Kind.TABLET, "Fenkenstrain's castle teleport", -1, 0, null, null, null, "Fenkenstrain's castle teleport"),
+	TROLLHEIM_TAB(Kind.TABLET, "Trollheim teleport tablet", 11747, 0, null, null, null, "Trollheim teleport"),
+	FENKENSTRAIN_TAB(Kind.TABLET, "Fenkenstrain's castle teleport", 19621, 0, null, null, null, "Fenkenstrain's castle teleport"),
 	HARMONY_TAB(Kind.TABLET, "Harmony island teleport", 19625, 0, null, null, null, "Harmony island teleport"),
-	BRIMHAVEN_TAB(Kind.TABLET, "Brimhaven teleport tablet", -1, 0, null, null, null, "Brimhaven teleport"),
+	BRIMHAVEN_TAB(Kind.TABLET, "Brimhaven teleport tablet", 11745, 0, null, null, null, "Brimhaven teleport"),
 
 	// ---- Standard spellbook spells (runes are added to the bank list)
 	VARROCK_SPELL(Kind.SPELL, "Varrock Teleport", -1, 25, null, null, "Law rune:1,Air rune:3,Fire rune:1"),
@@ -68,7 +68,7 @@ public enum Teleport
 	FAIRY_CIQ(Kind.FAIRY_RING, "Fairy ring CIQ", -1, 0, null, "CIQ", null),
 
 	// ---- Other
-	SPIRIT_TREE(Kind.OTHER, "Spirit tree", -1, 0, null, null, null);
+	SPIRIT_TREE(Kind.OTHER, "Spirit tree", 5317, 0, null, null, null);
 
 	public enum Kind
 	{

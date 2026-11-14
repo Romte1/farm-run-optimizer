@@ -55,3 +55,10 @@ Version **1.0.0** in development. Runs in the RuneLite developer client; not on 
 - [x] Seed pot / watering reminders for tree runs
 - [x] Hint arrow uses the loaded patch object
 - [x] Build version in footer
+
+## 2026-11-13 (b4)
+- [x] Timers on top, Runs below
+- [x] Crop name under each patch in the timers
+- [x] Travel tiles dimmed + padlock (not greyscale)
+- [x] Item pictures for every jewellery/item teleport and spirit tree
+- [x] Dramen staff fairy ring toggle
