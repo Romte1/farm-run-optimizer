@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.4 (2026-11-14)
+- The walking line is asked for again right after you teleport, from where you land. Before, a route worked out from the previous stop (e.g. Nemus Retreat to Varrock) could fail and wouldn't come back until you were next to the patch.
+
 ## 1.2.3 (2026-11-14)
 - Tree and allotment patches: Shortest Path is given a ring of tiles around the patch (plus the learned walkable spot) and walks to whichever it can reach, so it no longer stops with "Destination could not be reached" before you've ever visited the patch.
 

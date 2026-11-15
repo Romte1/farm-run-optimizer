@@ -175,6 +175,7 @@ public class HerbRunPlugin extends Plugin
 	private volatile Set<Integer> highlightIds = Collections.emptySet();
 	private volatile FarmPatch nextPatch;
 	private WorldPoint shortestPathTarget;
+	private WorldPoint lastPlayerTile;
 	/** Where to go right now: the patch, or the fairy ring to use first. */
 	private volatile WorldPoint navTarget;
 	private volatile String navRingLabel;
@@ -1711,6 +1712,17 @@ public class HerbRunPlugin extends Plugin
 
 		// Shortest Path plugin: always aim it at the patch itself, so it plans the whole trip
 		// (including the fairy ring or spirit tree) and draws it. Post again whenever the tile changes.
+		// After a teleport, ask Shortest Path again from where you landed: a route worked out
+		// from the other side of the map can come back "could not be reached" and isn't retried.
+		if (me != null)
+		{
+			if (lastPlayerTile != null && (lastPlayerTile.getPlane() != me.getPlane()
+				|| dist(me, lastPlayerTile.getX(), lastPlayerTile.getY()) > 15))
+			{
+				shortestPathTarget = null;
+			}
+			lastPlayerTile = me;
+		}
 		WorldPoint pathTarget = patchTarget;
 		if (next != null && next.getType().isTreeLike())
 		{
