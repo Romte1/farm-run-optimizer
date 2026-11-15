@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.5 (2026-11-14)
+- Grown trees with no model outline (seen at Lumbridge and Gnome Stronghold) are still marked: the plugin falls back to the click area, then the patch's floor area.
+
 ## 1.2.4 (2026-11-14)
 - The walking line is asked for again right after you teleport, from where you land. Before, a route worked out from the previous stop (e.g. Nemus Retreat to Varrock) could fail and wouldn't come back until you were next to the patch.
 

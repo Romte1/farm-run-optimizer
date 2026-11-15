@@ -98,7 +98,19 @@ public class PatchNavigationOverlay extends Overlay
 		LocalPoint labelPoint;
 		if (best != null)
 		{
+			// Some grown trees have no model outline: fall back to the click area, then the
+			// patch's floor area, so the patch is always marked.
 			Shape hull = best.getConvexHull();
+			if (hull == null)
+			{
+				hull = best.getClickbox();
+			}
+			if (hull == null)
+			{
+				LocalPoint centre = best.getLocalLocation();
+				int size = next.getType().isTreeLike() ? 3 : 2;
+				hull = centre == null ? null : Perspective.getCanvasTileAreaPoly(client, centre, size);
+			}
 			if (hull != null)
 			{
 				graphics.setColor(fill);
