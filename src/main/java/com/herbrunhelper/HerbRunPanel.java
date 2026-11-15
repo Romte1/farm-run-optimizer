@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.2.5";
+	static final String VERSION = "1.3.0";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -546,7 +546,16 @@ public class HerbRunPanel extends PluginPanel
 				unlocks.append(" • ").append(c.getDisplayName()).append(" at ").append(c.getLevel());
 			}
 		});
-		col.addRow(wrapped(unlocks.toString(), MUTED), 6);
+		col.addRow(wrapped(unlocks.toString(), MUTED), 2);
+		if (plan.estimatedXp >= 1)
+		{
+			col.addRow(wrapped("This run: about <font color='#7fd4ff'>" + FarmingXp.format(plan.estimatedXp)
+				+ " Farming XP</font>", Color.WHITE), 6);
+		}
+		else
+		{
+			col.addRow(new JLabel(" "), 4);
+		}
 
 		for (String w : plan.warnings)
 		{
@@ -565,10 +574,12 @@ public class HerbRunPanel extends PluginPanel
 		if (currentRun != null && setting("showHistory"))
 		{
 			long profit = currentRun.profit();
-			col.addRow(wrapped("This run: " + currentRun.patches.size() + " patch"
+			col.addRow(wrapped("So far: " + currentRun.patches.size() + " patch"
 				+ (currentRun.patches.size() == 1 ? "" : "es") + " • <font color='"
 				+ (profit >= 0 ? "#5ac85a" : "#e65046") + "'>" + (profit >= 0 ? "+" : "")
-				+ HerbPrices.gp(profit) + " gp</font>", Color.WHITE), 4);
+				+ HerbPrices.gp(profit) + " gp</font>"
+				+ (currentRun.xp > 0 ? " • <font color='#7fd4ff'>+" + FarmingXp.format(currentRun.xp) + " XP</font>" : ""),
+				Color.WHITE), 4);
 		}
 
 		// Take with you
@@ -1209,7 +1220,13 @@ public class HerbRunPanel extends PluginPanel
 			return col;
 		}
 		long avg = totalProfit / historyRuns.size();
+		long totalXp = 0;
+		for (RunHistory.Run r : historyRuns)
+		{
+			totalXp += r.xp;
+		}
 		col.addRow(wrapped(historyRuns.size() + " runs • average " + (avg >= 0 ? "+" : "") + HerbPrices.gp(avg)
+			+ (totalXp > 0 ? " and " + FarmingXp.format((double) totalXp / historyRuns.size()) + " XP" : "")
 			+ " • " + String.format("%.1f", herbYield) + " herbs a patch", MUTED), 4);
 		java.text.SimpleDateFormat when = new java.text.SimpleDateFormat("EEE h:mma");
 		int shown = 0;
@@ -1222,7 +1239,10 @@ public class HerbRunPanel extends PluginPanel
 			long p = r.profit();
 			JLabel left = label(when.format(new java.util.Date(r.start)).replace("AM", "am").replace("PM", "pm")
 				+ "  " + r.patches.size() + "p", Color.WHITE, false);
-			JLabel right = label((p >= 0 ? "+" : "") + HerbPrices.gp(p), p >= 0 ? GREEN : RED, false);
+			JLabel right = new JLabel("<html><font color='" + (p >= 0 ? "#5ac85a" : "#e65046") + "'>"
+				+ (p >= 0 ? "+" : "") + HerbPrices.gp(p) + "</font>"
+				+ (r.xp > 0 ? " <font color='#7fd4ff'>" + FarmingXp.format(r.xp) + "xp</font>" : "") + "</html>");
+			right.setFont(FontManager.getRunescapeSmallFont());
 			JPanel line = row(left, right);
 			StringBuilder tip = new StringBuilder("<html>");
 			r.produce.forEach((name, qty) -> tip.append(esc(name)).append(" x ").append(qty).append("<br>"));

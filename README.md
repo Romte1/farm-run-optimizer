@@ -68,8 +68,9 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 
 <br clear="right">
 
-### Profit
-- **Run history**: every harvest is logged at Grand Exchange prices, minus the seeds you planted, with profit per run and your average herbs per patch.
+### Profit and XP
+- **XP estimate** before every run, based on what's growing and what you're planting.
+- **Run history**: every harvest is logged at Grand Exchange prices, minus the seeds that grew it, with profit and Farming XP per run and your average herbs per patch.
 
 ## Settings
 

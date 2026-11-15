@@ -30,6 +30,8 @@ public final class RunHistory
 		/** Herbs picked and herb patches harvested, to learn your average yield. */
 		public int herbsPicked;
 		public int herbPatches;
+		/** Farming XP gained at the patches during the run. */
+		public long xp;
 
 		public long profit()
 		{
@@ -38,7 +40,7 @@ public final class RunHistory
 
 		public boolean isEmpty()
 		{
-			return patches.isEmpty() && produce.isEmpty();
+			return patches.isEmpty() && produce.isEmpty() && xp == 0;
 		}
 	}
 
@@ -94,6 +96,15 @@ public final class RunHistory
 			{
 				r.herbPatches++;
 			}
+		}
+	}
+
+	/** Farming XP gained while at a patch (checking health, harvesting, planting, compost). */
+	public synchronized void gainedXp(long amount, long now)
+	{
+		if (amount > 0)
+		{
+			active(now).xp += amount;
 		}
 	}
 
@@ -161,7 +172,7 @@ public final class RunHistory
 
 	// ---------------------------------------------------------------- saving
 
-	/** One run per line: start|end|value|cost|herbsPicked|herbPatches|PATCH,PATCH|name=qty;name=qty */
+	/** One run per line: start|end|value|cost|herbsPicked|herbPatches|PATCH,PATCH|name=qty;name=qty|xp */
 	public synchronized String serialize()
 	{
 		StringBuilder sb = new StringBuilder();
@@ -227,6 +238,7 @@ public final class RunHistory
 					.append('=').append(e.getValue());
 				first = false;
 			}
+			sb.append('|').append(r.xp);
 			sb.append('\n');
 		}
 	}
@@ -281,6 +293,10 @@ public final class RunHistory
 					{
 						r.produce.put(kv.substring(0, eq), Integer.parseInt(kv.substring(eq + 1)));
 					}
+				}
+				if (f.length > 8 && !f[8].isEmpty())
+				{
+					r.xp = Long.parseLong(f[8]);
 				}
 				out.add(r);
 			}

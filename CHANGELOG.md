@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0 (2026-11-14)
+- **XP before a run:** "This run: about 12k Farming XP", from what you'll harvest or health-check (using what's growing in each patch and your average herbs per patch), planting and compost. XP values from the OSRS Wiki.
+- **XP after a run:** Farming XP gained at the patches is logged with each run: "So far: 4 patches • +80k gp • +6.2k XP", and in Run history with the average XP per run.
+- Fix: huasca needs 65 Farming (was 58).
+
 ## 1.2.5 (2026-11-14)
 - Grown trees with no model outline (seen at Lumbridge and Gnome Stronghold) are still marked: the plugin falls back to the click area, then the patch's floor area.
 

@@ -137,6 +137,7 @@ public class HerbRunPlugin extends Plugin
 	private final Map<FarmPatch, PatchTimers.Status> lastStatus = new EnumMap<>(FarmPatch.class);
 	private boolean statusesPrimed;
 	private int lastBankTick = -10;
+	private int lastFarmingXp;
 	private final Map<Crop, Integer> herbProfit = new EnumMap<>(Crop.class);
 	private volatile List<RunReadyOverlay.Line> readyLines = Collections.emptyList();
 
@@ -249,6 +250,7 @@ public class HerbRunPlugin extends Plugin
 		saveHistory(); // keeps the run in progress for next time
 		lastStatus.clear();
 		statusesPrimed = false;
+		lastFarmingXp = 0;
 		contract = null;
 		progress.clear();
 		stepItem = null;
@@ -304,6 +306,17 @@ public class HerbRunPlugin extends Plugin
 		if (event.getSkill() == Skill.FARMING || event.getSkill() == Skill.MAGIC)
 		{
 			dirty = true;
+		}
+		if (event.getSkill() == Skill.FARMING)
+		{
+			int xp = event.getXp();
+			// Count Farming XP gained at a patch towards the run (not Tithe Farm, contracts, etc.).
+			if (lastFarmingXp > 0 && xp > lastFarmingXp && timersLoaded && patchNearPlayer() != null)
+			{
+				history.gainedXp(xp - lastFarmingXp, System.currentTimeMillis());
+				saveHistory();
+			}
+			lastFarmingXp = xp;
 		}
 	}
 
@@ -1317,6 +1330,16 @@ public class HerbRunPlugin extends Plugin
 		options.useCompost = config.useCompost();
 		options.bringRake = config.bringRake();
 		options.onlyReady = config.onlyReady();
+		options.herbYield = history.averageHerbYield();
+		for (FarmPatch p : FarmPatch.values())
+		{
+			PatchTimers.Planting growing = timers.get(p);
+			Crop crop = growing != null ? growing.crop : timers.getStatusCrop(p);
+			if (crop != null)
+			{
+				options.growingCrops.put(p, crop);
+			}
+		}
 		long nowMs = System.currentTimeMillis();
 		for (FarmPatch p : FarmPatch.values())
 		{

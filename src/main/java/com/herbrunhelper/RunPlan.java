@@ -93,4 +93,6 @@ public final class RunPlan
 	public final Map<Teleport, Teleport.Availability> availability = new EnumMap<>(Teleport.class);
 	/** Inventory slots the first leg needs (for the "fits" line). */
 	public int slotsNeeded;
+	/** About how much Farming XP the run gives (harvests / health checks, planting, compost). */
+	public double estimatedXp;
 }

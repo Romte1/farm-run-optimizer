@@ -44,6 +44,10 @@ public final class RunPlanner
 		public Set<FarmPatch> doneThisRun = EnumSet.noneOf(FarmPatch.class);
 		/** What was just planted in each done patch (so compost / payment steps still show). */
 		public Map<FarmPatch, Crop> plantedCrops = new java.util.EnumMap<>(FarmPatch.class);
+		/** What's growing in each patch now (for the XP estimate of what you'll harvest). */
+		public Map<FarmPatch, Crop> growingCrops = new java.util.EnumMap<>(FarmPatch.class);
+		/** Average herbs per patch, for the XP estimate. */
+		public double herbYield = HerbPrices.DEFAULT_YIELD;
 		/** Levels, quests, spellbook, disabled teleports, spells/tabs, fairy chaining. */
 		public Teleport.Context teleports = new Teleport.Context();
 	}
@@ -198,6 +202,7 @@ public final class RunPlanner
 
 		List<RunPlan.Withdrawal> fixed = fixedItems(plan, owned, options, bottomless,
 			doing.contains(PatchType.HERB) || doing.contains(PatchType.ALLOTMENT));
+		plan.estimatedXp = estimateXp(plan, options);
 		splitIntoTrips(plan, fixed, options);
 		return plan;
 	}
@@ -624,6 +629,29 @@ public final class RunPlanner
 		String ew = Math.abs(dx) * 2 < Math.abs(dy) ? "" : dx > 0 ? "east" : "west";
 		String dir = ns.isEmpty() ? ew : ew.isEmpty() ? ns : ns + "-" + ew;
 		return dir + (d >= 15 ? " (about " + (Math.round(d / 5.0) * 5) + " tiles) " : " ");
+	}
+
+	/** About how much XP the run gives: what you collect from grown crops, planting, and compost. */
+	static double estimateXp(RunPlan plan, Options options)
+	{
+		double xp = 0;
+		for (RunPlan.RouteStep s : plan.route)
+		{
+			if (s.done)
+			{
+				continue;
+			}
+			Crop growing = options.growingCrops.get(s.patch);
+			if (growing != null && !options.notReady.containsKey(s.patch))
+			{
+				xp += FarmingXp.grown(growing, options.herbYield);
+			}
+			if (s.crop != null)
+			{
+				xp += FarmingXp.plant(s.crop) + FarmingXp.compost(s.compost);
+			}
+		}
+		return xp;
 	}
 
 	private static String aOrAn(String word)
