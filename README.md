@@ -44,7 +44,7 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 ### Getting there
 - **Fastest teleports you own**: jewellery, capes, the ectophial, spells or tablets (your choice).
 - **Fairy rings** chained back to back, with the code to dial on every stop, e.g. Ardougne cloak, walk to BLR, dial ALQ, then AKR, then AJP.
-- **On the ground**: the next patch is outlined with a hint arrow; on fairy ring stops the ring is marked with the code to dial. If you have the **Shortest Path** plugin, it draws the walking line.
+- **On the ground**: the next patch is outlined with a hint arrow; on fairy ring stops the ring is marked with the code to dial. If you have the **[Shortest Path](https://runelite.net/plugin-hub/show/shortest-path)** plugin installed, it draws the walking line to each stop (recommended).
 - **Gardeners** you need to pay are outlined, with what to give them.
 
 <p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/walking-path-ardougne.png" alt="Walking path to the Ardougne herb patch with the run-ready box" width="100%"></p>
@@ -98,6 +98,7 @@ Everything can be switched on or off in the panel's **Settings** section or in R
 ## Credits
 
 - **[RuneLite](https://github.com/runelite/runelite)**: patch states, regions and growth stages come from RuneLite's Time Tracking plugin.
+- **[Shortest Path](https://github.com/Skretzo/shortest-path)** by Skretzo: draws the walking line. Install it from the Plugin Hub and Farm Run Optimizer sends it each stop.
 - **[Old School RuneScape Wiki](https://oldschool.runescape.wiki/)**: items, payments, growth times, teleports, directions and fairy ring codes.
 
 Released under the [BSD 2-Clause License](LICENSE). Full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of Jagex Ltd; this plugin is not affiliated with or endorsed by Jagex.
