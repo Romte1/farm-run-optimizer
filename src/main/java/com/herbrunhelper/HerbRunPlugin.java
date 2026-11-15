@@ -1731,7 +1731,7 @@ public class HerbRunPlugin extends Plugin
 			else
 			{
 				Map<String, Object> data = new HashMap<>();
-				data.put("target", target);
+				data.put("target", pathTargets(next, target));
 				// Our own settings for the line, applied by Shortest Path to this route only
 				// (cleared again when we clear the path).
 				Map<String, Object> overrides = new HashMap<>();
@@ -1862,6 +1862,37 @@ public class HerbRunPlugin extends Plugin
 			approachTiles.put(patch, best);
 			saveTileMap(APPROACH_KEY, approachTiles);
 		}
+	}
+
+	/**
+	 * What to send Shortest Path. A patch you can't stand on (trees, allotments) gets the walkable
+	 * tile we learned beside it, plus a ring of tiles around it: Shortest Path walks to whichever of
+	 * those it can reach first, so it never gives up with "Destination could not be reached".
+	 */
+	private Object pathTargets(FarmPatch patch, WorldPoint target)
+	{
+		if (patch == null || patch.getType() == PatchType.HERB)
+		{
+			return target;
+		}
+		java.util.List<WorldPoint> targets = new ArrayList<>();
+		targets.add(target);
+		WorldPoint centre = tileFor(patch);
+		int size = patch.getType() == PatchType.ALLOTMENT ? 4 : 3;
+		for (int r = 2; r <= size; r++)
+		{
+			for (int dx = -r; dx <= r; dx++)
+			{
+				for (int dy = -r; dy <= r; dy++)
+				{
+					if (Math.max(Math.abs(dx), Math.abs(dy)) == r)
+					{
+						targets.add(new WorldPoint(centre.getX() + dx, centre.getY() + dy, centre.getPlane()));
+					}
+				}
+			}
+		}
+		return targets;
 	}
 
 	/** The object to click first (fairy ring / spirit tree), or null. */
