@@ -192,7 +192,7 @@ public class HerbRunPlugin extends Plugin
 	private volatile String navLeadHint;
 	/** A walkable tile beside each tree patch (where the gardener stands), for the walking path. */
 	private final Map<FarmPatch, WorldPoint> approachTiles = new EnumMap<>(FarmPatch.class);
-	private static final String APPROACH_KEY = "patchApproachTiles";
+	private static final String APPROACH_KEY = "gardenerTiles";
 	private boolean ourHintArrow;
 	private RunPlan lastPlan;
 
@@ -393,7 +393,7 @@ public class HerbRunPlugin extends Plugin
 	public void onNpcSpawned(NpcSpawned event)
 	{
 		NPC npc = event.getNpc();
-		if (hasPayOption(npc))
+		if (Gardeners.ALL.contains(npc.getId()) || hasPayOption(npc))
 		{
 			gardeners.add(npc);
 		}
@@ -431,6 +431,14 @@ public class HerbRunPlugin extends Plugin
 			return null;
 		}
 		WorldPoint t = tileFor(patch);
+		int wanted = Gardeners.idFor(patch);
+		for (NPC npc : gardeners)
+		{
+			if (npc.getId() == wanted)
+			{
+				return npc; // this patch's own gardener
+			}
+		}
 		NPC best = null;
 		int bestDist = 20;
 		for (NPC npc : gardeners)
@@ -1147,10 +1155,23 @@ public class HerbRunPlugin extends Plugin
 				spell = focus.teleport.getLabel();
 				next = new StepItems.Next(null, "Cast " + spell);
 			}
-			else if ((kind == Teleport.Kind.ITEM || kind == Teleport.Kind.TABLET) && focus.teleportItem != null
-)
+			else if ((kind == Teleport.Kind.ITEM || kind == Teleport.Kind.TABLET) && focus.teleportItem != null)
 			{
 				next = new StepItems.Next(focus.teleportItem, "Teleport");
+			}
+			else if (focus.teleport == Teleport.SPIRIT_TREE && nearest(spiritTreeObjects, wp, 40) == null
+				&& dist(wp, GE_SPIRIT_TREE.getX(), GE_SPIRIT_TREE.getY()) > 120)
+			{
+				// First get to the Grand Exchange spirit tree: Varrock Teleport.
+				if (config.useSpells() && client.getRealSkillLevel(Skill.MAGIC) >= 25)
+				{
+					spell = Teleport.VARROCK_SPELL.getLabel();
+					next = new StepItems.Next(null, "Cast Varrock Teleport, then the spirit tree by the GE");
+				}
+				else if (inventoryItems.containsKey("Varrock teleport"))
+				{
+					next = new StepItems.Next("Varrock teleport", "Teleport to Varrock, then the spirit tree by the GE");
+				}
 			}
 		}
 		spellToHighlight = config.highlightInventory() ? spell : null;
@@ -1716,13 +1737,20 @@ public class HerbRunPlugin extends Plugin
 			}
 			else if (step.teleport == Teleport.SPIRIT_TREE && dist(me, target.getX(), target.getY()) > 40)
 			{
-				// Spirit tree step: lead you to the nearest spirit tree and say which one to pick.
+				// Spirit tree step: lead you to the nearest spirit tree (or the one by the Grand
+				// Exchange after Varrock Teleport) and say which destination to pick.
 				TileObject tree = nearest(spiritTreeObjects, me, 40);
+				String where = spiritTreeDestination(next);
 				if (tree != null)
 				{
 					target = tree.getWorldLocation();
 					leadObj = tree;
-					String where = spiritTreeDestination(next);
+					ringLabel = "Spirit tree: " + where;
+					leadHint = "Spirit tree: pick " + where;
+				}
+				else if (dist(me, GE_SPIRIT_TREE.getX(), GE_SPIRIT_TREE.getY()) <= 120)
+				{
+					target = GE_SPIRIT_TREE;
 					ringLabel = "Spirit tree: " + where;
 					leadHint = "Spirit tree: pick " + where;
 				}
@@ -1747,7 +1775,7 @@ public class HerbRunPlugin extends Plugin
 			lastPlayerTile = me;
 		}
 		WorldPoint pathTarget = patchTarget;
-		if (next != null && next.getType().isTreeLike())
+		if (next != null && next.getType().hasGardenerPayment())
 		{
 			learnApproach(next);
 			WorldPoint approach = approachTiles.get(next);
@@ -1766,7 +1794,7 @@ public class HerbRunPlugin extends Plugin
 			else
 			{
 				Map<String, Object> data = new HashMap<>();
-				data.put("target", pathTargets(next, target));
+				data.put("target", target);
 				// Our own settings for the line, applied by Shortest Path to this route only
 				// (cleared again when we clear the path).
 				Map<String, Object> overrides = new HashMap<>();
@@ -1777,17 +1805,39 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 
-		// Hint arrow when close enough to render (on the patch / ring / tree, not the approach tile).
-		target = navTarget;
+		// Hint arrow: only ever on something real that's loaded - the gardener to pay, the fairy
+		// ring / spirit tree to use, or the patch object itself - never on a guessed tile.
 		if (config.hintArrow())
 		{
-			boolean near = target != null && me != null && me.getPlane() == target.getPlane()
-				&& dist(me, target.getX(), target.getY()) <= HINT_ARROW_RANGE;
-			if (near)
+			NPC gardener = payLabel != null ? getGardenerToPay() : null;
+			WorldPoint point = null;
+			if (gardener == null)
 			{
-				if (!ourHintArrow || !target.equals(client.getHintArrowPoint()))
+				TileObject lead = navLeadObject;
+				GameObject patchObj = next == null || ringLabel != null ? null : objectFor(next);
+				if (lead != null)
 				{
-					client.setHintArrow(target);
+					point = lead.getWorldLocation();
+				}
+				else if (patchObj != null)
+				{
+					point = patchObj.getWorldLocation();
+				}
+			}
+			if (gardener != null)
+			{
+				if (!ourHintArrow || client.getHintArrowNpc() != gardener)
+				{
+					client.setHintArrow(gardener);
+					ourHintArrow = true;
+				}
+			}
+			else if (point != null && me != null && me.getPlane() == point.getPlane()
+				&& dist(me, point.getX(), point.getY()) <= HINT_ARROW_RANGE)
+			{
+				if (!ourHintArrow || !point.equals(client.getHintArrowPoint()))
+				{
+					client.setHintArrow(point);
 					ourHintArrow = true;
 				}
 			}
@@ -1796,9 +1846,15 @@ public class HerbRunPlugin extends Plugin
 				clearHintArrow();
 			}
 		}
+		else
+		{
+			clearHintArrow();
+		}
 	}
 
 	private static final int RING_LEAD_RANGE = 120;
+	/** The spirit tree just north-west of the Grand Exchange. */
+	private static final WorldPoint GE_SPIRIT_TREE = new WorldPoint(3185, 3508, 0);
 
 	private static int dist(WorldPoint p, int x, int y)
 	{
@@ -1837,8 +1893,8 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	/**
-	 * Works out a walkable tile right beside a tree patch (the patch itself can't be walked on),
-	 * from the game's collision map, once the patch is loaded. Learned once per patch and saved.
+	 * Remembers where this patch's gardener stands: always a walkable tile right beside the patch,
+	 * so it's what the walking line aims at. Learned once per patch and saved.
 	 */
 	private void learnApproach(FarmPatch patch)
 	{
@@ -1846,88 +1902,16 @@ public class HerbRunPlugin extends Plugin
 		{
 			return;
 		}
-		GameObject obj = objectFor(patch);
-		net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
-		Player player = client.getLocalPlayer();
-		if (obj == null || maps == null || player == null)
+		int wanted = Gardeners.idFor(patch);
+		for (NPC npc : gardeners)
 		{
-			return;
-		}
-		WorldPoint centre = obj.getWorldLocation();
-		if (centre.getPlane() >= maps.length || maps[centre.getPlane()] == null)
-		{
-			return;
-		}
-		int[][] flags = maps[centre.getPlane()].getFlags();
-		WorldPoint me = player.getWorldLocation();
-		WorldPoint best = null;
-		int bestScore = Integer.MAX_VALUE;
-		for (int r = 1; r <= 4 && best == null; r++)
-		{
-			for (int dx = -r; dx <= r; dx++)
+			if (npc.getId() == wanted && npc.getWorldLocation() != null)
 			{
-				for (int dy = -r; dy <= r; dy++)
-				{
-					if (Math.max(Math.abs(dx), Math.abs(dy)) != r)
-					{
-						continue; // only the ring at distance r
-					}
-					WorldPoint w = new WorldPoint(centre.getX() + dx, centre.getY() + dy, centre.getPlane());
-					LocalPoint lp = LocalPoint.fromWorld(client, w);
-					if (lp == null)
-					{
-						continue;
-					}
-					int f = flags[lp.getSceneX()][lp.getSceneY()];
-					if ((f & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL) != 0)
-					{
-						continue;
-					}
-					int score = dist(me, w.getX(), w.getY());
-					if (score < bestScore)
-					{
-						bestScore = score;
-						best = w;
-					}
-				}
+				approachTiles.put(patch, npc.getWorldLocation());
+				saveTileMap(APPROACH_KEY, approachTiles);
+				return;
 			}
 		}
-		if (best != null)
-		{
-			approachTiles.put(patch, best);
-			saveTileMap(APPROACH_KEY, approachTiles);
-		}
-	}
-
-	/**
-	 * What to send Shortest Path. A patch you can't stand on (trees, allotments) gets the walkable
-	 * tile we learned beside it, plus a ring of tiles around it: Shortest Path walks to whichever of
-	 * those it can reach first, so it never gives up with "Destination could not be reached".
-	 */
-	private Object pathTargets(FarmPatch patch, WorldPoint target)
-	{
-		if (patch == null || patch.getType() == PatchType.HERB)
-		{
-			return target;
-		}
-		java.util.List<WorldPoint> targets = new ArrayList<>();
-		targets.add(target);
-		WorldPoint centre = tileFor(patch);
-		int size = patch.getType() == PatchType.ALLOTMENT ? 4 : 3;
-		for (int r = 2; r <= size; r++)
-		{
-			for (int dx = -r; dx <= r; dx++)
-			{
-				for (int dy = -r; dy <= r; dy++)
-				{
-					if (Math.max(Math.abs(dx), Math.abs(dy)) == r)
-					{
-						targets.add(new WorldPoint(centre.getX() + dx, centre.getY() + dy, centre.getPlane()));
-					}
-				}
-			}
-		}
-		return targets;
 	}
 
 	/** The object to click first (fairy ring / spirit tree), or null. */

@@ -863,6 +863,20 @@ public final class RunPlanner
 			{
 				fairy = true;
 			}
+			else if (step.teleport == Teleport.SPIRIT_TREE)
+			{
+				// Getting to the spirit tree by the Grand Exchange: Varrock Teleport (spell or tab).
+				Teleport.Context ctx = options.teleports;
+				if (ctx.useSpells && ctx.standardSpellbook && ctx.magicLevel >= 25)
+				{
+					Teleport.VARROCK_SPELL.getRunes().forEach((rune, qty) -> runes.merge(rune, qty, Integer::sum));
+				}
+				else if (owned.getOrDefault("Varrock teleport", 0) > 0)
+				{
+					uses.merge("Varrock teleport", 1, Integer::sum);
+					firstPatch.putIfAbsent("Varrock teleport", step.patch.getDisplayName());
+				}
+			}
 		}
 		for (Map.Entry<String, Integer> e : uses.entrySet())
 		{

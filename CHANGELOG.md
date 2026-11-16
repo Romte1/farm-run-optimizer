@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1 (2026-11-15)
+- **Gardeners found by their id** (from RuneLite's Time Tracking), so every patch's gardener is highlighted, including Lumbridge and Taverley.
+- **Walking line for trees and allotments** aims at where the patch's gardener stands (always a walkable spot beside the patch), learned the first time you see them.
+- **Gnome Stronghold via the Grand Exchange spirit tree:** "Varrock Teleport, spirit tree at the Grand Exchange to Gnome Stronghold". Varrock Teleport is highlighted (and its runes or tab added to the bring list), then the GE spirit tree is marked with what to pick.
+- **Hint arrow pinned to real things only:** the gardener you need to pay, the fairy ring or spirit tree to use, or the patch itself once it's loaded. No more arrow on a guessed tile or jumping around.
+
 ## 1.3.0 (2026-11-14)
 - **XP before a run:** "This run: about 12k Farming XP", from what you'll harvest or health-check (using what's growing in each patch and your average herbs per patch), planting and compost. XP values from the OSRS Wiki.
 - **XP after a run:** Farming XP gained at the patches is logged with each run: "So far: 4 patches • +80k gp • +6.2k XP", and in Run history with the average XP per run.

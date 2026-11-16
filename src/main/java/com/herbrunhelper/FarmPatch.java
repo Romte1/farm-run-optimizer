@@ -47,16 +47,16 @@ public enum FarmPatch
 	// ---- Gnome Stronghold / Tree Gnome Village
 	GNOME_TREE("Gnome Stronghold tree", PatchType.TREE, Requirement.NONE, 2434, 3418, r(9781, 9525, 9526, 9782), 4771, null, "Grand Tree bank",
 		via(Teleport.ROYAL_SEED_POD, "Grand Tree, run south-west"),
-		via(Teleport.SPIRIT_TREE, "to the Grand Tree, run south-west")),
+		via(Teleport.SPIRIT_TREE, "Varrock Teleport, spirit tree at the Grand Exchange to Gnome Stronghold, run south-west")),
 	GNOME_FRUIT("Gnome Stronghold fruit tree", PatchType.FRUIT_TREE, Requirement.NONE, 2472, 3445, r(9781, 9525, 9526, 9782), 4772, null, "Grand Tree bank",
 		walk("Head north-east through the Stronghold to the fruit tree patch", "GNOME_TREE"),
 		via(Teleport.ROYAL_SEED_POD, "Grand Tree, fruit tree patch beside it"),
-		via(Teleport.SPIRIT_TREE, "to the Grand Tree, fruit tree patch beside it")),
+		via(Teleport.SPIRIT_TREE, "Varrock Teleport, spirit tree at the Grand Exchange to Gnome Stronghold, fruit tree patch beside the Grand Tree")),
 	TREE_GNOME_VILLAGE_FRUIT("Tree Gnome Village fruit tree", PatchType.FRUIT_TREE, Requirement.NONE, 2487, 3181, r(9777, 10033), 4771, null, "Grand Tree bank",
 		walk("Spirit tree to Tree Gnome Village, get Elkoy to guide you out of the maze", "GNOME_FRUIT"),
 		walk("Spirit tree to Tree Gnome Village, get Elkoy to guide you out of the maze", "GNOME_TREE"),
 		via(Teleport.FAIRY_CIQ, "head north-west to the patch"),
-		via(Teleport.SPIRIT_TREE, "to Tree Gnome Village, get Elkoy to guide you out")),
+		via(Teleport.SPIRIT_TREE, "Varrock Teleport, spirit tree at the Grand Exchange to Tree Gnome Village, get Elkoy to guide you out")),
 
 	// ---- Catherby / Brimhaven / Ardougne
 	CATHERBY_HERB("Catherby herb", PatchType.HERB, Requirement.NONE, 2810, 3462, r(11062, 11061, 11317, 11318), 4774, null, "Catherby bank",
