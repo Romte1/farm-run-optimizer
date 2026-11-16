@@ -71,6 +71,19 @@ final class FairyRings
 		TILES.put(code, new int[]{x, y});
 	}
 
+	/** True if a ring stands within a few tiles of this spot. */
+	static boolean isRingAt(int x, int y)
+	{
+		for (int[] t : TILES.values())
+		{
+			if (Math.abs(t[0] - x) <= 3 && Math.abs(t[1] - y) <= 3)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** {x, y} of the ring, or null. */
 	static int[] tile(String code)
 	{

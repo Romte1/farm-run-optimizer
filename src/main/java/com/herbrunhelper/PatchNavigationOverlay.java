@@ -88,6 +88,10 @@ public class PatchNavigationOverlay extends Overlay
 			if (textLoc != null)
 			{
 				OverlayUtil.renderTextLocation(graphics, textLoc, text, color);
+				if (ringObj != null && !gardenerArrow)
+				{
+					drawArrow(graphics, textLoc, graphics.getFontMetrics().stringWidth(text), color);
+				}
 			}
 			return null;
 		}
@@ -142,20 +146,52 @@ public class PatchNavigationOverlay extends Overlay
 			if (textLoc != null)
 			{
 				OverlayUtil.renderTextLocation(graphics, textLoc, text, color);
+				// The arrow only goes on the real patch once it's loaded, never on a guessed tile.
+				if (best != null && !gardenerArrow)
+				{
+					drawArrow(graphics, textLoc, graphics.getFontMetrics().stringWidth(text), color);
+				}
 			}
 		}
 		return null;
 	}
 
+	/** Set each frame: the arrow is on the gardener instead of the patch. */
+	private boolean gardenerArrow;
+
+	/**
+	 * A steady arrow pointing down at a label, drawn by this plugin (the game's own hint arrow
+	 * blinks and drifts). {@code textLoc} is the label's baseline-left point.
+	 */
+	private void drawArrow(Graphics2D graphics, Point textLoc, int textWidth, Color color)
+	{
+		if (!plugin.showArrow())
+		{
+			return;
+		}
+		int cx = textLoc.getX() + textWidth / 2;
+		int tipY = textLoc.getY() - graphics.getFontMetrics().getAscent() - 4;
+		int[] xs = {cx, cx - 9, cx - 4, cx - 4, cx + 4, cx + 4, cx + 9};
+		int[] ys = {tipY, tipY - 10, tipY - 10, tipY - 22, tipY - 22, tipY - 10, tipY - 10};
+		Polygon arrow = new Polygon(xs, ys, xs.length);
+		graphics.setStroke(new BasicStroke(2));
+		graphics.setColor(Color.BLACK);
+		graphics.draw(arrow);
+		graphics.setColor(color);
+		graphics.fill(arrow);
+	}
+
 	/** Outlines the gardener you need to pay, with what to give them. */
 	private void renderGardener(Graphics2D graphics)
 	{
+		gardenerArrow = false;
 		net.runelite.api.NPC npc = plugin.getGardenerToPay();
 		String text = plugin.getPayLabel();
 		if (npc == null || text == null)
 		{
 			return;
 		}
+		gardenerArrow = true;
 		Color gold = new Color(255, 200, 60);
 		Shape hull = npc.getConvexHull();
 		if (hull != null)
@@ -173,6 +209,7 @@ public class PatchNavigationOverlay extends Overlay
 			if (textLoc != null)
 			{
 				OverlayUtil.renderTextLocation(graphics, textLoc, text, gold);
+				drawArrow(graphics, textLoc, graphics.getFontMetrics().stringWidth(text), gold);
 			}
 		}
 	}

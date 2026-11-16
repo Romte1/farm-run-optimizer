@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.2 (2026-11-15)
+- **New arrow:** the game's blinking hint arrow is no longer used. The plugin draws its own steady arrow right above the label of the real thing on screen: the gardener to pay, the fairy ring or spirit tree to use, or the patch once it's loaded. Setting "Arrow over target" (on by default).
+- Fairy rings: only real rings at known ring spots are outlined (scenery that shares the name was being picked up near Morytania).
+
 ## 1.3.1 (2026-11-15)
 - **Gardeners found by their id** (from RuneLite's Time Tracking), so every patch's gardener is highlighted, including Lumbridge and Taverley.
 - **Walking line for trees and allotments** aims at where the patch's gardener stands (always a walkable spot beside the patch), learned the first time you see them.

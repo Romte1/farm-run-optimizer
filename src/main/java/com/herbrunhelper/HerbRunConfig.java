@@ -198,10 +198,10 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(keyName = "hintArrow", name = "Hint arrow", description = "Show the blinking yellow hint arrow over the next patch when it's nearby", position = 2, section = navSection)
+	@ConfigItem(keyName = "pointerArrow", name = "Arrow over target", description = "A steady arrow over the next patch, fairy ring, spirit tree or gardener (drawn by this plugin, not the game's blinking hint arrow)", position = 2, section = navSection)
 	default boolean hintArrow()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(keyName = "useShortestPath", name = "Use Shortest Path plugin",

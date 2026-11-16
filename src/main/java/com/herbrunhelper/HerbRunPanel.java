@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.3.1";
+	static final String VERSION = "1.3.2";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -751,7 +751,7 @@ public class HerbRunPanel extends PluginPanel
 		{"pathMinigameTeleports", "Path: minigame teleports", "Let the walking line use minigame teleports like Rat Pits"},
 		{"highlightPatch", "Highlight next patch", "Outline the next patch on the ground"},
 		{"highlightGardener", "Highlight gardener to pay", "Outline the gardener when you need to pay them"},
-		{"hintArrow", "Hint arrow", "Yellow arrow over the next patch when it's nearby"},
+		{"pointerArrow", "Arrow over target", "A steady arrow over the next patch, ring, tree or gardener"},
 		{"highlightInventory", "Highlight step items", "Outline the seed / compost / payment your current step needs"},
 		{"highlightBank", "Highlight in bank", "Outline what to withdraw when your bank is open"},
 		{"notifyReady", "Notify when ready", "Notification when a patch finishes growing"},

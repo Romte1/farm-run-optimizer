@@ -568,7 +568,11 @@ public class HerbRunPlugin extends Plugin
 		}
 		if (name.toLowerCase().startsWith("fairy ring"))
 		{
-			fairyRingObjects.add(obj);
+			// Only real rings, at a known ring spot (some scenery shares the name).
+			if (FairyRings.isRingAt(obj.getWorldLocation().getX(), obj.getWorldLocation().getY()))
+			{
+				fairyRingObjects.add(obj);
+			}
 			return true;
 		}
 		if (name.equalsIgnoreCase("Spirit tree"))
@@ -1469,7 +1473,7 @@ public class HerbRunPlugin extends Plugin
 		settings.put("pathMinigameTeleports", config.pathMinigameTeleports());
 		settings.put("highlightPatch", config.highlightPatch());
 		settings.put("highlightGardener", config.highlightGardener());
-		settings.put("hintArrow", config.hintArrow());
+		settings.put("pointerArrow", config.hintArrow());
 		settings.put("highlightInventory", config.highlightInventory());
 		settings.put("highlightBank", config.highlightBank());
 		settings.put("notifyReady", config.notifyReady());
@@ -1805,51 +1809,9 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 
-		// Hint arrow: only ever on something real that's loaded - the gardener to pay, the fairy
-		// ring / spirit tree to use, or the patch object itself - never on a guessed tile.
-		if (config.hintArrow())
-		{
-			NPC gardener = payLabel != null ? getGardenerToPay() : null;
-			WorldPoint point = null;
-			if (gardener == null)
-			{
-				TileObject lead = navLeadObject;
-				GameObject patchObj = next == null || ringLabel != null ? null : objectFor(next);
-				if (lead != null)
-				{
-					point = lead.getWorldLocation();
-				}
-				else if (patchObj != null)
-				{
-					point = patchObj.getWorldLocation();
-				}
-			}
-			if (gardener != null)
-			{
-				if (!ourHintArrow || client.getHintArrowNpc() != gardener)
-				{
-					client.setHintArrow(gardener);
-					ourHintArrow = true;
-				}
-			}
-			else if (point != null && me != null && me.getPlane() == point.getPlane()
-				&& dist(me, point.getX(), point.getY()) <= HINT_ARROW_RANGE)
-			{
-				if (!ourHintArrow || !point.equals(client.getHintArrowPoint()))
-				{
-					client.setHintArrow(point);
-					ourHintArrow = true;
-				}
-			}
-			else
-			{
-				clearHintArrow();
-			}
-		}
-		else
-		{
-			clearHintArrow();
-		}
+		// The game's own hint arrow isn't used any more (it blinks and can't follow objects
+		// well); the overlay draws a steady arrow instead. Clear one left by an older version.
+		clearHintArrow();
 	}
 
 	private static final int RING_LEAD_RANGE = 120;
@@ -1912,6 +1874,11 @@ public class HerbRunPlugin extends Plugin
 				return;
 			}
 		}
+	}
+
+	boolean showArrow()
+	{
+		return config.hintArrow();
 	}
 
 	/** The object to click first (fairy ring / spirit tree), or null. */
