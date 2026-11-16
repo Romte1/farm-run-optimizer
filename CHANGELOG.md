@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.3 (2026-11-15)
+- **Minimap arrow:** a marker on the minimap at the next patch, fairy ring or spirit tree, or an arrow near the minimap's edge pointing towards it when it's further away. Works without the Shortest Path plugin. Uses the "Arrow over target" setting.
+
 ## 1.3.2 (2026-11-15)
 - **New arrow:** the game's blinking hint arrow is no longer used. The plugin draws its own steady arrow right above the label of the real thing on screen: the gardener to pay, the fairy ring or spirit tree to use, or the patch once it's loaded. Setting "Arrow over target" (on by default).
 - Fairy rings: only real rings at known ring spots are outlined (scenery that shares the name was being picked up near Morytania).

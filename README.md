@@ -44,7 +44,7 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 ### Getting there
 - **Fastest teleports you own**: jewellery, capes, the ectophial, spells or tablets (your choice).
 - **Fairy rings** chained back to back, with the code to dial on every stop, e.g. Ardougne cloak, walk to BLR, dial ALQ, then AKR, then AJP.
-- **On the ground**: the next patch is outlined, with a steady arrow over it; on fairy ring and spirit tree stops the ring or tree is marked with what to pick. If you have the **[Shortest Path](https://runelite.net/plugin-hub/show/shortest-path)** plugin installed, it draws the walking line to each stop (recommended).
+- **On the ground**: the next patch is outlined, with a steady arrow over it and a marker or arrow on the minimap (no extra plugin needed); on fairy ring and spirit tree stops the ring or tree is marked with what to pick. If you have the **[Shortest Path](https://runelite.net/plugin-hub/show/shortest-path)** plugin installed, it draws the walking line to each stop (recommended).
 - **Gardeners** you need to pay are outlined, with what to give them.
 
 <p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/walking-path-ardougne.png" alt="Walking path to the Ardougne herb patch with the run-ready box" width="100%"></p>

@@ -128,6 +128,9 @@ public class HerbRunPlugin extends Plugin
 	private SpellHighlightOverlay spellHighlightOverlay;
 
 	@Inject
+	private MinimapArrowOverlay minimapArrowOverlay;
+
+	@Inject
 	private net.runelite.client.game.SpriteManager spriteManager;
 
 	private static final String HISTORY_KEY = "runHistory";
@@ -230,6 +233,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(readyOverlay);
 		overlayManager.add(leadHintOverlay);
 		overlayManager.add(spellHighlightOverlay);
+		overlayManager.add(minimapArrowOverlay);
 		dirty = true;
 		timersLoaded = false;
 		ticksSinceQuestCheck = QUEST_CHECK_INTERVAL_TICKS;
@@ -247,6 +251,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(readyOverlay);
 		overlayManager.remove(leadHintOverlay);
 		overlayManager.remove(spellHighlightOverlay);
+		overlayManager.remove(minimapArrowOverlay);
 		saveHistory(); // keeps the run in progress for next time
 		lastStatus.clear();
 		statusesPrimed = false;
@@ -1879,6 +1884,12 @@ public class HerbRunPlugin extends Plugin
 	boolean showArrow()
 	{
 		return config.hintArrow();
+	}
+
+	/** Where to go right now (the patch, or the fairy ring / spirit tree first), or null. */
+	WorldPoint getNavTarget()
+	{
+		return navTarget;
 	}
 
 	/** The object to click first (fairy ring / spirit tree), or null. */
