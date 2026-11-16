@@ -204,12 +204,20 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(keyName = "useShortestPath", name = "Use Shortest Path plugin",
-		description = "If the Shortest Path plugin (Plugin Hub) is installed, draw the walking path to the next patch",
+	@ConfigItem(keyName = "guideLine", name = "Guide line",
+		description = "Draw this plugin's own walking line to the next patch, fairy ring, spirit tree or gardener (no other plugin needed)",
+		position = 3, section = navSection)
+	default boolean guideLine()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "shortestPathLine", name = "Use Shortest Path plugin",
+		description = "Also send each stop to the Shortest Path plugin (if installed) for its own walking line",
 		position = 3, section = navSection)
 	default boolean useShortestPath()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(keyName = "pathMinigameTeleports", name = "Path: minigame teleports",

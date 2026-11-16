@@ -41,6 +41,7 @@ public class PatchNavigationOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		renderGuideLine(graphics);
 		renderGardener(graphics);
 		FarmPatch next = plugin.getNextPatch();
 		if (!config.highlightPatch() || next == null)
@@ -212,5 +213,43 @@ public class PatchNavigationOverlay extends Overlay
 				drawArrow(graphics, textLoc, graphics.getFontMetrics().stringWidth(text), gold);
 			}
 		}
+	}
+
+	/** The built-in walking line: through the middle of each tile of the route, on the ground. */
+	private void renderGuideLine(Graphics2D graphics)
+	{
+		java.util.List<WorldPoint> path = plugin.getGuidePath();
+		if (path.size() < 2)
+		{
+			return;
+		}
+		java.awt.geom.Path2D.Double line = new java.awt.geom.Path2D.Double();
+		boolean started = false;
+		for (WorldPoint w : path)
+		{
+			LocalPoint lp = LocalPoint.fromWorld(client, w);
+			Point p = lp == null ? null : Perspective.localToCanvas(client, lp, w.getPlane());
+			if (p == null)
+			{
+				started = false; // off screen: break the line here
+				continue;
+			}
+			if (started)
+			{
+				line.lineTo(p.getX(), p.getY());
+			}
+			else
+			{
+				line.moveTo(p.getX(), p.getY());
+				started = true;
+			}
+		}
+		Color c = config.patchColor();
+		graphics.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		graphics.setColor(new Color(0, 0, 0, 120));
+		graphics.draw(line);
+		graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		graphics.setColor(c);
+		graphics.draw(line);
 	}
 }

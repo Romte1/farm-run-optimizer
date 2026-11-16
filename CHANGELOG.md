@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0 (2026-11-15)
+- **Built-in guide line.** The plugin now draws its own walking line, worked out from the game's collision map over the loaded area: to the patch (stopping beside it), the fairy ring or spirit tree first, or the gardener when it's time to pay. It goes round walls, fences and gates, and towards the patch when it's beyond the loaded area. No other plugin needed. Setting: "Guide line" (on by default).
+- The Shortest Path plugin is now optional and off by default ("Shortest Path plugin line" in Settings). It kept saying "Destination could not be reached" at tree patches, because you can't stand on a 3x3 tree patch.
+
 ## 1.3.3 (2026-11-15)
 - **Minimap arrow:** a marker on the minimap at the next patch, fairy ring or spirit tree, or an arrow near the minimap's edge pointing towards it when it's further away. Works without the Shortest Path plugin. Uses the "Arrow over target" setting.
 

@@ -1474,7 +1474,8 @@ public class HerbRunPlugin extends Plugin
 		long totalProfit = history.totalProfit();
 		FarmingContract contractNow = contract;
 		Map<String, Boolean> settings = new java.util.LinkedHashMap<>();
-		settings.put("useShortestPath", config.useShortestPath());
+		settings.put("guideLine", config.guideLine());
+		settings.put("shortestPathLine", config.useShortestPath());
 		settings.put("pathMinigameTeleports", config.pathMinigameTeleports());
 		settings.put("highlightPatch", config.highlightPatch());
 		settings.put("highlightGardener", config.highlightGardener());
@@ -1817,6 +1818,99 @@ public class HerbRunPlugin extends Plugin
 		// The game's own hint arrow isn't used any more (it blinks and can't follow objects
 		// well); the overlay draws a steady arrow instead. Clear one left by an older version.
 		clearHintArrow();
+
+		updateGuideLine(next, ringLabel != null);
+	}
+
+	// ================================================================ built-in guide line
+
+	private volatile List<WorldPoint> guidePath = Collections.emptyList();
+	private WorldPoint guideFrom;
+	private String guideKey;
+
+	List<WorldPoint> getGuidePath()
+	{
+		return guidePath;
+	}
+
+	/**
+	 * Works out the walking route over the loaded map with the game's collision data: to the
+	 * gardener when you need to pay them, to the fairy ring / spirit tree first, otherwise to the
+	 * patch (or towards it, when it's beyond the loaded area).
+	 */
+	private void updateGuideLine(FarmPatch next, boolean leading)
+	{
+		WorldPoint target = navTarget;
+		Player player = client.getLocalPlayer();
+		if (!config.guideLine() || next == null || target == null || player == null)
+		{
+			guidePath = Collections.emptyList();
+			return;
+		}
+		WorldPoint me = player.getWorldLocation();
+		LocalPoint meLocal = player.getLocalLocation();
+		net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
+		if (me == null || meLocal == null || maps == null || me.getPlane() != target.getPlane()
+			|| me.getPlane() >= maps.length || maps[me.getPlane()] == null
+			|| dist(me, target.getX(), target.getY()) > 150)
+		{
+			guidePath = Collections.emptyList(); // far away: teleport first
+			return;
+		}
+		int baseX = me.getX() - meLocal.getSceneX();
+		int baseY = me.getY() - meLocal.getSceneY();
+
+		// The target box, in scene tiles.
+		int minX = target.getX() - baseX;
+		int minY = target.getY() - baseY;
+		int maxX = minX;
+		int maxY = minY;
+		NPC gardener = payLabel != null ? getGardenerToPay() : null;
+		TileObject lead = leading ? navLeadObject : null;
+		GameObject patchObj = leading ? null : objectFor(next);
+		if (gardener != null && gardener.getLocalLocation() != null)
+		{
+			minX = maxX = gardener.getLocalLocation().getSceneX();
+			minY = maxY = gardener.getLocalLocation().getSceneY();
+		}
+		else if (lead instanceof GameObject)
+		{
+			GameObject g = (GameObject) lead;
+			minX = g.getSceneMinLocation().getX();
+			minY = g.getSceneMinLocation().getY();
+			maxX = g.getSceneMaxLocation().getX();
+			maxY = g.getSceneMaxLocation().getY();
+		}
+		else if (lead != null && lead.getLocalLocation() != null)
+		{
+			minX = maxX = lead.getLocalLocation().getSceneX();
+			minY = maxY = lead.getLocalLocation().getSceneY();
+		}
+		else if (patchObj != null)
+		{
+			minX = patchObj.getSceneMinLocation().getX();
+			minY = patchObj.getSceneMinLocation().getY();
+			maxX = patchObj.getSceneMaxLocation().getX();
+			maxY = patchObj.getSceneMaxLocation().getY();
+		}
+
+		// Only work it out again when you or the target moved.
+		String key = minX + "," + minY + "," + maxX + "," + maxY + "," + baseX + "," + baseY;
+		if (me.equals(guideFrom) && key.equals(guideKey))
+		{
+			return;
+		}
+		guideFrom = me;
+		guideKey = key;
+
+		List<int[]> path = PathGuide.find(maps[me.getPlane()].getFlags(), meLocal.getSceneX(), meLocal.getSceneY(),
+			minX, minY, maxX, maxY);
+		List<WorldPoint> out = new ArrayList<>(path.size());
+		for (int[] t : path)
+		{
+			out.add(new WorldPoint(baseX + t[0], baseY + t[1], me.getPlane()));
+		}
+		guidePath = out;
 	}
 
 	private static final int RING_LEAD_RANGE = 120;
