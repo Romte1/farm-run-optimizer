@@ -54,6 +54,40 @@ Old School RuneScape and RuneScape are trademarks of Jagex Ltd. This plugin is n
 with or endorsed by Jagex.
 
 
-Shortest Path (https://github.com/Skretzo/shortest-path) by Skretzo
-Farm Run Optimizer does not include Shortest Path's code. When both plugins are installed, it sends
-Shortest Path the location of the next stop (through RuneLite's plugin messages) so it can draw the walking line.
+Shortest Path
+-------------
+https://github.com/Skretzo/shortest-path by Skretzo and contributors
+
+The walking map used for the guide line (src/main/resources/com/herbrunhelper/walk-map.zip) is
+Shortest Path's collision map (src/main/resources/collision-map.zip, from commit a7dd4a2), included
+unchanged. WorldWalkMap.java reads it; none of Shortest Path's code is included. When both plugins
+are installed and the setting is on, Farm Run Optimizer can also send Shortest Path the next stop
+(through RuneLite's plugin messages) so it draws its own line.
+
+Shortest Path's license (its LICENSE file, as published):
+
+  BSD 2-Clause License
+
+  Copyright (c) <YEAR>, <COPYRIGHT HOLDER>
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this
+     list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

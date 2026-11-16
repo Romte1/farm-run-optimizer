@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0 (2026-11-16)
+- **Guide line reworked.** It now plans with a walking map of the whole game (from the Shortest Path plugin, credited in NOTICE) instead of only the area around you, so it no longer heads off the wrong way (into the sea at Morytania, away from the patch in Varlamore) when the stop isn't loaded yet.
+- **Straighter, steadier line.** Routes use real distances and are smoothed into straight stretches instead of zigzagging, and the line stays the same while you follow it instead of jumping between equally short routes.
+- Stops beside the patch on a side you can actually reach (not behind a fence), or in the fairy ring.
+- **Route on the minimap** too, and the minimap arrow now points along the route.
+- Map squares with no map data are never walked on.
+
 ## 1.4.0 (2026-11-15)
 - **Built-in guide line.** The plugin now draws its own walking line, worked out from the game's collision map over the loaded area: to the patch (stopping beside it), the fairy ring or spirit tree first, or the gardener when it's time to pay. It goes round walls, fences and gates, and towards the patch when it's beyond the loaded area. No other plugin needed. Setting: "Guide line" (on by default).
 - The Shortest Path plugin is now optional and off by default ("Shortest Path plugin line" in Settings). It kept saying "Destination could not be reached" at tree patches, because you can't stand on a 3x3 tree patch.

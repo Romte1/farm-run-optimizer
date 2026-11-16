@@ -27,6 +27,7 @@ import net.runelite.api.NPCComposition;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ObjectComposition;
+import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
@@ -214,6 +215,7 @@ public class HerbRunPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		loadWorldMap();
 		panel = new HerbRunPanel(itemManager, timers, this::resetTimers, this::setRun,
 			this::toggleTeleport, this::setUseSpells, this::setUseTabs, this::toggleCrop, this::togglePatch,
 			this::setSetting);
@@ -1824,19 +1826,50 @@ public class HerbRunPlugin extends Plugin
 
 	// ================================================================ built-in guide line
 
+	/** Corners of the line to draw (world tiles), from you to the target. */
 	private volatile List<WorldPoint> guidePath = Collections.emptyList();
-	private WorldPoint guideFrom;
+	/** Every step of the current route (world x, y), kept so the line stays put while you follow it. */
+	private List<int[]> guideSteps = Collections.emptyList();
 	private String guideKey;
+	private WorldPoint guideFrom;
+	/** Walking map of the whole world, loaded in the background at start-up. */
+	private volatile WorldWalkMap worldMap;
+	private volatile boolean worldMapLoading;
 
 	List<WorldPoint> getGuidePath()
 	{
 		return guidePath;
 	}
 
+	private void loadWorldMap()
+	{
+		if (worldMap != null || worldMapLoading)
+		{
+			return;
+		}
+		worldMapLoading = true;
+		Thread t = new Thread(() ->
+		{
+			try (java.io.InputStream in = HerbRunPlugin.class.getResourceAsStream("walk-map.zip"))
+			{
+				if (in != null)
+				{
+					worldMap = WorldWalkMap.load(in);
+				}
+			}
+			catch (Exception e)
+			{
+				log.warn("Couldn't load the walking map; the guide line will use the loaded area only", e);
+			}
+		}, "farm-run-walk-map");
+		t.setDaemon(true);
+		t.start();
+	}
+
 	/**
-	 * Works out the walking route over the loaded map with the game's collision data: to the
-	 * gardener when you need to pay them, to the fairy ring / spirit tree first, otherwise to the
-	 * patch (or towards it, when it's beyond the loaded area).
+	 * Works out the walking route: to the gardener when you need to pay them, to the fairy ring /
+	 * spirit tree first, otherwise to a tile beside the patch. Uses the whole-world walking map, so
+	 * the route is right even before the target area has loaded.
 	 */
 	private void updateGuideLine(FarmPatch next, boolean leading)
 	{
@@ -1844,74 +1877,178 @@ public class HerbRunPlugin extends Plugin
 		Player player = client.getLocalPlayer();
 		if (!config.guideLine() || next == null || target == null || player == null)
 		{
-			guidePath = Collections.emptyList();
+			clearGuide();
 			return;
 		}
 		WorldPoint me = player.getWorldLocation();
 		LocalPoint meLocal = player.getLocalLocation();
-		net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
-		if (me == null || meLocal == null || maps == null || me.getPlane() != target.getPlane()
-			|| me.getPlane() >= maps.length || maps[me.getPlane()] == null
-			|| dist(me, target.getX(), target.getY()) > 150)
+		if (me == null || meLocal == null || me.getPlane() != target.getPlane()
+			|| dist(me, target.getX(), target.getY()) > MAX_GUIDE_TILES)
 		{
-			guidePath = Collections.emptyList(); // far away: teleport first
+			clearGuide(); // far away: teleport first
 			return;
 		}
 		int baseX = me.getX() - meLocal.getSceneX();
 		int baseY = me.getY() - meLocal.getSceneY();
 
-		// The target box, in scene tiles.
-		int minX = target.getX() - baseX;
-		int minY = target.getY() - baseY;
+		// The target box, in world tiles: the real object when it's loaded, else the known tile.
+		int minX = target.getX();
+		int minY = target.getY();
 		int maxX = minX;
 		int maxY = minY;
+		boolean exact = false;
+		boolean onto = false;
 		NPC gardener = payLabel != null ? getGardenerToPay() : null;
 		TileObject lead = leading ? navLeadObject : null;
 		GameObject patchObj = leading ? null : objectFor(next);
-		if (gardener != null && gardener.getLocalLocation() != null)
+		if (gardener != null && gardener.getWorldLocation() != null)
 		{
-			minX = maxX = gardener.getLocalLocation().getSceneX();
-			minY = maxY = gardener.getLocalLocation().getSceneY();
+			minX = maxX = gardener.getWorldLocation().getX();
+			minY = maxY = gardener.getWorldLocation().getY();
+			exact = true;
 		}
 		else if (lead instanceof GameObject)
 		{
 			GameObject g = (GameObject) lead;
-			minX = g.getSceneMinLocation().getX();
-			minY = g.getSceneMinLocation().getY();
-			maxX = g.getSceneMaxLocation().getX();
-			maxY = g.getSceneMaxLocation().getY();
+			minX = baseX + g.getSceneMinLocation().getX();
+			minY = baseY + g.getSceneMinLocation().getY();
+			maxX = baseX + g.getSceneMaxLocation().getX();
+			maxY = baseY + g.getSceneMaxLocation().getY();
+			exact = true;
 		}
-		else if (lead != null && lead.getLocalLocation() != null)
+		else if (lead != null && lead.getWorldLocation() != null)
 		{
-			minX = maxX = lead.getLocalLocation().getSceneX();
-			minY = maxY = lead.getLocalLocation().getSceneY();
+			minX = maxX = lead.getWorldLocation().getX();
+			minY = maxY = lead.getWorldLocation().getY();
+			exact = true;
 		}
 		else if (patchObj != null)
 		{
-			minX = patchObj.getSceneMinLocation().getX();
-			minY = patchObj.getSceneMinLocation().getY();
-			maxX = patchObj.getSceneMaxLocation().getX();
-			maxY = patchObj.getSceneMaxLocation().getY();
+			minX = baseX + patchObj.getSceneMinLocation().getX();
+			minY = baseY + patchObj.getSceneMinLocation().getY();
+			maxX = baseX + patchObj.getSceneMaxLocation().getX();
+			maxY = baseY + patchObj.getSceneMaxLocation().getY();
+			exact = true;
+		}
+		if (leading && navRingLabel != null && navRingLabel.startsWith("Fairy ring"))
+		{
+			onto = true; // you stand in a fairy ring
 		}
 
-		// Only work it out again when you or the target moved.
-		String key = minX + "," + minY + "," + maxX + "," + maxY + "," + baseX + "," + baseY;
+		String key = minX + "," + minY + "," + maxX + "," + maxY + "," + me.getPlane() + "," + onto;
 		if (me.equals(guideFrom) && key.equals(guideKey))
 		{
 			return;
 		}
+
+		PathGuide.Walkable map;
+		WorldWalkMap world = worldMap;
+		if (world != null && world.hasRegion(me.getX(), me.getY()))
+		{
+			map = world;
+		}
+		else
+		{
+			net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
+			if (maps == null || me.getPlane() >= maps.length || maps[me.getPlane()] == null)
+			{
+				clearGuide();
+				return;
+			}
+			map = PathGuide.scene(maps[me.getPlane()].getFlags(), baseX, baseY);
+		}
+
+		// Still on the same route? Keep it and just trim the part you've walked, so the line
+		// doesn't jump about between routes that are equally short.
+		List<int[]> steps = null;
+		if (key.equals(guideKey) && !guideSteps.isEmpty())
+		{
+			int limit = Math.min(guideSteps.size(), 25);
+			for (int i = 0; i < limit; i++)
+			{
+				int[] t = guideSteps.get(i);
+				if (Math.max(Math.abs(t[0] - me.getX()), Math.abs(t[1] - me.getY())) <= 1)
+				{
+					steps = new ArrayList<>();
+					steps.add(new int[]{me.getX(), me.getY()});
+					steps.addAll(guideSteps.subList(i + 1, guideSteps.size()));
+					break;
+				}
+			}
+		}
+		if (steps == null)
+		{
+			steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(), minX, minY, maxX, maxY, onto, GUIDE_MARGIN);
+			// Only the rough tile known (the object isn't loaded yet): the tile may be inside the
+			// patch, so allow a slightly bigger box.
+			for (int grow = 1; steps.isEmpty() && !exact && grow <= 2; grow++)
+			{
+				steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(),
+					minX - grow, minY - grow, maxX + grow, maxY + grow, false, GUIDE_MARGIN);
+			}
+		}
 		guideFrom = me;
 		guideKey = key;
-
-		List<int[]> path = PathGuide.find(maps[me.getPlane()].getFlags(), meLocal.getSceneX(), meLocal.getSceneY(),
-			minX, minY, maxX, maxY);
-		List<WorldPoint> out = new ArrayList<>(path.size());
-		for (int[] t : path)
+		guideSteps = steps;
+		List<int[]> corners = PathGuide.smooth(map, me.getPlane(), steps);
+		List<WorldPoint> out = new ArrayList<>(corners.size());
+		for (int[] t : corners)
 		{
-			out.add(new WorldPoint(baseX + t[0], baseY + t[1], me.getPlane()));
+			out.add(new WorldPoint(t[0], t[1], me.getPlane()));
 		}
-		guidePath = out;
+		guidePath = out.size() >= 2 ? out : Collections.emptyList();
 	}
+
+	private void clearGuide()
+	{
+		guidePath = Collections.emptyList();
+		guideSteps = Collections.emptyList();
+		guideKey = null;
+		guideFrom = null;
+	}
+
+	/**
+	 * The guide line as points to draw, a tile apart (so it follows the ground), in local
+	 * coordinates; null entries are off the loaded area (break the line there).
+	 */
+	List<LocalPoint> guideLinePoints()
+	{
+		List<WorldPoint> path = guidePath;
+		Player player = client.getLocalPlayer();
+		if (path.size() < 2 || player == null)
+		{
+			return Collections.emptyList();
+		}
+		WorldPoint me = player.getWorldLocation();
+		LocalPoint anchor = player.getLocalLocation();
+		if (me == null || anchor == null)
+		{
+			return Collections.emptyList();
+		}
+		List<LocalPoint> out = new ArrayList<>();
+		for (int i = 0; i + 1 < path.size(); i++)
+		{
+			WorldPoint a = path.get(i);
+			WorldPoint b = path.get(i + 1);
+			int n = Math.max(1, Math.max(Math.abs(b.getX() - a.getX()), Math.abs(b.getY() - a.getY())));
+			for (int k = (i == 0 ? 0 : 1); k <= n; k++)
+			{
+				double fx = a.getX() + (b.getX() - a.getX()) * (double) k / n;
+				double fy = a.getY() + (b.getY() - a.getY()) * (double) k / n;
+				int dx = (int) Math.round((fx - me.getX()) * Perspective.LOCAL_TILE_SIZE);
+				int dy = (int) Math.round((fy - me.getY()) * Perspective.LOCAL_TILE_SIZE);
+				LocalPoint lp = anchor.plus(dx, dy);
+				int sx = lp.getSceneX();
+				int sy = lp.getSceneY();
+				out.add(sx < 1 || sy < 1 || sx >= SCENE_TILES - 1 || sy >= SCENE_TILES - 1 ? null : lp);
+			}
+		}
+		return out;
+	}
+
+	private static final int MAX_GUIDE_TILES = 250;
+	private static final int GUIDE_MARGIN = 48;
+	private static final int SCENE_TILES = 104;
 
 	private static final int RING_LEAD_RANGE = 120;
 	/** The spirit tree just north-west of the Grand Exchange. */

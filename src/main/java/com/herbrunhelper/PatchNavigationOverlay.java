@@ -218,20 +218,25 @@ public class PatchNavigationOverlay extends Overlay
 	/** The built-in walking line: through the middle of each tile of the route, on the ground. */
 	private void renderGuideLine(Graphics2D graphics)
 	{
-		java.util.List<WorldPoint> path = plugin.getGuidePath();
-		if (path.size() < 2)
+		java.util.List<LocalPoint> points = plugin.guideLinePoints();
+		if (points.size() < 2)
 		{
 			return;
 		}
+		java.util.List<WorldPoint> corners = plugin.getGuidePath();
+		if (corners.isEmpty())
+		{
+			return;
+		}
+		int plane = corners.get(0).getPlane();
 		java.awt.geom.Path2D.Double line = new java.awt.geom.Path2D.Double();
 		boolean started = false;
-		for (WorldPoint w : path)
+		for (LocalPoint lp : points)
 		{
-			LocalPoint lp = LocalPoint.fromWorld(client, w);
-			Point p = lp == null ? null : Perspective.localToCanvas(client, lp, w.getPlane());
+			Point p = lp == null ? null : Perspective.localToCanvas(client, lp, plane);
 			if (p == null)
 			{
-				started = false; // off screen: break the line here
+				started = false; // off the loaded area or off screen: break the line here
 				continue;
 			}
 			if (started)
