@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-16.
 
 ## Status
 
-Version **1.5.0**. Live on the Plugin Hub.
+Version **1.5.1**. Live on the Plugin Hub.
 
 ## Done
 
@@ -37,6 +37,7 @@ Version **1.5.0**. Live on the Plugin Hub.
 - [x] Patch data generated from RuneLite source (`scripts/`), all 28 patches verified
 
 ## Recent fixes
+- 1.5.1: guide line uses doors, gates and Agility shortcuts (walk-links.tsv from Shortest Path's transports via scripts/build_walk_links.py; shortcuts filtered by boosted Agility).
 - 1.5.0: guide line uses the whole-world walking map (Shortest Path's collision map, BSD-2), A* with real distances, smoothing, stays put while followed, minimap route. Tested on real map data: Morytania to ALQ, Varlamore, Catherby, all tree patches.
 - Tree run no longer sends you to patches you don't use when you're short on saplings
 - Patch outline finds the real patch even when something is growing on it

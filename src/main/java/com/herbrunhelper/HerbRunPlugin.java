@@ -1854,7 +1854,15 @@ public class HerbRunPlugin extends Plugin
 			{
 				if (in != null)
 				{
-					worldMap = WorldWalkMap.load(in);
+					WorldWalkMap m = WorldWalkMap.load(in);
+					try (java.io.InputStream links = HerbRunPlugin.class.getResourceAsStream("walk-links.tsv"))
+					{
+						if (links != null)
+						{
+							m.loadLinks(links);
+						}
+					}
+					worldMap = m;
 				}
 			}
 			catch (Exception e)
@@ -1935,7 +1943,8 @@ public class HerbRunPlugin extends Plugin
 			onto = true; // you stand in a fairy ring
 		}
 
-		String key = minX + "," + minY + "," + maxX + "," + maxY + "," + me.getPlane() + "," + onto;
+		String key = minX + "," + minY + "," + maxX + "," + maxY + "," + me.getPlane() + "," + onto
+			+ "," + client.getBoostedSkillLevel(Skill.AGILITY);
 		if (me.equals(guideFrom) && key.equals(guideKey))
 		{
 			return;
@@ -1945,6 +1954,7 @@ public class HerbRunPlugin extends Plugin
 		WorldWalkMap world = worldMap;
 		if (world != null && world.hasRegion(me.getX(), me.getY()))
 		{
+			world.setAgility(client.getBoostedSkillLevel(Skill.AGILITY));
 			map = world;
 		}
 		else

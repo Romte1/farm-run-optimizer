@@ -23,10 +23,91 @@ final class WorldWalkMap implements PathGuide.Walkable
 	private static final int BITS_PER_PLANE = REGION * REGION * BITS_PER_TILE;
 
 	private final Map<Integer, BitSet> regions;
+	/** Doors, gates and shortcuts by origin tile: {destX, destY, agility, duration} per link. */
+	private final Map<Long, int[]> links = new HashMap<>();
+	/** Your Agility level, for which shortcuts you can use. */
+	private volatile int agility;
 
 	private WorldWalkMap(Map<Integer, BitSet> regions)
 	{
 		this.regions = regions;
+	}
+
+	void setAgility(int level)
+	{
+		agility = level;
+	}
+
+	/**
+	 * Adds doors, gates and agility shortcuts (walk-links.tsv, built by
+	 * scripts/build_walk_links.py from Shortest Path's transport lists).
+	 */
+	void loadLinks(InputStream in) throws IOException
+	{
+		java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+		String line;
+		while ((line = r.readLine()) != null)
+		{
+			if (line.isEmpty() || line.startsWith("#"))
+			{
+				continue;
+			}
+			String[] c = line.split("\t");
+			if (c.length < 7)
+			{
+				continue;
+			}
+			try
+			{
+				long k = tile(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+				int[] add = {Integer.parseInt(c[3]), Integer.parseInt(c[4]), Integer.parseInt(c[5]), Integer.parseInt(c[6])};
+				int[] old = links.get(k);
+				if (old == null)
+				{
+					links.put(k, add);
+				}
+				else
+				{
+					int[] both = java.util.Arrays.copyOf(old, old.length + 4);
+					System.arraycopy(add, 0, both, old.length, 4);
+					links.put(k, both);
+				}
+			}
+			catch (NumberFormatException e)
+			{
+				// skip the line
+			}
+		}
+	}
+
+	private static long tile(int x, int y, int z)
+	{
+		return ((long) z << 40) | ((long) x << 20) | y;
+	}
+
+	@Override
+	public int[] links(int x, int y, int z)
+	{
+		int[] l = links.get(tile(x, y, z));
+		if (l == null)
+		{
+			return null;
+		}
+		int level = agility;
+		int[] out = new int[l.length / 4 * 3];
+		int n = 0;
+		for (int i = 0; i < l.length; i += 4)
+		{
+			if (l[i + 2] > level)
+			{
+				continue;
+			}
+			out[n++] = l[i];
+			out[n++] = l[i + 1];
+			// A tick is about two tiles' worth of running.
+			out[n++] = Math.max(1, l[i + 3]) * 20;
+		}
+		return n == 0 ? null : java.util.Arrays.copyOf(out, n);
 	}
 
 	static WorldWalkMap load(InputStream in) throws IOException

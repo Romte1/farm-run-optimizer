@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.1 (2026-11-16)
+- **Guide line uses doors, gates and Agility shortcuts.** The walking map counts doors and gates as closed, so the line was taking long detours (or going the wrong way, like at Nemus Retreat). It now goes through doors and gates, and through Agility shortcuts your current Agility level can use (broken walls, stepping stones, tunnels...). The list comes from the Shortest Path plugin (see NOTICE), filtered to ones that need nothing but an Agility level.
+
 ## 1.5.0 (2026-11-16)
 - **Guide line reworked.** It now plans with a walking map of the whole game (from the Shortest Path plugin, credited in NOTICE) instead of only the area around you, so it no longer heads off the wrong way (into the sea at Morytania, away from the patch in Varlamore) when the stop isn't loaded yet.
 - **Straighter, steadier line.** Routes use real distances and are smoothed into straight stretches instead of zigzagging, and the line stays the same while you follow it instead of jumping between equally short routes.

@@ -23,6 +23,15 @@ final class PathGuide
 		/** Can you take one step from (x, y) by (dx, dy), each -1, 0 or 1? */
 		boolean step(int x, int y, int z, int dx, int dy);
 
+		/**
+		 * Doors, gates and shortcuts you can use from (x, y): flattened {destX, destY, cost, ...},
+		 * or null for none.
+		 */
+		default int[] links(int x, int y, int z)
+		{
+			return null;
+		}
+
 		/** Is there a wall on the edge between (x, y) and the tile next to it at (dx, dy)? */
 		default boolean wall(int x, int y, int z, int dx, int dy)
 		{
@@ -185,6 +194,35 @@ final class PathGuide
 					cost[next] = c;
 					prev[next] = cur;
 					open.push(next, c + heuristic(nx, ny, minX, minY, maxX, maxY));
+				}
+			}
+			// Doors, gates and shortcuts.
+			int[] links = map.links(x, y, z);
+			if (links != null)
+			{
+				for (int i = 0; i + 2 < links.length; i += 3)
+				{
+					int nx = links[i];
+					int ny = links[i + 1];
+					int lx = nx - wx0;
+					int ly = ny - wy0;
+					if (lx < 0 || ly < 0 || lx >= w || ly >= h)
+					{
+						continue;
+					}
+					int next = lx * h + ly;
+					boolean inBox = nx >= minX && nx <= maxX && ny >= minY && ny <= maxY;
+					if (closed[next] || (inBox && !onto))
+					{
+						continue;
+					}
+					int c = cost[cur] + links[i + 2];
+					if (c < cost[next])
+					{
+						cost[next] = c;
+						prev[next] = cur;
+						open.push(next, c + heuristic(nx, ny, minX, minY, maxX, maxY));
+					}
 				}
 			}
 		}

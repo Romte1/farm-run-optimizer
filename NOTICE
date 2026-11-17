@@ -60,7 +60,9 @@ https://github.com/Skretzo/shortest-path by Skretzo and contributors
 
 The walking map used for the guide line (src/main/resources/com/herbrunhelper/walk-map.zip) is
 Shortest Path's collision map (src/main/resources/collision-map.zip, from commit a7dd4a2), included
-unchanged. WorldWalkMap.java reads it; none of Shortest Path's code is included. When both plugins
+unchanged. The doors, gates and Agility shortcuts the line can use
+(src/main/resources/com/herbrunhelper/walk-links.tsv) are taken from its transport lists
+(transports/transports.tsv and transports/agility_shortcuts.tsv) by scripts/build_walk_links.py. WorldWalkMap.java reads it; none of Shortest Path's code is included. When both plugins
 are installed and the setting is on, Farm Run Optimizer can also send Shortest Path the next stop
 (through RuneLite's plugin messages) so it draws its own line.
 
