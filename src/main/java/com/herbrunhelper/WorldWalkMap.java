@@ -104,8 +104,8 @@ final class WorldWalkMap implements PathGuide.Walkable
 			}
 			out[n++] = l[i];
 			out[n++] = l[i + 1];
-			// A tick is about two tiles' worth of running.
-			out[n++] = Math.max(1, l[i + 3]) * 20;
+			out[n++] = Math.max(1, l[i + 3]); // in game ticks, like a walking step
+
 		}
 		return n == 0 ? null : java.util.Arrays.copyOf(out, n);
 	}

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 (2026-11-16)
+- **Guide line steadied the way the Shortest Path plugin does it.**
+  - It now draws the exact tiles your character walks when you click along it (the game's own walking order: west, east, south, north, then diagonals), not a straightened line.
+  - It keeps the same route while you follow it, and only works it out again if you go more than 10 tiles off it (Shortest Path's default) or the next stop changes.
+  - The part you've already walked disappears.
+  - A gardener walking about no longer makes the line re-plan every tick; it only re-plans if they wander more than 3 tiles from the end of the line.
+
 ## 1.5.1 (2026-11-16)
 - **Guide line uses doors, gates and Agility shortcuts.** The walking map counts doors and gates as closed, so the line was taking long detours (or going the wrong way, like at Nemus Retreat). It now goes through doors and gates, and through Agility shortcuts your current Agility level can use (broken walls, stepping stones, tunnels...). The list comes from the Shortest Path plugin (see NOTICE), filtered to ones that need nothing but an Agility level.
 

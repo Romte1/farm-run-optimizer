@@ -10,10 +10,10 @@ import java.util.List;
  * any {@link Walkable} map: the whole-world walking map, or the part of the map the game has
  * loaded (scene collision flags) as a fallback.
  *
- * The search is A* with real distances (a diagonal step costs more than a straight one), so the
- * route is the one that looks shortest, not just the fewest steps. The route is then smoothed:
- * corners are skipped wherever you could walk straight between them, so the line runs in straight
- * stretches instead of zigzagging.
+ * The search is A* in game ticks (every walking step is one tick, a door or shortcut its own time).
+ * Each walking stretch is then rewritten into the exact tiles the game's own walking takes when
+ * you click its end ({@link #gameWalk}), the way the Shortest Path plugin does it, so the line is
+ * where your character really walks.
  */
 final class PathGuide
 {
@@ -46,9 +46,11 @@ final class PathGuide
 	/** Blocked tile: object, floor decoration, blocked floor, or no map data loaded there. */
 	static final int FULL = 0x100 | 0x40000 | 0x200000 | 0x1000000;
 
-	private static final int STRAIGHT = 10;
-	private static final int DIAGONAL = 14;
-	private static final int[][] DIRS = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+	/**
+	 * The order the game's own walking checks a tile's neighbours: W, E, S, N, SW, SE, NW, NE
+	 * (as documented by the Shortest Path plugin's GameWalkOrder).
+	 */
+	static final int[][] DIRS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
 	/** Largest search window, in tiles per side. */
 	static final int MAX_WINDOW = 640;
 
@@ -188,7 +190,7 @@ final class PathGuide
 				{
 					continue;
 				}
-				int c = cost[cur] + (d[0] != 0 && d[1] != 0 ? DIAGONAL : STRAIGHT);
+				int c = cost[cur] + 1;
 				if (c < cost[next])
 				{
 					cost[next] = c;
@@ -266,15 +268,10 @@ final class PathGuide
 		return false;
 	}
 
-	/** Shortest possible walking cost to the box, ignoring walls (keeps A* exact). */
+	/** Fewest possible steps to the box, ignoring walls (keeps A* exact). */
 	private static int heuristic(int x, int y, int minX, int minY, int maxX, int maxY)
 	{
-		int dx = x < minX ? minX - x : x > maxX ? x - maxX : 0;
-		int dy = y < minY ? minY - y : y > maxY ? y - maxY : 0;
-		int lo = Math.min(dx, dy);
-		int hi = Math.max(dx, dy);
-		int octile = lo * DIAGONAL + (hi - lo) * STRAIGHT;
-		return Math.max(0, octile - DIAGONAL);
+		return Math.max(0, distToBox(x, y, minX, minY, maxX, maxY) - 1);
 	}
 
 	/** Chebyshev distance from a tile to a box (0 inside it). */
@@ -286,64 +283,119 @@ final class PathGuide
 	}
 
 	/**
-	 * Smooths a step-by-step route: from each corner, jumps as far ahead as you could walk in a
-	 * straight line. Returns the corners (start and end included).
+	 * Rewrites every walking stretch of a route (between doors and shortcuts) into the game's own
+	 * walk between its ends: a breadth-first search from the start in the game's neighbour order,
+	 * traced back from the end through each tile's first discoverer. That's the path your character
+	 * takes when you click the end, and every part of it is also the game's path between its own
+	 * tiles, so the line doesn't change as you walk along it.
 	 */
-	static List<int[]> smooth(Walkable map, int z, List<int[]> path)
+	static List<int[]> gameWalk(Walkable map, int z, List<int[]> path)
 	{
 		if (path.size() <= 2)
 		{
 			return path;
 		}
 		List<int[]> out = new ArrayList<>();
-		int i = 0;
 		out.add(path.get(0));
-		while (i < path.size() - 1)
+		int legStart = 0;
+		for (int i = 1; i <= path.size(); i++)
 		{
-			int j = i + 1;
-			while (j + 1 < path.size() && straightWalk(map, z, path.get(i), path.get(j + 1)))
+			boolean walkStep = i < path.size() && isStep(map, z, path.get(i - 1), path.get(i));
+			if (walkStep)
 			{
-				j++;
+				continue;
 			}
-			out.add(path.get(j));
-			i = j;
+			// path[legStart .. i-1] is one walking stretch.
+			int legEnd = i - 1;
+			if (legEnd > legStart)
+			{
+				List<int[]> walk = walkBetween(map, z, path.get(legStart), path.get(legEnd), legEnd - legStart);
+				if (walk == null)
+				{
+					walk = path.subList(legStart, legEnd + 1);
+				}
+				out.addAll(walk.subList(1, walk.size()));
+			}
+			if (i < path.size())
+			{
+				out.add(path.get(i)); // through a door or shortcut
+			}
+			legStart = i;
 		}
 		return out;
 	}
 
-	/** Can you walk in a straight line from a to b (tile by tile along the line)? */
-	static boolean straightWalk(Walkable map, int z, int[] a, int[] b)
+	private static boolean isStep(Walkable map, int z, int[] a, int[] b)
 	{
-		int x = a[0];
-		int y = a[1];
-		int dx = Math.abs(b[0] - x);
-		int dy = Math.abs(b[1] - y);
-		int sx = Integer.signum(b[0] - x);
-		int sy = Integer.signum(b[1] - y);
-		int err = dx - dy;
-		while (x != b[0] || y != b[1])
+		int dx = b[0] - a[0];
+		int dy = b[1] - a[1];
+		return Math.max(Math.abs(dx), Math.abs(dy)) == 1 && map.step(a[0], a[1], z, dx, dy);
+	}
+
+	/** The game's walk from a to b, if it is no longer than maxSteps; else null. */
+	private static List<int[]> walkBetween(Walkable map, int z, int[] a, int[] b, int maxSteps)
+	{
+		int r = maxSteps + 1;
+		int x0 = Math.min(a[0], b[0]) - r;
+		int y0 = Math.min(a[1], b[1]) - r;
+		int w = Math.abs(a[0] - b[0]) + 2 * r + 1;
+		int h = Math.abs(a[1] - b[1]) + 2 * r + 1;
+		if (w > MAX_WINDOW || h > MAX_WINDOW)
 		{
-			int e2 = 2 * err;
-			int mx = 0;
-			int my = 0;
-			if (e2 > -dy)
-			{
-				err -= dy;
-				mx = sx;
-			}
-			if (e2 < dx)
-			{
-				err += dx;
-				my = sy;
-			}
-			if (!map.step(x, y, z, mx, my))
-			{
-				return false;
-			}
-			x += mx;
-			y += my;
+			return null;
 		}
-		return true;
+		int[] prev = new int[w * h];
+		int[] dist = new int[w * h];
+		Arrays.fill(prev, -2);
+		int[] queue = new int[w * h];
+		int head = 0;
+		int tail = 0;
+		int start = (a[0] - x0) * h + (a[1] - y0);
+		int goal = (b[0] - x0) * h + (b[1] - y0);
+		prev[start] = -1;
+		queue[tail++] = start;
+		while (head < tail)
+		{
+			int cur = queue[head++];
+			if (cur == goal)
+			{
+				break;
+			}
+			if (dist[cur] >= maxSteps)
+			{
+				continue;
+			}
+			int x = cur / h + x0;
+			int y = cur % h + y0;
+			for (int[] d : DIRS)
+			{
+				int lx = x + d[0] - x0;
+				int ly = y + d[1] - y0;
+				if (lx < 0 || ly < 0 || lx >= w || ly >= h)
+				{
+					continue;
+				}
+				int next = lx * h + ly;
+				if (prev[next] != -2 || !map.step(x, y, z, d[0], d[1]))
+				{
+					continue;
+				}
+				prev[next] = cur;
+				dist[next] = dist[cur] + 1;
+				queue[tail++] = next;
+			}
+		}
+		if (prev[goal] == -2)
+		{
+			return null;
+		}
+		List<int[]> walk = new ArrayList<>();
+		for (int at = goal; at != -1; at = prev[at])
+		{
+			walk.add(new int[]{at / h + x0, at % h + y0});
+		}
+		Collections.reverse(walk);
+		return walk;
 	}
 
 	/** Small binary min-heap of (node, priority). */

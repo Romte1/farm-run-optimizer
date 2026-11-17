@@ -1832,6 +1832,7 @@ public class HerbRunPlugin extends Plugin
 	private List<int[]> guideSteps = Collections.emptyList();
 	private String guideKey;
 	private WorldPoint guideFrom;
+	private int[] guideBox;
 	/** Walking map of the whole world, loaded in the background at start-up. */
 	private volatile WorldWalkMap worldMap;
 	private volatile boolean worldMapLoading;
@@ -1943,52 +1944,46 @@ public class HerbRunPlugin extends Plugin
 			onto = true; // you stand in a fairy ring
 		}
 
-		String key = minX + "," + minY + "," + maxX + "," + maxY + "," + me.getPlane() + "," + onto
-			+ "," + client.getBoostedSkillLevel(Skill.AGILITY);
-		if (me.equals(guideFrom) && key.equals(guideKey))
+		int agility = client.getBoostedSkillLevel(Skill.AGILITY);
+		String key = (gardener != null ? "gardener" : minX + "," + minY + "," + maxX + "," + maxY)
+			+ "," + me.getPlane() + "," + onto + "," + exact + "," + agility;
+		if (me.equals(guideFrom) && key.equals(guideKey) && guideBox != null
+			&& guideBox[0] == minX && guideBox[1] == minY)
 		{
 			return;
 		}
+		guideFrom = me;
 
-		PathGuide.Walkable map;
-		WorldWalkMap world = worldMap;
-		if (world != null && world.hasRegion(me.getX(), me.getY()))
+		// Like the Shortest Path plugin: keep the route you're following, and only work it out
+		// again when the target changes or you've gone more than RECALC_TILES off it. A moving
+		// gardener only counts once they've wandered away from the end of the line.
+		boolean sameTarget = key.equals(guideKey);
+		if (sameTarget && gardener != null && !guideSteps.isEmpty())
 		{
-			world.setAgility(client.getBoostedSkillLevel(Skill.AGILITY));
-			map = world;
+			int[] end = guideSteps.get(guideSteps.size() - 1);
+			sameTarget = PathGuide.distToBox(end[0], end[1], minX, minY, maxX, maxY) <= GARDENER_SLACK;
 		}
-		else
+		int index = sameTarget ? nearestStep(guideSteps, me) : -1;
+		if (index < 0)
 		{
-			net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
-			if (maps == null || me.getPlane() >= maps.length || maps[me.getPlane()] == null)
+			PathGuide.Walkable map;
+			WorldWalkMap world = worldMap;
+			if (world != null && world.hasRegion(me.getX(), me.getY()))
 			{
-				clearGuide();
-				return;
+				world.setAgility(agility);
+				map = world;
 			}
-			map = PathGuide.scene(maps[me.getPlane()].getFlags(), baseX, baseY);
-		}
-
-		// Still on the same route? Keep it and just trim the part you've walked, so the line
-		// doesn't jump about between routes that are equally short.
-		List<int[]> steps = null;
-		if (key.equals(guideKey) && !guideSteps.isEmpty())
-		{
-			int limit = Math.min(guideSteps.size(), 25);
-			for (int i = 0; i < limit; i++)
+			else
 			{
-				int[] t = guideSteps.get(i);
-				if (Math.max(Math.abs(t[0] - me.getX()), Math.abs(t[1] - me.getY())) <= 1)
+				net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
+				if (maps == null || me.getPlane() >= maps.length || maps[me.getPlane()] == null)
 				{
-					steps = new ArrayList<>();
-					steps.add(new int[]{me.getX(), me.getY()});
-					steps.addAll(guideSteps.subList(i + 1, guideSteps.size()));
-					break;
+					clearGuide();
+					return;
 				}
+				map = PathGuide.scene(maps[me.getPlane()].getFlags(), baseX, baseY);
 			}
-		}
-		if (steps == null)
-		{
-			steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(), minX, minY, maxX, maxY, onto, GUIDE_MARGIN);
+			List<int[]> steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(), minX, minY, maxX, maxY, onto, GUIDE_MARGIN);
 			// Only the rough tile known (the object isn't loaded yet): the tile may be inside the
 			// patch, so allow a slightly bigger box.
 			for (int grow = 1; steps.isEmpty() && !exact && grow <= 2; grow++)
@@ -1996,17 +1991,46 @@ public class HerbRunPlugin extends Plugin
 				steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(),
 					minX - grow, minY - grow, maxX + grow, maxY + grow, false, GUIDE_MARGIN);
 			}
+			guideSteps = PathGuide.gameWalk(map, me.getPlane(), steps);
+			guideKey = key;
+			guideBox = new int[]{minX, minY};
+			index = 0;
 		}
-		guideFrom = me;
-		guideKey = key;
-		guideSteps = steps;
-		List<int[]> corners = PathGuide.smooth(map, me.getPlane(), steps);
-		List<WorldPoint> out = new ArrayList<>(corners.size());
-		for (int[] t : corners)
+		guideBox = new int[]{minX, minY};
+
+		// Draw from where you are on it; the part you've walked disappears.
+		List<WorldPoint> out = new ArrayList<>();
+		for (int i = index; i < guideSteps.size(); i++)
 		{
+			int[] t = guideSteps.get(i);
 			out.add(new WorldPoint(t[0], t[1], me.getPlane()));
 		}
 		guidePath = out.size() >= 2 ? out : Collections.emptyList();
+	}
+
+	/**
+	 * Your place on the route: the step you're standing on, else the nearest step within
+	 * RECALC_TILES; -1 when you're further off than that (work it out again).
+	 */
+	private static int nearestStep(List<int[]> steps, WorldPoint me)
+	{
+		int best = -1;
+		int bestDist = Integer.MAX_VALUE;
+		for (int i = 0; i < steps.size(); i++)
+		{
+			int[] t = steps.get(i);
+			int d = Math.max(Math.abs(t[0] - me.getX()), Math.abs(t[1] - me.getY()));
+			if (d == 0)
+			{
+				return i;
+			}
+			if (d < bestDist)
+			{
+				bestDist = d;
+				best = i;
+			}
+		}
+		return bestDist <= RECALC_TILES ? best : -1;
 	}
 
 	private void clearGuide()
@@ -2015,6 +2039,7 @@ public class HerbRunPlugin extends Plugin
 		guideSteps = Collections.emptyList();
 		guideKey = null;
 		guideFrom = null;
+		guideBox = null;
 	}
 
 	/**
@@ -2057,6 +2082,10 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	private static final int MAX_GUIDE_TILES = 250;
+	/** Same as the Shortest Path plugin's default "Recalculate Distance". */
+	private static final int RECALC_TILES = 10;
+	/** How far the gardener may wander from the end of the line before it's worked out again. */
+	private static final int GARDENER_SLACK = 3;
 	private static final int GUIDE_MARGIN = 48;
 	private static final int SCENE_TILES = 104;
 
