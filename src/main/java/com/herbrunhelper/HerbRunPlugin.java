@@ -4,6 +4,7 @@ import com.google.inject.Provides;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -1687,6 +1688,53 @@ public class HerbRunPlugin extends Plugin
 
 	// ================================================================ navigation
 
+	/** The stop the travel state is for, and whether you've already teleported for it. */
+	private FarmPatch travelFor;
+	private boolean travelDone;
+	private WorldPoint travelLastTile;
+
+	/**
+	 * Remembers when you've done the teleport for the next stop, so you're not sent back to a
+	 * fairy ring or spirit tree after arriving: you're at the destination ring, or a teleport
+	 * just brought you much closer to the patch.
+	 */
+	private void updateTravelDone(FarmPatch next, RunPlan.RouteStep step, WorldPoint me, WorldPoint patch)
+	{
+		if (next != travelFor)
+		{
+			travelFor = next;
+			travelDone = false;
+		}
+		if (next == null || me == null || patch == null)
+		{
+			travelLastTile = me;
+			return;
+		}
+		if (step != null && step.teleport != null && step.teleport.getFairyCode() != null)
+		{
+			int[] dest = FairyRings.tile(step.teleport.getFairyCode());
+			if (dest != null && me.getPlane() == 0 && dist(me, dest[0], dest[1]) <= 20)
+			{
+				travelDone = true;
+			}
+		}
+		WorldPoint before = travelLastTile;
+		if (before != null && (before.getPlane() != me.getPlane()
+			|| dist(before, me.getX(), me.getY()) > TRAVEL_JUMP_TILES))
+		{
+			int was = dist(before, patch.getX(), patch.getY());
+			int now = dist(me, patch.getX(), patch.getY());
+			if (now <= MAX_TRAVEL_ARRIVAL_TILES && now < was - TRAVEL_JUMP_TILES)
+			{
+				travelDone = true;
+			}
+		}
+		travelLastTile = me;
+	}
+
+	private static final int TRAVEL_JUMP_TILES = 30;
+	private static final int MAX_TRAVEL_ARRIVAL_TILES = 200;
+
 	private void updateNavigation()
 	{
 		if (lastPlan == null || client.getGameState() != GameState.LOGGED_IN)
@@ -1718,7 +1766,8 @@ public class HerbRunPlugin extends Plugin
 		Player player = client.getLocalPlayer();
 		WorldPoint me = player == null ? null : player.getWorldLocation();
 		RunPlan.RouteStep step = next == null ? null : stepFor(next);
-		if (step != null && step.teleport != null && me != null && me.getPlane() == 0)
+		updateTravelDone(next, step, me, target);
+		if (step != null && step.teleport != null && me != null && me.getPlane() == 0 && !travelDone)
 		{
 			String code = step.teleport.getFairyCode();
 			if (code != null)
@@ -1729,6 +1778,11 @@ public class HerbRunPlugin extends Plugin
 				if ((dest == null || dist(me, dest[0], dest[1]) > 20) && dist(me, target.getX(), target.getY()) > 25)
 				{
 					TileObject ringObj = nearest(fairyRingObjects, me, 40);
+					if (ringObj != null && dest != null && ringObj.getWorldLocation() != null
+						&& dist(ringObj.getWorldLocation(), dest[0], dest[1]) <= 3)
+					{
+						ringObj = null; // that's the ring you arrive at, not the one to use
+					}
 					int i = lastPlan.route.indexOf(step);
 					int[] ring = FairyRings.tile(FairyRings.startRing(step, i > 0 ? lastPlan.route.get(i - 1) : null));
 					if (ringObj != null)
@@ -1833,8 +1887,8 @@ public class HerbRunPlugin extends Plugin
 	private String guideKey;
 	private WorldPoint guideFrom;
 	private int[] guideBox;
-	/** How much of the route you've walked (that part isn't drawn). */
-	private int guideIndex;
+	/** You've reached the end of the line: it stays hidden until the next one. */
+	private boolean guideReached;
 	/** Which stop (and ring / tree) the route was worked out for. */
 	private String guideKind;
 	/** Walking map of the whole world, loaded in the background at start-up. */
@@ -1959,8 +2013,9 @@ public class HerbRunPlugin extends Plugin
 		WorldPoint before = guideFrom;
 		guideFrom = me;
 
-		// The line stays fixed on the ground: it's only worked out again when the target changes,
-		// you teleport, or you end up far away from it. Walking off it doesn't move it.
+		// The line goes from A (where you were when it was worked out) to B (the patch, ring, tree
+		// or gardener) and stays exactly as it is until you reach B or the stop changes. It's only
+		// worked out again for a new B, or after a teleport (a new A).
 		boolean sameTarget = key.equals(guideKey);
 		if (!sameTarget && guideKey != null && !guideSteps.isEmpty() && gardener == null)
 		{
@@ -1981,17 +2036,7 @@ public class HerbRunPlugin extends Plugin
 		}
 		boolean teleported = before != null && (before.getPlane() != me.getPlane()
 			|| Math.max(Math.abs(before.getX() - me.getX()), Math.abs(before.getY() - me.getY())) > TELEPORT_TILES);
-		int index = -1;
-		if (sameTarget && !teleported && !guideSteps.isEmpty())
-		{
-			int near = distanceToSteps(guideSteps, me);
-			if (near <= FAR_FROM_LINE_TILES)
-			{
-				// Walked part disappears only once you're on the line; otherwise leave it as is.
-				int on = stepUnder(guideSteps, me, guideIndex);
-				index = on >= 0 ? on : guideIndex;
-			}
-		}
+		int index = sameTarget && !teleported && guideKey != null ? 0 : -1;
 		if (index < 0)
 		{
 			PathGuide.Walkable map;
@@ -2020,52 +2065,33 @@ public class HerbRunPlugin extends Plugin
 					minX - grow, minY - grow, maxX + grow, maxY + grow, false, GUIDE_MARGIN);
 			}
 			guideSteps = PathGuide.gameWalk(map, me.getPlane(), steps);
-			guideKey = key;
+			guideReached = false;
+			// No route found: try again as you move.
+			guideKey = guideSteps.isEmpty() ? null : key;
 			guideKind = (navRingLabel == null ? "" : navRingLabel) + "|" + next;
 			index = 0;
 		}
 		guideBox = new int[]{minX, minY};
-		guideIndex = index;
 
-		// Draw from where you are on it; the part you've walked disappears.
-		List<WorldPoint> out = new ArrayList<>();
-		for (int i = index; i < guideSteps.size(); i++)
+		// Reached B: the line goes away (until the next stop gives a new B).
+		if (!guideSteps.isEmpty()
+			&& (PathGuide.distToBox(me.getX(), me.getY(), minX, minY, maxX, maxY) <= 1
+			|| Arrays.equals(guideSteps.get(guideSteps.size() - 1), new int[]{me.getX(), me.getY()})))
 		{
-			int[] t = guideSteps.get(i);
+			guideReached = true;
+		}
+		if (guideReached || guideSteps.isEmpty())
+		{
+			guidePath = Collections.emptyList();
+			return;
+		}
+		// The whole line from A to B: nothing is trimmed while you walk.
+		List<WorldPoint> out = new ArrayList<>(guideSteps.size());
+		for (int[] t : guideSteps)
+		{
 			out.add(new WorldPoint(t[0], t[1], me.getPlane()));
 		}
 		guidePath = out.size() >= 2 ? out : Collections.emptyList();
-	}
-
-	/** Index of the step you're standing on (or right next to), at or after {@code from}; else -1. */
-	private static int stepUnder(List<int[]> steps, WorldPoint me, int from)
-	{
-		int best = -1;
-		for (int i = Math.max(0, from); i < steps.size(); i++)
-		{
-			int[] t = steps.get(i);
-			int d = Math.max(Math.abs(t[0] - me.getX()), Math.abs(t[1] - me.getY()));
-			if (d == 0)
-			{
-				return i;
-			}
-			if (d == 1 && best < 0)
-			{
-				best = i;
-			}
-		}
-		return best;
-	}
-
-	/** How far you are from the nearest step of the route, in tiles. */
-	private static int distanceToSteps(List<int[]> steps, WorldPoint me)
-	{
-		int best = Integer.MAX_VALUE;
-		for (int[] t : steps)
-		{
-			best = Math.min(best, Math.max(Math.abs(t[0] - me.getX()), Math.abs(t[1] - me.getY())));
-		}
-		return best;
 	}
 
 	private void clearGuide()
@@ -2075,7 +2101,7 @@ public class HerbRunPlugin extends Plugin
 		guideKey = null;
 		guideFrom = null;
 		guideBox = null;
-		guideIndex = 0;
+		guideReached = false;
 	}
 
 	/**
@@ -2110,8 +2136,6 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	private static final int MAX_GUIDE_TILES = 250;
-	/** Only this far from the line (or after a teleport) is the route worked out again. */
-	private static final int FAR_FROM_LINE_TILES = 40;
 	/** Moving more than this in one go counts as a teleport. */
 	private static final int TELEPORT_TILES = 15;
 	/** How far the gardener may wander from the end of the line before it's worked out again. */

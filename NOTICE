@@ -93,3 +93,11 @@ Shortest Path's license (its LICENSE file, as published):
   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Quest Helper
+------------
+https://github.com/Zoinkwiz/quest-helper
+
+The built-in patch tiles in FarmPatch.java were checked against the patch locations in Quest
+Helper's herb run and tree run helpers. Only map coordinates (facts about the game) were used; no
+code was copied.

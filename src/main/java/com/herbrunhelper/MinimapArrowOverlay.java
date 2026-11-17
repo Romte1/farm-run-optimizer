@@ -69,8 +69,25 @@ class MinimapArrowOverlay extends Overlay
 			{
 				return null;
 			}
+			// The line runs from A to B; count ahead from the point nearest you.
+			int from = 0;
+			int best = Integer.MAX_VALUE;
+			for (int i = 0; i < route.size(); i++)
+			{
+				LocalPoint lp = route.get(i);
+				if (lp == null)
+				{
+					continue;
+				}
+				int d = Math.max(Math.abs(lp.getX() - meLocal.getX()), Math.abs(lp.getY() - meLocal.getY()));
+				if (d < best)
+				{
+					best = d;
+					from = i;
+				}
+			}
 			LocalPoint ahead = null;
-			for (LocalPoint lp : route)
+			for (LocalPoint lp : route.subList(from, route.size()))
 			{
 				if (lp == null)
 				{

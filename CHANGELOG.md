@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0 (2026-11-16)
+- **Guide line goes from A to B and stays put.** The whole line, from where you start to the patch, fairy ring, spirit tree or gardener, is drawn once and kept exactly as it is. Nothing is trimmed while you walk. It disappears when you reach the end, and the next stop's line takes over. It's only worked out again for a new stop, or after a teleport.
+- **No more being sent back to the ring after a fairy ring or spirit tree teleport.** Once you've arrived (at the destination ring, or a teleport took you much closer to the stop), the plugin leads you to the patch, not back to the ring you landed on. This fixes Hosidius after AKR.
+- **Correct patch tiles** for 28 patches (checked against the Quest Helper plugin's farm-run tiles): herb patches at Falador, Catherby, Ardougne, Morytania, Hosidius, Varlamore, Farming Guild, Troll Stronghold, Weiss and Harmony; the tree, fruit tree and hardwood patches; the three Fossil Island hardwood patches were well off. Lines to stops that haven't loaded yet now head to the right place (Ortus Farm, Hosidius).
+
 ## 1.6.2 (2026-11-16)
 - **Guide line no longer bounces as you walk.** Each point of the line was placed relative to your character, which glides between tiles, so the whole line slid with you. Every point is now pinned to its own map tile, like Shortest Path's line.
 - The line stays the same until you reach the patch or fairy ring: it no longer re-plans when the patch or ring loads in (if the line already ends beside it) or when an Agility boost wears off.
