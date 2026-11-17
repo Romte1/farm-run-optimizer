@@ -74,7 +74,7 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 
 ## Settings
 
-Everything can be switched on or off in the panel's **Settings** section or in RuneLite's plugin settings: the ground highlight, hint arrow, walking line, gardener highlight, inventory and bank highlights, notifications, the run-ready box, run history, which teleports to use (spells, tablets, individual items) and more.
+Everything can be switched on or off in the panel's **Settings** section or in RuneLite's plugin settings: the ground highlight, the game's hint arrow or the plugin's own steady arrow, walking line (as a line or tiles), gardener highlight, inventory and bank highlights, notifications, the run-ready box, run history, which teleports to use (spells, tablets, individual items) and more.
 
 <p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/travel-and-settings.png" alt="Travel and settings" height="520"></p>
 

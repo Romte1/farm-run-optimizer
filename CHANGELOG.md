@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.1 (2026-11-17)
+- **Game hint arrow is back** as a setting, "Game hint arrow" (on by default): the game's own yellow arrow, which also shows on the minimap. It sits on the same thing the guide line goes to: the gardener you need to pay (it follows them), the fairy ring or spirit tree to use, or the patch. It's only moved when that target changes, so it no longer jumps about, and it waits until you've done a stop's teleport. It won't clear an arrow another plugin (like Quest Helper) has set. The plugin's own "Arrow over target" stays available; turn either off if you only want one.
+
 ## 1.8.0 (2026-11-16)
 Guide line reworked to match how the Shortest Path plugin picks where to go:
 - **Tree, fruit tree and hardwood stops aim at a fixed spot**: the tile where that patch's gardener stood when the plugin first saw them (the same tile Shortest Path is sent), not the moving gardener or the patch outline. That's why Shortest Path's line worked on tree runs and ours didn't.

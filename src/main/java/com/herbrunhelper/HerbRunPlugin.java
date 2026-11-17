@@ -608,7 +608,7 @@ public class HerbRunPlugin extends Plugin
 		{
 			shortestPathTarget = null; // send the route again with the new setting
 		}
-		if (!config.hintArrow())
+		if (!config.gameHintArrow())
 		{
 			clearHintArrow();
 		}
@@ -1871,11 +1871,8 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 
-		// The game's own hint arrow isn't used any more (it blinks and can't follow objects
-		// well); the overlay draws a steady arrow instead. Clear one left by an older version.
-		clearHintArrow();
-
 		updateGuideLine(next, ringLabel != null);
+		updateGameHintArrow(next, step, ringLabel != null);
 	}
 
 	// ================================================================ built-in guide line
@@ -2453,8 +2450,75 @@ public class HerbRunPlugin extends Plugin
 	{
 		if (ourHintArrow)
 		{
-			client.clearHintArrow();
+			// Only clear it if it's still ours (another plugin may have set its own since).
+			boolean stillOurs = (hintNpc != null && hintNpc == client.getHintArrowNpc())
+				|| (hintPoint != null && hintPoint.equals(client.getHintArrowPoint()));
+			if (stillOurs)
+			{
+				client.clearHintArrow();
+			}
 			ourHintArrow = false;
+		}
+		hintNpc = null;
+		hintPoint = null;
+	}
+
+	/** What the game hint arrow is on (one of the two), so it's only set again when that changes. */
+	private NPC hintNpc;
+	private WorldPoint hintPoint;
+
+	/**
+	 * The game's own hint arrow, on the same thing the guide line goes to: the gardener to pay
+	 * (it follows them), the fairy ring or spirit tree to use, else the patch (or the gardener's
+	 * spot). It's set only when that target changes, so it doesn't jump about, and not before a
+	 * stop's teleport (nothing nearby to point at yet).
+	 */
+	private void updateGameHintArrow(FarmPatch next, RunPlan.RouteStep step, boolean leading)
+	{
+		Player player = client.getLocalPlayer();
+		WorldPoint target = navTarget;
+		if (!config.gameHintArrow() || next == null || target == null || player == null)
+		{
+			clearHintArrow();
+			return;
+		}
+		WorldPoint me = player.getWorldLocation();
+		int away = dist(me, target.getX(), target.getY());
+		if (me.getPlane() != target.getPlane() || away > MAX_GUIDE_TILES
+			|| (!leading && !travelDone && step != null && step.teleport != null && away > TELEPORT_FIRST_TILES))
+		{
+			clearHintArrow();
+			return;
+		}
+		NPC gardener = !leading && payLabel != null ? getGardenerToPay() : null;
+		if (gardener != null)
+		{
+			if (gardener != hintNpc || !ourHintArrow)
+			{
+				client.setHintArrow(gardener);
+				hintNpc = gardener;
+				hintPoint = null;
+				ourHintArrow = true;
+			}
+			return;
+		}
+		WorldPoint point = target;
+		TileObject lead = leading ? navLeadObject : null;
+		GameObject patchObj = leading ? null : objectFor(next);
+		if (lead != null && lead.getWorldLocation() != null)
+		{
+			point = lead.getWorldLocation();
+		}
+		else if (patchObj != null && patchObj.getWorldLocation() != null)
+		{
+			point = patchObj.getWorldLocation();
+		}
+		if (!point.equals(hintPoint) || hintNpc != null || !ourHintArrow)
+		{
+			client.setHintArrow(point);
+			hintPoint = point;
+			hintNpc = null;
+			ourHintArrow = true;
 		}
 	}
 

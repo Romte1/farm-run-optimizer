@@ -198,6 +198,14 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(keyName = "gameHintArrow", name = "Game hint arrow",
+		description = "Use the game's own yellow hint arrow (also shown on the minimap) on the next patch, fairy ring, spirit tree or gardener to pay",
+		position = 2, section = navSection)
+	default boolean gameHintArrow()
+	{
+		return true;
+	}
+
 	@ConfigItem(keyName = "pointerArrow", name = "Arrow over target", description = "A steady arrow over the next patch, fairy ring, spirit tree or gardener (drawn by this plugin, not the game's blinking hint arrow)", position = 2, section = navSection)
 	default boolean hintArrow()
 	{
