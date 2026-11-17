@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-16.
 
 ## Status
 
-Version **1.6.0**. Live on the Plugin Hub.
+Version **1.6.1**. Live on the Plugin Hub.
 
 ## Done
 
@@ -37,6 +37,7 @@ Version **1.6.0**. Live on the Plugin Hub.
 - [x] Patch data generated from RuneLite source (`scripts/`), all 28 patches verified
 
 ## Recent fixes
+- 1.6.1: guide line static: re-planned only on target change, teleport (>15 tiles in one move) or >40 tiles from the line; walked part trimmed only while on the line.
 - 1.6.0: guide line follows Shortest Path's approach: A* in ticks, walking legs rewritten to the game's BFS walk (order W,E,S,N,SW,SE,NW,NE), route kept until >10 tiles off, walked part hidden, gardener slack 3 tiles.
 - 1.5.1: guide line uses doors, gates and Agility shortcuts (walk-links.tsv from Shortest Path's transports via scripts/build_walk_links.py; shortcuts filtered by boosted Agility).
 - 1.5.0: guide line uses the whole-world walking map (Shortest Path's collision map, BSD-2), A* with real distances, smoothing, stays put while followed, minimap route. Tested on real map data: Morytania to ALQ, Varlamore, Catherby, all tree patches.

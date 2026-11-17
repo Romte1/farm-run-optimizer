@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.1 (2026-11-16)
+- **Guide line stays fixed on the ground.** Walking off it no longer moves it. It's only worked out again when the next stop changes, you teleport, or you end up more than 40 tiles away from it. The part you've walked still disappears once you're back on the line.
+
 ## 1.6.0 (2026-11-16)
 - **Guide line steadied the way the Shortest Path plugin does it.**
   - It now draws the exact tiles your character walks when you click along it (the game's own walking order: west, east, south, north, then diagonals), not a straightened line.

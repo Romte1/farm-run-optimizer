@@ -1833,6 +1833,8 @@ public class HerbRunPlugin extends Plugin
 	private String guideKey;
 	private WorldPoint guideFrom;
 	private int[] guideBox;
+	/** How much of the route you've walked (that part isn't drawn). */
+	private int guideIndex;
 	/** Walking map of the whole world, loaded in the background at start-up. */
 	private volatile WorldWalkMap worldMap;
 	private volatile boolean worldMapLoading;
@@ -1952,18 +1954,30 @@ public class HerbRunPlugin extends Plugin
 		{
 			return;
 		}
+		WorldPoint before = guideFrom;
 		guideFrom = me;
 
-		// Like the Shortest Path plugin: keep the route you're following, and only work it out
-		// again when the target changes or you've gone more than RECALC_TILES off it. A moving
-		// gardener only counts once they've wandered away from the end of the line.
+		// The line stays fixed on the ground: it's only worked out again when the target changes,
+		// you teleport, or you end up far away from it. Walking off it doesn't move it.
 		boolean sameTarget = key.equals(guideKey);
 		if (sameTarget && gardener != null && !guideSteps.isEmpty())
 		{
 			int[] end = guideSteps.get(guideSteps.size() - 1);
 			sameTarget = PathGuide.distToBox(end[0], end[1], minX, minY, maxX, maxY) <= GARDENER_SLACK;
 		}
-		int index = sameTarget ? nearestStep(guideSteps, me) : -1;
+		boolean teleported = before != null && (before.getPlane() != me.getPlane()
+			|| Math.max(Math.abs(before.getX() - me.getX()), Math.abs(before.getY() - me.getY())) > TELEPORT_TILES);
+		int index = -1;
+		if (sameTarget && !teleported && !guideSteps.isEmpty())
+		{
+			int near = distanceToSteps(guideSteps, me);
+			if (near <= FAR_FROM_LINE_TILES)
+			{
+				// Walked part disappears only once you're on the line; otherwise leave it as is.
+				int on = stepUnder(guideSteps, me, guideIndex);
+				index = on >= 0 ? on : guideIndex;
+			}
+		}
 		if (index < 0)
 		{
 			PathGuide.Walkable map;
@@ -1993,10 +2007,10 @@ public class HerbRunPlugin extends Plugin
 			}
 			guideSteps = PathGuide.gameWalk(map, me.getPlane(), steps);
 			guideKey = key;
-			guideBox = new int[]{minX, minY};
 			index = 0;
 		}
 		guideBox = new int[]{minX, minY};
+		guideIndex = index;
 
 		// Draw from where you are on it; the part you've walked disappears.
 		List<WorldPoint> out = new ArrayList<>();
@@ -2008,15 +2022,11 @@ public class HerbRunPlugin extends Plugin
 		guidePath = out.size() >= 2 ? out : Collections.emptyList();
 	}
 
-	/**
-	 * Your place on the route: the step you're standing on, else the nearest step within
-	 * RECALC_TILES; -1 when you're further off than that (work it out again).
-	 */
-	private static int nearestStep(List<int[]> steps, WorldPoint me)
+	/** Index of the step you're standing on (or right next to), at or after {@code from}; else -1. */
+	private static int stepUnder(List<int[]> steps, WorldPoint me, int from)
 	{
 		int best = -1;
-		int bestDist = Integer.MAX_VALUE;
-		for (int i = 0; i < steps.size(); i++)
+		for (int i = Math.max(0, from); i < steps.size(); i++)
 		{
 			int[] t = steps.get(i);
 			int d = Math.max(Math.abs(t[0] - me.getX()), Math.abs(t[1] - me.getY()));
@@ -2024,13 +2034,23 @@ public class HerbRunPlugin extends Plugin
 			{
 				return i;
 			}
-			if (d < bestDist)
+			if (d == 1 && best < 0)
 			{
-				bestDist = d;
 				best = i;
 			}
 		}
-		return bestDist <= RECALC_TILES ? best : -1;
+		return best;
+	}
+
+	/** How far you are from the nearest step of the route, in tiles. */
+	private static int distanceToSteps(List<int[]> steps, WorldPoint me)
+	{
+		int best = Integer.MAX_VALUE;
+		for (int[] t : steps)
+		{
+			best = Math.min(best, Math.max(Math.abs(t[0] - me.getX()), Math.abs(t[1] - me.getY())));
+		}
+		return best;
 	}
 
 	private void clearGuide()
@@ -2040,6 +2060,7 @@ public class HerbRunPlugin extends Plugin
 		guideKey = null;
 		guideFrom = null;
 		guideBox = null;
+		guideIndex = 0;
 	}
 
 	/**
@@ -2082,8 +2103,10 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	private static final int MAX_GUIDE_TILES = 250;
-	/** Same as the Shortest Path plugin's default "Recalculate Distance". */
-	private static final int RECALC_TILES = 10;
+	/** Only this far from the line (or after a teleport) is the route worked out again. */
+	private static final int FAR_FROM_LINE_TILES = 40;
+	/** Moving more than this in one go counts as a teleport. */
+	private static final int TELEPORT_TILES = 15;
 	/** How far the gardener may wander from the end of the line before it's worked out again. */
 	private static final int GARDENER_SLACK = 3;
 	private static final int GUIDE_MARGIN = 48;
