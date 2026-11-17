@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.2 (2026-11-16)
+- **Guide line no longer bounces as you walk.** Each point of the line was placed relative to your character, which glides between tiles, so the whole line slid with you. Every point is now pinned to its own map tile, like Shortest Path's line.
+- The line stays the same until you reach the patch or fairy ring: it no longer re-plans when the patch or ring loads in (if the line already ends beside it) or when an Agility boost wears off.
+
 ## 1.6.1 (2026-11-16)
 - **Guide line stays fixed on the ground.** Walking off it no longer moves it. It's only worked out again when the next stop changes, you teleport, or you end up more than 40 tiles away from it. The part you've walked still disappears once you're back on the line.
 

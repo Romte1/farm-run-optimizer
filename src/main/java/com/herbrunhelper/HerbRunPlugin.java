@@ -1835,6 +1835,8 @@ public class HerbRunPlugin extends Plugin
 	private int[] guideBox;
 	/** How much of the route you've walked (that part isn't drawn). */
 	private int guideIndex;
+	/** Which stop (and ring / tree) the route was worked out for. */
+	private String guideKind;
 	/** Walking map of the whole world, loaded in the background at start-up. */
 	private volatile WorldWalkMap worldMap;
 	private volatile boolean worldMapLoading;
@@ -1948,7 +1950,7 @@ public class HerbRunPlugin extends Plugin
 
 		int agility = client.getBoostedSkillLevel(Skill.AGILITY);
 		String key = (gardener != null ? "gardener" : minX + "," + minY + "," + maxX + "," + maxY)
-			+ "," + me.getPlane() + "," + onto + "," + exact + "," + agility;
+			+ "," + me.getPlane() + "," + onto + "," + exact;
 		if (me.equals(guideFrom) && key.equals(guideKey) && guideBox != null
 			&& guideBox[0] == minX && guideBox[1] == minY)
 		{
@@ -1960,6 +1962,18 @@ public class HerbRunPlugin extends Plugin
 		// The line stays fixed on the ground: it's only worked out again when the target changes,
 		// you teleport, or you end up far away from it. Walking off it doesn't move it.
 		boolean sameTarget = key.equals(guideKey);
+		if (!sameTarget && guideKey != null && !guideSteps.isEmpty() && gardener == null)
+		{
+			// Same stop, but the patch / ring has just loaded so the box is now exact: keep the
+			// line if it already ends right beside it.
+			int[] end = guideSteps.get(guideSteps.size() - 1);
+			String kind = (navRingLabel == null ? "" : navRingLabel) + "|" + next;
+			if (kind.equals(guideKind) && PathGuide.distToBox(end[0], end[1], minX, minY, maxX, maxY) <= 1)
+			{
+				sameTarget = true;
+				guideKey = key;
+			}
+		}
 		if (sameTarget && gardener != null && !guideSteps.isEmpty())
 		{
 			int[] end = guideSteps.get(guideSteps.size() - 1);
@@ -2007,6 +2021,7 @@ public class HerbRunPlugin extends Plugin
 			}
 			guideSteps = PathGuide.gameWalk(map, me.getPlane(), steps);
 			guideKey = key;
+			guideKind = (navRingLabel == null ? "" : navRingLabel) + "|" + next;
 			index = 0;
 		}
 		guideBox = new int[]{minX, minY};
@@ -2070,34 +2085,26 @@ public class HerbRunPlugin extends Plugin
 	List<LocalPoint> guideLinePoints()
 	{
 		List<WorldPoint> path = guidePath;
-		Player player = client.getLocalPlayer();
-		if (path.size() < 2 || player == null)
+		if (path.size() < 2)
 		{
 			return Collections.emptyList();
 		}
-		WorldPoint me = player.getWorldLocation();
-		LocalPoint anchor = player.getLocalLocation();
-		if (me == null || anchor == null)
+		// Each point is pinned to its own tile on the map (not worked out from where your
+		// character is standing), so the line stays fixed on the ground while you move.
+		List<LocalPoint> out = new ArrayList<>(path.size());
+		for (WorldPoint wp : path)
 		{
-			return Collections.emptyList();
-		}
-		List<LocalPoint> out = new ArrayList<>();
-		for (int i = 0; i + 1 < path.size(); i++)
-		{
-			WorldPoint a = path.get(i);
-			WorldPoint b = path.get(i + 1);
-			int n = Math.max(1, Math.max(Math.abs(b.getX() - a.getX()), Math.abs(b.getY() - a.getY())));
-			for (int k = (i == 0 ? 0 : 1); k <= n; k++)
+			LocalPoint lp = LocalPoint.fromWorld(client, wp);
+			if (lp != null)
 			{
-				double fx = a.getX() + (b.getX() - a.getX()) * (double) k / n;
-				double fy = a.getY() + (b.getY() - a.getY()) * (double) k / n;
-				int dx = (int) Math.round((fx - me.getX()) * Perspective.LOCAL_TILE_SIZE);
-				int dy = (int) Math.round((fy - me.getY()) * Perspective.LOCAL_TILE_SIZE);
-				LocalPoint lp = anchor.plus(dx, dy);
 				int sx = lp.getSceneX();
 				int sy = lp.getSceneY();
-				out.add(sx < 1 || sy < 1 || sx >= SCENE_TILES - 1 || sy >= SCENE_TILES - 1 ? null : lp);
+				if (sx < 1 || sy < 1 || sx >= SCENE_TILES - 1 || sy >= SCENE_TILES - 1)
+				{
+					lp = null;
+				}
 			}
+			out.add(lp);
 		}
 		return out;
 	}
