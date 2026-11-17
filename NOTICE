@@ -66,6 +66,10 @@ unchanged. The doors, gates and Agility shortcuts the line can use
 are installed and the setting is on, Farm Run Optimizer can also send Shortest Path the next stop
 (through RuneLite's plugin messages) so it draws its own line.
 
+The guide line's end-point rule (nearest reachable tile around the target, sides before corners)
+and the fairy ring travel log highlight follow how Shortest Path does them (ReachableGoalRule and
+PathAnnotator); they were written anew here, not copied.
+
 Shortest Path's license (its LICENSE file, as published):
 
   BSD 2-Clause License

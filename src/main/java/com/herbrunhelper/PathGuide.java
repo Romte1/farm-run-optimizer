@@ -122,11 +122,16 @@ final class PathGuide
 		};
 	}
 
+	/** How far out from the target to look for somewhere to stop, like Shortest Path's goal rule. */
+	static final int GOAL_RINGS = 5;
+
 	/**
-	 * Walking route from (sx, sy) to the target box [minX..maxX] x [minY..maxY]: to a tile right
-	 * beside it (sharing an edge, with no wall between), or onto it when {@code onto} is set (a
-	 * fairy ring you stand in). Returns the tiles from start to end, every step included, or an
-	 * empty list when there's no route within reach.
+	 * Walking route from (sx, sy) to the target box [minX..maxX] x [minY..maxY]. Like the Shortest
+	 * Path plugin's goal rule: a walkable target you stand on ({@code onto}) is its own goal;
+	 * otherwise the route ends on the nearest reachable tile around it, preferring, right beside
+	 * it, a side with no wall between, then a side behind a wall, then a corner; failing those,
+	 * the nearest reachable tile up to {@link #GOAL_RINGS} tiles out. Returns every step from
+	 * start to end, or an empty list when nothing near the target can be reached.
 	 */
 	static List<int[]> find(Walkable map, int z, int sx, int sy, int minX, int minY, int maxX, int maxY,
 		boolean onto, int margin)
@@ -146,11 +151,22 @@ final class PathGuide
 		Arrays.fill(prev, -1);
 		boolean[] closed = new boolean[n];
 		Heap open = new Heap();
-
 		int start = (sx - wx0) * h + (sy - wy0);
 		cost[start] = 0;
-		open.push(start, heuristic(sx, sy, minX, minY, maxX, maxY));
-		int goal = -1;
+		open.push(start, 0);
+		// Standing on a tile the map counts as blocked (a doorway, in a fairy ring...): allow the
+		// first step off it, like Shortest Path does.
+		boolean stuck = true;
+		for (int[] d : DIRS)
+		{
+			if (map.step(sx, sy, z, d[0], d[1]))
+			{
+				stuck = false;
+				break;
+			}
+		}
+
+		// Everything you can reach from where you are (within the window), cheapest first.
 		while (!open.isEmpty())
 		{
 			int cur = open.pop();
@@ -161,60 +177,46 @@ final class PathGuide
 			closed[cur] = true;
 			int x = cur / h + wx0;
 			int y = cur % h + wy0;
-			if (isGoal(map, z, x, y, minX, minY, maxX, maxY, onto))
-			{
-				goal = cur;
-				break;
-			}
 			for (int[] d : DIRS)
 			{
-				int nx = x + d[0];
-				int ny = y + d[1];
-				int lx = nx - wx0;
-				int ly = ny - wy0;
+				int lx = x + d[0] - wx0;
+				int ly = y + d[1] - wy0;
 				if (lx < 0 || ly < 0 || lx >= w || ly >= h)
 				{
 					continue;
 				}
 				int next = lx * h + ly;
-				if (closed[next])
+				if (closed[next] || !(map.step(x, y, z, d[0], d[1]) || (stuck && cur == start)))
 				{
 					continue;
 				}
-				boolean inBox = nx >= minX && nx <= maxX && ny >= minY && ny <= maxY;
-				if (inBox && !onto)
+				int nx = x + d[0];
+				int ny = y + d[1];
+				if (!onto && nx >= minX && nx <= maxX && ny >= minY && ny <= maxY)
 				{
 					continue; // the patch itself can't be walked through
-				}
-				if (!map.step(x, y, z, d[0], d[1]))
-				{
-					continue;
 				}
 				int c = cost[cur] + 1;
 				if (c < cost[next])
 				{
 					cost[next] = c;
 					prev[next] = cur;
-					open.push(next, c + heuristic(nx, ny, minX, minY, maxX, maxY));
+					open.push(next, c);
 				}
 			}
-			// Doors, gates and shortcuts.
 			int[] links = map.links(x, y, z);
 			if (links != null)
 			{
 				for (int i = 0; i + 2 < links.length; i += 3)
 				{
-					int nx = links[i];
-					int ny = links[i + 1];
-					int lx = nx - wx0;
-					int ly = ny - wy0;
+					int lx = links[i] - wx0;
+					int ly = links[i + 1] - wy0;
 					if (lx < 0 || ly < 0 || lx >= w || ly >= h)
 					{
 						continue;
 					}
 					int next = lx * h + ly;
-					boolean inBox = nx >= minX && nx <= maxX && ny >= minY && ny <= maxY;
-					if (closed[next] || (inBox && !onto))
+					if (closed[next])
 					{
 						continue;
 					}
@@ -223,9 +225,31 @@ final class PathGuide
 					{
 						cost[next] = c;
 						prev[next] = cur;
-						open.push(next, c + heuristic(nx, ny, minX, minY, maxX, maxY));
+						open.push(next, c);
 					}
 				}
+			}
+		}
+
+		// Pick where to stop.
+		int goal = -1;
+		if (onto)
+		{
+			goal = cheapest(cost, wx0, wy0, w, h, 0, -1, map, z, minX, minY, maxX, maxY);
+		}
+		for (int ring = 1; goal < 0 && ring <= GOAL_RINGS; ring++)
+		{
+			if (ring == 1)
+			{
+				// Beside it: open side, side behind a wall, then corner.
+				for (int tier = 0; goal < 0 && tier < 3; tier++)
+				{
+					goal = cheapest(cost, wx0, wy0, w, h, 1, tier, map, z, minX, minY, maxX, maxY);
+				}
+			}
+			else
+			{
+				goal = cheapest(cost, wx0, wy0, w, h, ring, -1, map, z, minX, minY, maxX, maxY);
 			}
 		}
 		if (goal < 0)
@@ -241,37 +265,56 @@ final class PathGuide
 		return path;
 	}
 
-	private static boolean isGoal(Walkable map, int z, int x, int y, int minX, int minY, int maxX, int maxY, boolean onto)
+	/**
+	 * The cheapest reached tile on the given ring around the box (ring 0: the box itself).
+	 * On ring 1, tier 0 = sides with no wall, 1 = sides behind a wall, 2 = corners; -1 = any.
+	 */
+	private static int cheapest(int[] cost, int wx0, int wy0, int w, int h, int ring, int tier, Walkable map, int z,
+		int minX, int minY, int maxX, int maxY)
 	{
-		boolean inX = x >= minX && x <= maxX;
-		boolean inY = y >= minY && y <= maxY;
-		if (inX && inY)
+		int best = -1;
+		int bestCost = Integer.MAX_VALUE;
+		for (int x = minX - ring; x <= maxX + ring; x++)
 		{
-			return onto;
+			for (int y = minY - ring; y <= maxY + ring; y++)
+			{
+				if (distToBox(x, y, minX, minY, maxX, maxY) != ring)
+				{
+					continue;
+				}
+				int lx = x - wx0;
+				int ly = y - wy0;
+				if (lx < 0 || ly < 0 || lx >= w || ly >= h)
+				{
+					continue;
+				}
+				int i = lx * h + ly;
+				if (cost[i] == Integer.MAX_VALUE || cost[i] >= bestCost)
+				{
+					continue;
+				}
+				if (tier >= 0)
+				{
+					boolean side = (x >= minX && x <= maxX) || (y >= minY && y <= maxY);
+					if (tier == 2 ? side : !side)
+					{
+						continue;
+					}
+					if (tier < 2)
+					{
+						int dx = x < minX ? 1 : x > maxX ? -1 : 0;
+						int dy = y < minY ? 1 : y > maxY ? -1 : 0;
+						if (map.wall(x, y, z, dx, dy) != (tier == 1))
+						{
+							continue;
+						}
+					}
+				}
+				best = i;
+				bestCost = cost[i];
+			}
 		}
-		if (inX && y == minY - 1)
-		{
-			return !map.wall(x, y, z, 0, 1);
-		}
-		if (inX && y == maxY + 1)
-		{
-			return !map.wall(x, y, z, 0, -1);
-		}
-		if (inY && x == minX - 1)
-		{
-			return !map.wall(x, y, z, 1, 0);
-		}
-		if (inY && x == maxX + 1)
-		{
-			return !map.wall(x, y, z, -1, 0);
-		}
-		return false;
-	}
-
-	/** Fewest possible steps to the box, ignoring walls (keeps A* exact). */
-	private static int heuristic(int x, int y, int minX, int minY, int maxX, int maxY)
-	{
-		return Math.max(0, distToBox(x, y, minX, minY, maxX, maxY) - 1);
+		return best;
 	}
 
 	/** Chebyshev distance from a tile to a box (0 inside it). */

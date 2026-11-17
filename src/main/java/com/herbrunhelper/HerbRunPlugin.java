@@ -1988,10 +1988,20 @@ public class HerbRunPlugin extends Plugin
 		int maxY = minY;
 		boolean exact = false;
 		boolean onto = false;
-		NPC gardener = payLabel != null ? getGardenerToPay() : null;
+		// Stops with a gardener: aim at the spot you stood on when you last paid them, the same
+		// fixed, walkable tile the Shortest Path plugin is sent (the gardener himself wanders).
+		WorldPoint gardenerSpot = !leading && next.getType().hasGardenerPayment() ? approachTiles.get(next) : null;
+		NPC gardener = gardenerSpot == null && payLabel != null ? getGardenerToPay() : null;
 		TileObject lead = leading ? navLeadObject : null;
 		GameObject patchObj = leading ? null : objectFor(next);
-		if (gardener != null && gardener.getWorldLocation() != null)
+		if (gardenerSpot != null && gardenerSpot.getPlane() == me.getPlane())
+		{
+			minX = maxX = gardenerSpot.getX();
+			minY = maxY = gardenerSpot.getY();
+			exact = true;
+			onto = true;
+		}
+		else if (gardener != null && gardener.getWorldLocation() != null)
 		{
 			minX = maxX = gardener.getWorldLocation().getX();
 			minY = maxY = gardener.getWorldLocation().getY();
@@ -2025,7 +2035,7 @@ public class HerbRunPlugin extends Plugin
 			onto = true; // you stand in a fairy ring
 		}
 
-		String what = gardener != null ? "gardener" : lead != null ? (navRingLabel != null ? navRingLabel : "lead")
+		String what = gardenerSpot != null ? "gardener spot" : gardener != null ? "gardener" : lead != null ? (navRingLabel != null ? navRingLabel : "lead")
 			: patchObj != null ? "patch" : leading && navRingLabel != null ? navRingLabel + " (not loaded)" : "patch (not loaded, rough tile)";
 		String aim = what + " at " + minX + "," + minY + (maxX != minX || maxY != minY ? " to " + maxX + "," + maxY : "");
 		int agility = client.getBoostedSkillLevel(Skill.AGILITY);
@@ -2264,6 +2274,85 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	private static final int FAIRY_RING_INTERFACE = 398;
+	// Fairy ring travel log (the list beside the dial), as used by the Shortest Path plugin.
+	private static final int FAIRY_LOG_GROUP = 381;
+	private static final int FAIRY_LOG_CONTENTS = 8;
+	private static final int FAIRY_LOG_FAVES = 9;
+	private static final int FAIRY_LOG_SCROLLBAR = 0x017d_00a6;
+	private static final int FAIRY_LOG_CONTENTS_ID = 0x017d_0008;
+	private static final int UPDATE_SCROLLBAR_SCRIPT = 72;
+	private static final String FAIRY_LOG_TAG = "(Farm Run) ";
+	/** The code the travel log was last scrolled to while it's open (scroll once, then leave it). */
+	private String fairyLogScrolled;
+
+	/**
+	 * When the fairy ring travel log is open, mark the code for your next stop in it (green, with
+	 * "(Farm Run)" in front) and scroll the list to it once, the way Shortest Path does.
+	 */
+	@Subscribe
+	public void onClientTick(net.runelite.api.events.ClientTick tick)
+	{
+		net.runelite.api.widgets.Widget contents = client.getWidget(FAIRY_LOG_GROUP, FAIRY_LOG_CONTENTS);
+		if (contents == null || contents.isHidden())
+		{
+			fairyLogScrolled = null;
+			return;
+		}
+		String hint = navLeadHint;
+		if (hint == null || !hint.startsWith("Dial ") || hint.length() < 8)
+		{
+			return;
+		}
+		String code = hint.substring(5, 8);
+		net.runelite.api.widgets.Widget found = null;
+		net.runelite.api.widgets.Widget faves = client.getWidget(FAIRY_LOG_GROUP, FAIRY_LOG_FAVES);
+		if (faves != null && faves.getStaticChildren() != null)
+		{
+			found = findCode(faves.getStaticChildren(), code);
+		}
+		boolean inList = false;
+		if (found == null && contents.getDynamicChildren() != null)
+		{
+			found = findCode(contents.getDynamicChildren(), code);
+			inList = found != null;
+		}
+		if (found == null)
+		{
+			return;
+		}
+		found.setTextColor(0x00FF00);
+		String text = found.getText();
+		if (text != null && !text.contains(FAIRY_LOG_TAG))
+		{
+			found.setText(FAIRY_LOG_TAG + text);
+		}
+		if (inList && !code.equals(fairyLogScrolled))
+		{
+			fairyLogScrolled = code;
+			int y = Math.max(0, Math.min(found.getRelativeY(), contents.getScrollHeight() - contents.getHeight()));
+			contents.setScrollY(y);
+			contents.revalidateScroll();
+			client.runScript(UPDATE_SCROLLBAR_SCRIPT, FAIRY_LOG_SCROLLBAR, FAIRY_LOG_CONTENTS_ID, y);
+		}
+	}
+
+	/** The log entry showing this code (plain, or already tagged by us or Shortest Path). */
+	private static net.runelite.api.widgets.Widget findCode(net.runelite.api.widgets.Widget[] widgets, String code)
+	{
+		for (net.runelite.api.widgets.Widget w : widgets)
+		{
+			if (w == null || w.getText() == null)
+			{
+				continue;
+			}
+			String t = w.getText().trim();
+			if (t.equals(code) || t.endsWith(") " + code))
+			{
+				return w;
+			}
+		}
+		return null;
+	}
 
 	/** The hint to show on screen: when the fairy ring interface is open, or you're at the ring/tree. */
 	String getOnScreenLeadHint()

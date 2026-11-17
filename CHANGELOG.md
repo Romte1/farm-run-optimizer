@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0 (2026-11-16)
+Guide line reworked to match how the Shortest Path plugin picks where to go:
+- **Tree, fruit tree and hardwood stops aim at a fixed spot**: the tile where that patch's gardener stood when the plugin first saw them (the same tile Shortest Path is sent), not the moving gardener or the patch outline. That's why Shortest Path's line worked on tree runs and ours didn't.
+- **Always somewhere to stop.** If the target can't be stood on, the line ends on the nearest tile you can reach: right beside it (an open side first, then a side behind a fence, then a corner), else up to 5 tiles out. Before, a slightly-off patch outline or a fence edge meant no line at all.
+- **Starting on a "blocked" tile** (a doorway, standing in a fairy ring) no longer stops the line.
+- **Fairy ring travel log:** when you open a fairy ring, the code for your next stop is turned green with "(Farm Run)" in front, and the list scrolls to it once, like Shortest Path does.
+
 ## 1.7.1 (2026-11-16)
 - **New "Guide line style" setting:** Line (as before), Tiles (each step of the route highlighted on the ground, like Shortest Path's tile mode), or Line and tiles.
 - **New "Guide line status" setting** (off by default): a small box under the top hint saying what the line is aiming at (patch, gardener, fairy ring or spirit tree, and where), which map it used, how many steps, and, when there's no line, why ("teleport first", "no route found from ...", "reached the end"). Turn it on and screenshot it if the line misbehaves.
