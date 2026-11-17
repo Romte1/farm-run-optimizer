@@ -1887,6 +1887,10 @@ public class HerbRunPlugin extends Plugin
 	private String guideKey;
 	private WorldPoint guideFrom;
 	private int[] guideBox;
+	/** For the "Guide line status" box. */
+	private volatile String guideStatusText;
+	private String guideMapName = "";
+	private int guidePlans;
 	/** You've reached the end of the line: it stays hidden until the next one. */
 	private boolean guideReached;
 	/** Which stop (and ring / tree) the route was worked out for. */
@@ -1894,6 +1898,11 @@ public class HerbRunPlugin extends Plugin
 	/** Walking map of the whole world, loaded in the background at start-up. */
 	private volatile WorldWalkMap worldMap;
 	private volatile boolean worldMapLoading;
+
+	String getGuideStatus()
+	{
+		return config.guideStatus() ? guideStatusText : null;
+	}
 
 	List<WorldPoint> getGuidePath()
 	{
@@ -1945,6 +1954,7 @@ public class HerbRunPlugin extends Plugin
 		if (!config.guideLine() || next == null || target == null || player == null)
 		{
 			clearGuide();
+			guideStatusText = !config.guideLine() ? "Guide line is off" : next == null ? "No next stop" : "Waiting for the game";
 			return;
 		}
 		WorldPoint me = player.getWorldLocation();
@@ -1953,6 +1963,19 @@ public class HerbRunPlugin extends Plugin
 			|| dist(me, target.getX(), target.getY()) > MAX_GUIDE_TILES)
 		{
 			clearGuide(); // far away: teleport first
+			guideStatusText = me != null && me.getPlane() != target.getPlane()
+				? "Next stop is on another floor"
+				: "Next stop " + (me == null ? "?" : String.valueOf(dist(me, target.getX(), target.getY())))
+					+ " tiles away: teleport first (no line past " + MAX_GUIDE_TILES + ")";
+			return;
+		}
+		RunPlan.RouteStep step = stepFor(next);
+		int away = dist(me, target.getX(), target.getY());
+		if (!leading && !travelDone && step != null && step.teleport != null && away > TELEPORT_FIRST_TILES)
+		{
+			// This stop starts with a teleport you haven't done yet: no walking line until then.
+			clearGuide();
+			guideStatusText = "Teleport first (" + step.teleport.getLabel() + "), next stop " + away + " tiles away";
 			return;
 		}
 		int baseX = me.getX() - meLocal.getSceneX();
@@ -2002,6 +2025,9 @@ public class HerbRunPlugin extends Plugin
 			onto = true; // you stand in a fairy ring
 		}
 
+		String what = gardener != null ? "gardener" : lead != null ? (navRingLabel != null ? navRingLabel : "lead")
+			: patchObj != null ? "patch" : leading && navRingLabel != null ? navRingLabel + " (not loaded)" : "patch (not loaded, rough tile)";
+		String aim = what + " at " + minX + "," + minY + (maxX != minX || maxY != minY ? " to " + maxX + "," + maxY : "");
 		int agility = client.getBoostedSkillLevel(Skill.AGILITY);
 		String key = (gardener != null ? "gardener" : minX + "," + minY + "," + maxX + "," + maxY)
 			+ "," + me.getPlane() + "," + onto + "," + exact;
@@ -2052,6 +2078,7 @@ public class HerbRunPlugin extends Plugin
 				if (maps == null || me.getPlane() >= maps.length || maps[me.getPlane()] == null)
 				{
 					clearGuide();
+					guideStatusText = "No map data yet";
 					return;
 				}
 				map = PathGuide.scene(maps[me.getPlane()].getFlags(), baseX, baseY);
@@ -2065,6 +2092,8 @@ public class HerbRunPlugin extends Plugin
 					minX - grow, minY - grow, maxX + grow, maxY + grow, false, GUIDE_MARGIN);
 			}
 			guideSteps = PathGuide.gameWalk(map, me.getPlane(), steps);
+			guideMapName = map == world ? "world map" : "loaded area only";
+			guidePlans++;
 			guideReached = false;
 			// No route found: try again as you move.
 			guideKey = guideSteps.isEmpty() ? null : key;
@@ -2080,6 +2109,10 @@ public class HerbRunPlugin extends Plugin
 		{
 			guideReached = true;
 		}
+		guideStatusText = "Aiming at " + aim + " | " + guideMapName + " | "
+			+ (guideSteps.isEmpty() ? "NO ROUTE FOUND from " + me.getX() + "," + me.getY()
+			: guideReached ? "reached the end (line hidden)" : guideSteps.size() + " steps")
+			+ " | planned " + guidePlans + "x";
 		if (guideReached || guideSteps.isEmpty())
 		{
 			guidePath = Collections.emptyList();
@@ -2136,6 +2169,8 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	private static final int MAX_GUIDE_TILES = 250;
+	/** Further than this from a stop that starts with a teleport: teleport before any line. */
+	private static final int TELEPORT_FIRST_TILES = 60;
 	/** Moving more than this in one go counts as a teleport. */
 	private static final int TELEPORT_TILES = 15;
 	/** How far the gardener may wander from the end of the line before it's worked out again. */

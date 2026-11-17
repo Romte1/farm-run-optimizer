@@ -218,6 +218,15 @@ public class PatchNavigationOverlay extends Overlay
 	/** The built-in walking line: through the middle of each tile of the route, on the ground. */
 	private void renderGuideLine(Graphics2D graphics)
 	{
+		GuideStyle style = config.guideStyle();
+		if (style == GuideStyle.TILES || style == GuideStyle.BOTH)
+		{
+			renderGuideTiles(graphics);
+			if (style == GuideStyle.TILES)
+			{
+				return;
+			}
+		}
 		java.util.List<LocalPoint> points = plugin.guideLinePoints();
 		if (points.size() < 2)
 		{
@@ -256,5 +265,34 @@ public class PatchNavigationOverlay extends Overlay
 		graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		graphics.setColor(c);
 		graphics.draw(line);
+	}
+
+	/** The route as highlighted tiles, one per step, fixed on the ground. */
+	private void renderGuideTiles(Graphics2D graphics)
+	{
+		java.util.List<LocalPoint> points = plugin.guideLinePoints();
+		if (points.size() < 2)
+		{
+			return;
+		}
+		Color c = config.patchColor();
+		Color fill = new Color(c.getRed(), c.getGreen(), c.getBlue(), 50);
+		graphics.setStroke(new BasicStroke(1.5f));
+		for (LocalPoint lp : points)
+		{
+			if (lp == null)
+			{
+				continue;
+			}
+			java.awt.Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+			if (poly == null)
+			{
+				continue;
+			}
+			graphics.setColor(fill);
+			graphics.fill(poly);
+			graphics.setColor(c);
+			graphics.draw(poly);
+		}
 	}
 }

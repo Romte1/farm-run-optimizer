@@ -212,6 +212,22 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(keyName = "guideStyle", name = "Guide line style",
+		description = "Draw the guide as a line through the middle of each tile, as highlighted tiles (like Shortest Path's tile mode), or both",
+		position = 3, section = navSection)
+	default GuideStyle guideStyle()
+	{
+		return GuideStyle.LINE;
+	}
+
+	@ConfigItem(keyName = "guideStatus", name = "Guide line status",
+		description = "Show a small status box saying what the guide line is aiming at and, if there's no line, why. Handy for bug reports.",
+		position = 3, section = navSection)
+	default boolean guideStatus()
+	{
+		return false;
+	}
+
 	@ConfigItem(keyName = "shortestPathLine", name = "Use Shortest Path plugin",
 		description = "Also send each stop to the Shortest Path plugin (if installed) for its own walking line",
 		position = 3, section = navSection)

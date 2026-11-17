@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1 (2026-11-16)
+- **New "Guide line style" setting:** Line (as before), Tiles (each step of the route highlighted on the ground, like Shortest Path's tile mode), or Line and tiles.
+- **New "Guide line status" setting** (off by default): a small box under the top hint saying what the line is aiming at (patch, gardener, fairy ring or spirit tree, and where), which map it used, how many steps, and, when there's no line, why ("teleport first", "no route found from ...", "reached the end"). Turn it on and screenshot it if the line misbehaves.
+- **No walking line before a teleport.** If the next stop starts with a teleport you haven't done yet and it's more than 60 tiles away, the line waits until you've teleported, instead of drawing a long walk there.
+
 ## 1.7.0 (2026-11-16)
 - **Guide line goes from A to B and stays put.** The whole line, from where you start to the patch, fairy ring, spirit tree or gardener, is drawn once and kept exactly as it is. Nothing is trimmed while you walk. It disappears when you reach the end, and the next stop's line takes over. It's only worked out again for a new stop, or after a teleport.
 - **No more being sent back to the ring after a fairy ring or spirit tree teleport.** Once you've arrived (at the destination ring, or a teleport took you much closer to the stop), the plugin leads you to the patch, not back to the ring you landed on. This fixes Hosidius after AKR.
