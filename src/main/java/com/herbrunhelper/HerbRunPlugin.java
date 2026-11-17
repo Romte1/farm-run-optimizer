@@ -91,6 +91,9 @@ public class HerbRunPlugin extends Plugin
 	private Client client;
 
 	@Inject
+	private java.util.concurrent.ScheduledExecutorService executor;
+
+	@Inject
 	private HerbRunConfig config;
 
 	@Inject
@@ -1913,7 +1916,7 @@ public class HerbRunPlugin extends Plugin
 			return;
 		}
 		worldMapLoading = true;
-		Thread t = new Thread(() ->
+		executor.submit(() ->
 		{
 			try (java.io.InputStream in = HerbRunPlugin.class.getResourceAsStream("walk-map.zip"))
 			{
@@ -1934,9 +1937,7 @@ public class HerbRunPlugin extends Plugin
 			{
 				log.warn("Couldn't load the walking map; the guide line will use the loaded area only", e);
 			}
-		}, "farm-run-walk-map");
-		t.setDaemon(true);
-		t.start();
+		});
 	}
 
 	/**
