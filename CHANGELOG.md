@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.0 (2026-11-18)
+- **Guide line checks what doors, stairs and shortcuts need, like Shortest Path.** It now knows over 5,000 doors, gates, stairs, ladders and shortcuts (from Shortest Path's lists), and works out which you can use from your skill levels, finished quests, items carried or worn, and game progress. Before, anything needing more than an Agility level was treated as closed, so the line went the long way round (or nowhere) past quest gates and item shortcuts.
+- **Stairs and ladders:** the line can start upstairs or downstairs and take you down (or up) to the stop. Only the part on your floor is drawn.
+- Teleports are still chosen by the run plan, so the line and the panel always agree.
+
 ## 1.8.2 (2026-11-18)
 - **Tree, fruit tree and hardwood stops go in the right order.** When the game says a grown tree's health hasn't been checked yet, the step is "Check the tree's health" first (that's where the XP is). Only after that does it highlight your coins and the gardener for "Pay 200 coins to chop it down". Before, it jumped straight to paying.
 - **The step you're on is marked in the stop's card:** that line turns bright white with an arrow, and the others stay orange. Works for every step: rake, dig, check health, pay to clear, plant, compost, pay to protect.

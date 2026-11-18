@@ -11,7 +11,7 @@ import java.util.zip.ZipInputStream;
 
 /**
  * Walking map of the whole game world, so the guide line can plan a route to places that aren't
- * loaded yet. The data file (walk-map.zip) is the collision map from the Shortest Path plugin
+ * loaded yet, plus the doors, stairs and shortcuts you can use (checked against what you have). The data file (walk-map.zip) is the collision map from the Shortest Path plugin
  * by Skretzo (BSD 2-Clause, see NOTICE): one entry per 64x64 region named "regionX_regionY",
  * holding a bit set with four bits per tile per plane: north edge open, east edge open, and two
  * wall markers we don't use.
@@ -23,24 +23,25 @@ final class WorldWalkMap implements PathGuide.Walkable
 	private static final int BITS_PER_PLANE = REGION * REGION * BITS_PER_TILE;
 
 	private final Map<Integer, BitSet> regions;
-	/** Doors, gates and shortcuts by origin tile: {destX, destY, agility, duration} per link. */
+	/** Doors, stairs and shortcuts by origin tile: {destX, destY, destPlane, duration, reqId} per link. */
 	private final Map<Long, int[]> links = new HashMap<>();
-	/** Your Agility level, for which shortcuts you can use. */
-	private volatile int agility;
+	private static final int LINK_FIELDS = 5;
+	/** Which requirement ids you meet (index 0 = nothing needed), refreshed by the plugin. */
+	private volatile boolean[] allowed = {true};
 
 	private WorldWalkMap(Map<Integer, BitSet> regions)
 	{
 		this.regions = regions;
 	}
 
-	void setAgility(int level)
+	void setAllowed(boolean[] allowed)
 	{
-		agility = level;
+		this.allowed = allowed;
 	}
 
 	/**
-	 * Adds doors, gates and agility shortcuts (walk-links.tsv, built by
-	 * scripts/build_walk_links.py from Shortest Path's transport lists).
+	 * Adds doors, stairs and shortcuts (walk-links.tsv, built by scripts/build_walk_links.py
+	 * from Shortest Path's transport lists).
 	 */
 	void loadLinks(InputStream in) throws IOException
 	{
@@ -52,15 +53,16 @@ final class WorldWalkMap implements PathGuide.Walkable
 			{
 				continue;
 			}
-			String[] c = line.split("\t");
-			if (c.length < 7)
+			String[] c = line.split("\\t");
+			if (c.length < 8)
 			{
 				continue;
 			}
 			try
 			{
 				long k = tile(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-				int[] add = {Integer.parseInt(c[3]), Integer.parseInt(c[4]), Integer.parseInt(c[5]), Integer.parseInt(c[6])};
+				int[] add = {Integer.parseInt(c[3]), Integer.parseInt(c[4]), Integer.parseInt(c[5]),
+					Integer.parseInt(c[6]), Integer.parseInt(c[7])};
 				int[] old = links.get(k);
 				if (old == null)
 				{
@@ -68,8 +70,8 @@ final class WorldWalkMap implements PathGuide.Walkable
 				}
 				else
 				{
-					int[] both = java.util.Arrays.copyOf(old, old.length + 4);
-					System.arraycopy(add, 0, both, old.length, 4);
+					int[] both = java.util.Arrays.copyOf(old, old.length + LINK_FIELDS);
+					System.arraycopy(add, 0, both, old.length, LINK_FIELDS);
 					links.put(k, both);
 				}
 			}
@@ -93,19 +95,20 @@ final class WorldWalkMap implements PathGuide.Walkable
 		{
 			return null;
 		}
-		int level = agility;
-		int[] out = new int[l.length / 4 * 3];
+		boolean[] ok = allowed;
+		int[] out = new int[l.length / LINK_FIELDS * 4];
 		int n = 0;
-		for (int i = 0; i < l.length; i += 4)
+		for (int i = 0; i < l.length; i += LINK_FIELDS)
 		{
-			if (l[i + 2] > level)
+			int req = l[i + 4];
+			if (req >= ok.length || !ok[req])
 			{
 				continue;
 			}
 			out[n++] = l[i];
 			out[n++] = l[i + 1];
+			out[n++] = l[i + 2];
 			out[n++] = Math.max(1, l[i + 3]); // in game ticks, like a walking step
-
 		}
 		return n == 0 ? null : java.util.Arrays.copyOf(out, n);
 	}

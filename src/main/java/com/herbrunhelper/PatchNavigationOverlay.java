@@ -237,7 +237,8 @@ public class PatchNavigationOverlay extends Overlay
 		{
 			return;
 		}
-		int plane = corners.get(0).getPlane();
+		int plane = client.getLocalPlayer() != null && client.getLocalPlayer().getWorldLocation() != null
+			? client.getLocalPlayer().getWorldLocation().getPlane() : corners.get(0).getPlane();
 		java.awt.geom.Path2D.Double line = new java.awt.geom.Path2D.Double();
 		boolean started = false;
 		for (LocalPoint lp : points)

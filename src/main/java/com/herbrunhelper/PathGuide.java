@@ -24,8 +24,8 @@ final class PathGuide
 		boolean step(int x, int y, int z, int dx, int dy);
 
 		/**
-		 * Doors, gates and shortcuts you can use from (x, y): flattened {destX, destY, cost, ...},
-		 * or null for none.
+		 * Doors, stairs and shortcuts you can use from (x, y, z): flattened
+		 * {destX, destY, destPlane, cost, ...}, or null for none.
 		 */
 		default int[] links(int x, int y, int z)
 		{
@@ -136,6 +136,19 @@ final class PathGuide
 	static List<int[]> find(Walkable map, int z, int sx, int sy, int minX, int minY, int maxX, int maxY,
 		boolean onto, int margin)
 	{
+		return find(map, z, sx, sy, z, minX, minY, maxX, maxY, onto, margin);
+	}
+
+	/** Most cells (tiles x floors) one search may use; past that, only your own floor is searched. */
+	private static final int MAX_CELLS = 1_200_000;
+
+	/**
+	 * As above, from (sx, sy) on floor z to a target on floor tz: stairs and ladders take you
+	 * between floors. Each step of the result is {x, y, plane}.
+	 */
+	static List<int[]> find(Walkable map, int z, int sx, int sy, int tz, int minX, int minY, int maxX, int maxY,
+		boolean onto, int margin)
+	{
 		int wx0 = Math.min(sx, minX) - margin;
 		int wy0 = Math.min(sy, minY) - margin;
 		int w = Math.max(sx, maxX) + margin - wx0 + 1;
@@ -144,14 +157,20 @@ final class PathGuide
 		{
 			return Collections.emptyList();
 		}
-		int n = w * h;
+		int planes = 4 * w * h <= MAX_CELLS ? 4 : 1;
+		if (planes == 1 && z != tz)
+		{
+			return Collections.emptyList();
+		}
+		int z0 = planes == 1 ? z : 0;
+		int n = planes * w * h;
 		int[] cost = new int[n];
 		int[] prev = new int[n];
 		Arrays.fill(cost, Integer.MAX_VALUE);
 		Arrays.fill(prev, -1);
 		boolean[] closed = new boolean[n];
 		Heap open = new Heap();
-		int start = (sx - wx0) * h + (sy - wy0);
+		int start = ((z - z0) * w + (sx - wx0)) * h + (sy - wy0);
 		cost[start] = 0;
 		open.push(start, 0);
 		// Standing on a tile the map counts as blocked (a doorway, in a fairy ring...): allow the
@@ -175,8 +194,9 @@ final class PathGuide
 				continue;
 			}
 			closed[cur] = true;
-			int x = cur / h + wx0;
 			int y = cur % h + wy0;
+			int x = (cur / h) % w + wx0;
+			int cz = cur / h / w + z0;
 			for (int[] d : DIRS)
 			{
 				int lx = x + d[0] - wx0;
@@ -185,14 +205,14 @@ final class PathGuide
 				{
 					continue;
 				}
-				int next = lx * h + ly;
-				if (closed[next] || !(map.step(x, y, z, d[0], d[1]) || (stuck && cur == start)))
+				int next = ((cz - z0) * w + lx) * h + ly;
+				if (closed[next] || !(map.step(x, y, cz, d[0], d[1]) || (stuck && cur == start)))
 				{
 					continue;
 				}
 				int nx = x + d[0];
 				int ny = y + d[1];
-				if (!onto && nx >= minX && nx <= maxX && ny >= minY && ny <= maxY)
+				if (!onto && cz == tz && nx >= minX && nx <= maxX && ny >= minY && ny <= maxY)
 				{
 					continue; // the patch itself can't be walked through
 				}
@@ -204,23 +224,24 @@ final class PathGuide
 					open.push(next, c);
 				}
 			}
-			int[] links = map.links(x, y, z);
+			int[] links = map.links(x, y, cz);
 			if (links != null)
 			{
-				for (int i = 0; i + 2 < links.length; i += 3)
+				for (int i = 0; i + 3 < links.length; i += 4)
 				{
 					int lx = links[i] - wx0;
 					int ly = links[i + 1] - wy0;
-					if (lx < 0 || ly < 0 || lx >= w || ly >= h)
+					int lz = links[i + 2] - z0;
+					if (lx < 0 || ly < 0 || lx >= w || ly >= h || lz < 0 || lz >= planes)
 					{
 						continue;
 					}
-					int next = lx * h + ly;
+					int next = (lz * w + lx) * h + ly;
 					if (closed[next])
 					{
 						continue;
 					}
-					int c = cost[cur] + links[i + 2];
+					int c = cost[cur] + links[i + 3];
 					if (c < cost[next])
 					{
 						cost[next] = c;
@@ -235,7 +256,7 @@ final class PathGuide
 		int goal = -1;
 		if (onto)
 		{
-			goal = cheapest(cost, wx0, wy0, w, h, 0, -1, map, z, minX, minY, maxX, maxY);
+			goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, 0, -1, map, tz, minX, minY, maxX, maxY);
 		}
 		for (int ring = 1; goal < 0 && ring <= GOAL_RINGS; ring++)
 		{
@@ -244,12 +265,12 @@ final class PathGuide
 				// Beside it: open side, side behind a wall, then corner.
 				for (int tier = 0; goal < 0 && tier < 3; tier++)
 				{
-					goal = cheapest(cost, wx0, wy0, w, h, 1, tier, map, z, minX, minY, maxX, maxY);
+					goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, 1, tier, map, tz, minX, minY, maxX, maxY);
 				}
 			}
 			else
 			{
-				goal = cheapest(cost, wx0, wy0, w, h, ring, -1, map, z, minX, minY, maxX, maxY);
+				goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, ring, -1, map, tz, minX, minY, maxX, maxY);
 			}
 		}
 		if (goal < 0)
@@ -259,7 +280,7 @@ final class PathGuide
 		List<int[]> path = new ArrayList<>();
 		for (int at = goal; at != -1; at = prev[at])
 		{
-			path.add(new int[]{at / h + wx0, at % h + wy0});
+			path.add(new int[]{(at / h) % w + wx0, at % h + wy0, at / h / w + z0});
 		}
 		Collections.reverse(path);
 		return path;
@@ -269,8 +290,8 @@ final class PathGuide
 	 * The cheapest reached tile on the given ring around the box (ring 0: the box itself).
 	 * On ring 1, tier 0 = sides with no wall, 1 = sides behind a wall, 2 = corners; -1 = any.
 	 */
-	private static int cheapest(int[] cost, int wx0, int wy0, int w, int h, int ring, int tier, Walkable map, int z,
-		int minX, int minY, int maxX, int maxY)
+	private static int cheapest(int[] cost, int wx0, int wy0, int w, int h, int planeOffset, int ring, int tier,
+		Walkable map, int z, int minX, int minY, int maxX, int maxY)
 	{
 		int best = -1;
 		int bestCost = Integer.MAX_VALUE;
@@ -288,7 +309,7 @@ final class PathGuide
 				{
 					continue;
 				}
-				int i = lx * h + ly;
+				int i = planeOffset + lx * h + ly;
 				if (cost[i] == Integer.MAX_VALUE || cost[i] >= bestCost)
 				{
 					continue;
@@ -352,7 +373,8 @@ final class PathGuide
 			int legEnd = i - 1;
 			if (legEnd > legStart)
 			{
-				List<int[]> walk = walkBetween(map, z, path.get(legStart), path.get(legEnd), legEnd - legStart);
+				List<int[]> walk = walkBetween(map, plane(path.get(legStart), z), path.get(legStart), path.get(legEnd),
+					legEnd - legStart);
 				if (walk == null)
 				{
 					walk = path.subList(legStart, legEnd + 1);
@@ -370,9 +392,19 @@ final class PathGuide
 
 	private static boolean isStep(Walkable map, int z, int[] a, int[] b)
 	{
+		if (plane(a, z) != plane(b, z))
+		{
+			return false;
+		}
 		int dx = b[0] - a[0];
 		int dy = b[1] - a[1];
-		return Math.max(Math.abs(dx), Math.abs(dy)) == 1 && map.step(a[0], a[1], z, dx, dy);
+		return Math.max(Math.abs(dx), Math.abs(dy)) == 1 && map.step(a[0], a[1], plane(a, z), dx, dy);
+	}
+
+	/** A step's floor ({x, y, plane}), or the given one for old-style {x, y} steps. */
+	static int plane(int[] t, int z)
+	{
+		return t.length > 2 ? t[2] : z;
 	}
 
 	/** The game's walk from a to b, if it is no longer than maxSteps; else null. */
@@ -435,7 +467,7 @@ final class PathGuide
 		List<int[]> walk = new ArrayList<>();
 		for (int at = goal; at != -1; at = prev[at])
 		{
-			walk.add(new int[]{at / h + x0, at % h + y0});
+			walk.add(new int[]{at / h + x0, at % h + y0, z});
 		}
 		Collections.reverse(walk);
 		return walk;

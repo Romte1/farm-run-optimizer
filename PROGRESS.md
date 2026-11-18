@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-16.
 
 ## Status
 
-Version **1.8.2**. Live on the Plugin Hub.
+Version **1.9.0**. Live on the Plugin Hub.
 
 ## Done
 
@@ -37,6 +37,7 @@ Version **1.8.2**. Live on the Plugin Hub.
 - [x] Patch data generated from RuneLite source (`scripts/`), all 28 patches verified
 
 ## Recent fixes
+- 1.9.0: walk-links.tsv now 5074 links (transports + agility_shortcuts; same floor <=15 tiles, floor changes <=6) with reqId -> walk-reqs.tsv (skills/items ids/quests/varbits/varplayers). WalkRequirements checks them (client thread, quests cached 60s, items = inventory+worn). PathGuide is multi-floor (4 planes if <=1.2M cells). Tests: ReqCheck (16); real map: Lumbridge castle upstairs -> tree, Nemus shortcut by Agility.
 - 1.8.2: Decoded.checkHealth from patch-states 'check' flag -> healthCheckDue set -> StepItems 'Check the tree's health' before 'Pay the gardener to clear it'; panel marks current line (StopWork.isCurrent). Test FruitHardCheck (26). Not yet added: Anglers' Retreat hardwood patch (gardener 15065).
 - 1.8.1: gameHintArrow setting (default on): client hint arrow on gardener NPC / lead object / patch object / nav target; set only on change; not before teleport; doesn't clear other plugins' arrows.
 - 1.8.0: PathGuide.find floods the window then picks the goal like SP's ReachableGoalRule (ring 1 tiers: open side, walled side, corner; rings 2-5 any reachable); gardener-payment stops target the learned approach tile (onto); stuck-start step allowed; fairy ring log (group 381) code tagged green + scrolled once.

@@ -44,7 +44,7 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 ### Getting there
 - **Fastest teleports you own**: jewellery, capes, the ectophial, spells or tablets (your choice).
 - **Fairy rings** chained back to back, with the code to dial on every stop, e.g. Ardougne cloak, walk to BLR, dial ALQ, then AKR, then AJP.
-- **On the ground**: the next patch is outlined, with a steady arrow over it and a marker or arrow on the minimap (no extra plugin needed); on fairy ring and spirit tree stops the ring or tree is marked with what to pick. A built-in **guide line** shows the way to each stop, on screen and on the minimap, using a walking map of the whole game, so it's right even before the area has loaded (no other plugin needed). You can also hand each stop to the **[Shortest Path](https://runelite.net/plugin-hub/show/shortest-path)** plugin if you prefer its line.
+- **On the ground**: the next patch is outlined, with a steady arrow over it and a marker or arrow on the minimap (no extra plugin needed); on fairy ring and spirit tree stops the ring or tree is marked with what to pick. A built-in **guide line** shows the way to each stop, on screen and on the minimap, using a walking map of the whole game, so it's right even before the area has loaded. It goes through the doors, gates, stairs and shortcuts your quests, levels and items allow (no other plugin needed). You can also hand each stop to the **[Shortest Path](https://runelite.net/plugin-hub/show/shortest-path)** plugin if you prefer its line.
 - **Gardeners** you need to pay are outlined, with what to give them.
 
 <p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/walking-path-ardougne.png" alt="Walking path to the Ardougne herb patch with the run-ready box" width="100%"></p>
@@ -99,7 +99,7 @@ Everything can be switched on or off in the panel's **Settings** section or in R
 ## Credits
 
 - **[RuneLite](https://github.com/runelite/runelite)**: patch states, regions and growth stages come from RuneLite's Time Tracking plugin.
-- **[Shortest Path](https://github.com/Skretzo/shortest-path)** by Skretzo: the guide line uses its walking map of the game (BSD 2-Clause, see NOTICE). Optionally, Farm Run Optimizer can also send it each stop for its own line.
+- **[Shortest Path](https://github.com/Skretzo/shortest-path)** by Skretzo: the guide line uses its walking map of the game and its lists of doors, stairs and shortcuts with what they need (BSD 2-Clause, see NOTICE). Optionally, Farm Run Optimizer can also send it each stop for its own line.
 - **[Old School RuneScape Wiki](https://oldschool.runescape.wiki/)**: items, payments, growth times, teleports, directions and fairy ring codes.
 
 Released under the [BSD 2-Clause License](LICENSE). Full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of Jagex Ltd; this plugin is not affiliated with or endorsed by Jagex.

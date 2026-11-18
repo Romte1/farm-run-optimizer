@@ -1908,6 +1908,11 @@ public class HerbRunPlugin extends Plugin
 	private String guideKind;
 	/** Walking map of the whole world, loaded in the background at start-up. */
 	private volatile WorldWalkMap worldMap;
+	/** What its doors, stairs and shortcuts need (quests, levels, items, game state). */
+	private volatile WalkRequirements walkReqs = WalkRequirements.empty();
+	/** Finished quests, by name, cached for a minute (asking the game runs a script each time). */
+	private final Map<String, Boolean> questCache = new java.util.HashMap<>();
+	private long questCacheAt;
 	private volatile boolean worldMapLoading;
 
 	String getGuideStatus()
@@ -1941,6 +1946,13 @@ public class HerbRunPlugin extends Plugin
 							m.loadLinks(links);
 						}
 					}
+					try (java.io.InputStream reqs = HerbRunPlugin.class.getResourceAsStream("walk-reqs.tsv"))
+					{
+						if (reqs != null)
+						{
+							walkReqs = WalkRequirements.load(reqs);
+						}
+					}
 					worldMap = m;
 				}
 			}
@@ -1968,12 +1980,13 @@ public class HerbRunPlugin extends Plugin
 		}
 		WorldPoint me = player.getWorldLocation();
 		LocalPoint meLocal = player.getLocalLocation();
-		if (me == null || meLocal == null || me.getPlane() != target.getPlane()
+		boolean otherFloor = me != null && me.getPlane() != target.getPlane() && worldMap == null;
+		if (me == null || meLocal == null || otherFloor
 			|| dist(me, target.getX(), target.getY()) > MAX_GUIDE_TILES)
 		{
 			clearGuide(); // far away: teleport first
-			guideStatusText = me != null && me.getPlane() != target.getPlane()
-				? "Next stop is on another floor"
+			guideStatusText = otherFloor
+				? "Next stop is on another floor (walking map still loading)"
 				: "Next stop " + (me == null ? "?" : String.valueOf(dist(me, target.getX(), target.getY())))
 					+ " tiles away: teleport first (no line past " + MAX_GUIDE_TILES + ")";
 			return;
@@ -2003,10 +2016,12 @@ public class HerbRunPlugin extends Plugin
 		NPC gardener = gardenerSpot == null && payLabel != null ? getGardenerToPay() : null;
 		TileObject lead = leading ? navLeadObject : null;
 		GameObject patchObj = leading ? null : objectFor(next);
-		if (gardenerSpot != null && gardenerSpot.getPlane() == me.getPlane())
+		int targetPlane = target.getPlane();
+		if (gardenerSpot != null)
 		{
 			minX = maxX = gardenerSpot.getX();
 			minY = maxY = gardenerSpot.getY();
+			targetPlane = gardenerSpot.getPlane();
 			exact = true;
 			onto = true;
 		}
@@ -2014,11 +2029,13 @@ public class HerbRunPlugin extends Plugin
 		{
 			minX = maxX = gardener.getWorldLocation().getX();
 			minY = maxY = gardener.getWorldLocation().getY();
+			targetPlane = gardener.getWorldLocation().getPlane();
 			exact = true;
 		}
 		else if (lead instanceof GameObject)
 		{
 			GameObject g = (GameObject) lead;
+			targetPlane = me.getPlane(); // loaded objects are on your floor
 			minX = baseX + g.getSceneMinLocation().getX();
 			minY = baseY + g.getSceneMinLocation().getY();
 			maxX = baseX + g.getSceneMaxLocation().getX();
@@ -2033,6 +2050,7 @@ public class HerbRunPlugin extends Plugin
 		}
 		else if (patchObj != null)
 		{
+			targetPlane = me.getPlane();
 			minX = baseX + patchObj.getSceneMinLocation().getX();
 			minY = baseY + patchObj.getSceneMinLocation().getY();
 			maxX = baseX + patchObj.getSceneMaxLocation().getX();
@@ -2047,7 +2065,6 @@ public class HerbRunPlugin extends Plugin
 		String what = gardenerSpot != null ? "gardener spot" : gardener != null ? "gardener" : lead != null ? (navRingLabel != null ? navRingLabel : "lead")
 			: patchObj != null ? "patch" : leading && navRingLabel != null ? navRingLabel + " (not loaded)" : "patch (not loaded, rough tile)";
 		String aim = what + " at " + minX + "," + minY + (maxX != minX || maxY != minY ? " to " + maxX + "," + maxY : "");
-		int agility = client.getBoostedSkillLevel(Skill.AGILITY);
 		String key = (gardener != null ? "gardener" : minX + "," + minY + "," + maxX + "," + maxY)
 			+ "," + me.getPlane() + "," + onto + "," + exact;
 		if (me.equals(guideFrom) && key.equals(guideKey) && guideBox != null
@@ -2088,7 +2105,7 @@ public class HerbRunPlugin extends Plugin
 			WorldWalkMap world = worldMap;
 			if (world != null && world.hasRegion(me.getX(), me.getY()))
 			{
-				world.setAgility(agility);
+				world.setAllowed(walkReqs.check(walkPlayer()));
 				map = world;
 			}
 			else
@@ -2102,12 +2119,13 @@ public class HerbRunPlugin extends Plugin
 				}
 				map = PathGuide.scene(maps[me.getPlane()].getFlags(), baseX, baseY);
 			}
-			List<int[]> steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(), minX, minY, maxX, maxY, onto, GUIDE_MARGIN);
+			int tz = map == world ? targetPlane : me.getPlane();
+			List<int[]> steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(), tz, minX, minY, maxX, maxY, onto, GUIDE_MARGIN);
 			// Only the rough tile known (the object isn't loaded yet): the tile may be inside the
 			// patch, so allow a slightly bigger box.
 			for (int grow = 1; steps.isEmpty() && !exact && grow <= 2; grow++)
 			{
-				steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(),
+				steps = PathGuide.find(map, me.getPlane(), me.getX(), me.getY(), tz,
 					minX - grow, minY - grow, maxX + grow, maxY + grow, false, GUIDE_MARGIN);
 			}
 			guideSteps = PathGuide.gameWalk(map, me.getPlane(), steps);
@@ -2124,7 +2142,7 @@ public class HerbRunPlugin extends Plugin
 		// Reached B: the line goes away (until the next stop gives a new B).
 		if (!guideSteps.isEmpty()
 			&& (PathGuide.distToBox(me.getX(), me.getY(), minX, minY, maxX, maxY) <= 1
-			|| Arrays.equals(guideSteps.get(guideSteps.size() - 1), new int[]{me.getX(), me.getY()})))
+			|| atStep(guideSteps.get(guideSteps.size() - 1), me)))
 		{
 			guideReached = true;
 		}
@@ -2141,10 +2159,95 @@ public class HerbRunPlugin extends Plugin
 		List<WorldPoint> out = new ArrayList<>(guideSteps.size());
 		for (int[] t : guideSteps)
 		{
-			out.add(new WorldPoint(t[0], t[1], me.getPlane()));
+			out.add(new WorldPoint(t[0], t[1], PathGuide.plane(t, me.getPlane())));
 		}
 		guidePath = out.size() >= 2 ? out : Collections.emptyList();
 	}
+
+	private static boolean atStep(int[] t, WorldPoint me)
+	{
+		return t[0] == me.getX() && t[1] == me.getY() && PathGuide.plane(t, me.getPlane()) == me.getPlane();
+	}
+
+	/** You, as the guide line's door / stairs / shortcut checks see you. Call on the client thread. */
+	private WalkRequirements.Player walkPlayer()
+	{
+		long now = System.currentTimeMillis();
+		if (now - questCacheAt > 60_000L)
+		{
+			questCache.clear();
+			questCacheAt = now;
+		}
+		Map<Integer, Integer> carried = new java.util.HashMap<>();
+		for (int container : new int[]{INVENTORY_CONTAINER, WORN_CONTAINER})
+		{
+			ItemContainer c = client.getItemContainer(container);
+			if (c == null)
+			{
+				continue;
+			}
+			for (net.runelite.api.Item item : c.getItems())
+			{
+				if (item != null && item.getId() >= 0)
+				{
+					carried.merge(item.getId(), item.getQuantity(), Integer::sum);
+				}
+			}
+		}
+		return new WalkRequirements.Player()
+		{
+			@Override
+			public int level(String skill)
+			{
+				for (Skill sk : Skill.values())
+				{
+					if (sk.getName().equalsIgnoreCase(skill))
+					{
+						return client.getBoostedSkillLevel(sk);
+					}
+				}
+				return -1;
+			}
+
+			@Override
+			public boolean questDone(String quest)
+			{
+				return questCache.computeIfAbsent(quest, q ->
+				{
+					for (net.runelite.api.Quest qu : net.runelite.api.Quest.values())
+					{
+						if (qu.getName().equals(q))
+						{
+							return qu.getState(client) == net.runelite.api.QuestState.FINISHED;
+						}
+					}
+					return false;
+				});
+			}
+
+			@Override
+			public int varbit(int id)
+			{
+				return client.getVarbitValue(id);
+			}
+
+			@Override
+			public int varp(int id)
+			{
+				return client.getVarpValue(id);
+			}
+
+			@Override
+			public int carried(int itemId)
+			{
+				return carried.getOrDefault(itemId, 0);
+			}
+		};
+	}
+
+	/** Inventory and worn-equipment containers (RuneLite's gameval InventoryID INV and WORN). */
+	private static final int INVENTORY_CONTAINER = 93;
+	private static final int WORN_CONTAINER = 94;
 
 	private void clearGuide()
 	{
@@ -2169,10 +2272,14 @@ public class HerbRunPlugin extends Plugin
 		}
 		// Each point is pinned to its own tile on the map (not worked out from where your
 		// character is standing), so the line stays fixed on the ground while you move.
+		Player player = client.getLocalPlayer();
+		int floor = player == null || player.getWorldLocation() == null ? path.get(0).getPlane()
+			: player.getWorldLocation().getPlane();
 		List<LocalPoint> out = new ArrayList<>(path.size());
 		for (WorldPoint wp : path)
 		{
-			LocalPoint lp = LocalPoint.fromWorld(client, wp);
+			// Only the part of the route on your floor is drawn (the rest is up or down stairs).
+			LocalPoint lp = wp.getPlane() == floor ? LocalPoint.fromWorld(client, wp) : null;
 			if (lp != null)
 			{
 				int sx = lp.getSceneX();
