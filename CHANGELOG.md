@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.10.0 (2026-11-18)
+- **Seven new run types** (all off by default; switch them on in the panel or settings):
+  - **Bushes:** Champions' Guild, Rimmington, Ardougne, Etceteria, Farming Guild. Redberry up to poison ivy. Check health, pick the berries, dig up with a spade to replant.
+  - **Hops:** Lumbridge, Seers' Village, Yanille, Entrana, Aldarin. Barley up to wildblood, 4 seeds a patch (jute 3).
+  - **Cactus:** Al Kharid, Farming Guild. Cactus and potato cactus (which grows every 10 minutes).
+  - **Calquat:** Tai Bwo Wannai, Kastori. The gardener clears it for 200 coins.
+  - **Spirit trees:** Port Sarim, Etceteria, Brimhaven, Hosidius, Farming Guild. Only plants as many as your Farming level allows (1 at 83, 2 at 88, 3 at 93, 4 at 96, any at 99), counting ones already planted. Payment of 5 monkey nuts, 1 monkey bar and 1 ground tooth is on the bring list.
+  - **Celastrus** and **redwood** in the Farming Guild's top tier.
+- Each has timers, health-check-first steps, gardener payments (from the OSRS Wiki), XP estimates, highlights, the guide line and gardener highlighting (gardener ids from RuneLite).
+- New ways in: Amulet of glory (Al Kharid), Ring of wealth (Miscellania) and fairy rings AIQ, ALS, CIP and CKR.
+- Farming Guild contracts for bushes, cactus, celastrus and redwood now point at the right guild patch.
+- Not yet: the Great Conch calquat and Anglers' Retreat hardwood patches (Sailing areas).
+
 ## 1.9.0 (2026-11-18)
 - **Guide line checks what doors, stairs and shortcuts need, like Shortest Path.** It now knows over 5,000 doors, gates, stairs, ladders and shortcuts (from Shortest Path's lists), and works out which you can use from your skill levels, finished quests, items carried or worn, and game progress. Before, anything needing more than an Agility level was treated as closed, so the line went the long way round (or nowhere) past quest gates and item shortcuts.
 - **Stairs and ladders:** the line can start upstairs or downstairs and take you down (or up) to the stop. Only the part on your floor is drawn.

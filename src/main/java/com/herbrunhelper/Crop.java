@@ -56,7 +56,34 @@ public enum Crop
 
 	// Hardwood: 640-minute ticks
 	TEAK(PatchType.HARDWOOD, "Teak", 35, "Teak sapling", 8, "Limpwurt root", 15, 6333),
-	MAHOGANY(PatchType.HARDWOOD, "Mahogany", 55, "Mahogany sapling", 9, "Yanillian hops", 25, 6332);
+	MAHOGANY(PatchType.HARDWOOD, "Mahogany", 55, "Mahogany sapling", 9, "Yanillian hops", 25, 6332),
+
+	// Bushes: stages and ticks from RuneLite's Produce; levels, payments from the OSRS Wiki.
+	REDBERRIES(PatchType.BUSH, "Redberry", 10, "Redberry seed", 6, "Cabbages(10)", 4, 1951),
+	CADAVABERRIES(PatchType.BUSH, "Cadavaberry", 22, "Cadavaberry seed", 7, "Tomatoes(5)", 3, 753),
+	DWELLBERRIES(PatchType.BUSH, "Dwellberry", 36, "Dwellberry seed", 8, "Strawberries(5)", 3, 2126),
+	JANGERBERRIES(PatchType.BUSH, "Jangerberry", 48, "Jangerberry seed", 9, "Watermelon", 6, 247),
+	WHITEBERRIES(PatchType.BUSH, "Whiteberry", 59, "Whiteberry seed", 9, "Mushroom", 8, 239),
+	POISON_IVY(PatchType.BUSH, "Poison ivy", 70, "Poison ivy seed", 9, null, 0, 6018), // immune to disease
+
+	// Hops: 4 seeds (jute 3).
+	BARLEY(PatchType.HOPS, "Barley", 3, "Barley seed", 5, "Compost", 3, 6006),
+	HAMMERSTONE(PatchType.HOPS, "Hammerstone", 4, "Hammerstone seed", 5, "Marigolds", 1, 5994),
+	ASGARNIAN(PatchType.HOPS, "Asgarnian", 8, "Asgarnian seed", 6, "Onions(10)", 1, 5996),
+	JUTE(PatchType.HOPS, "Jute", 13, "Jute seed", 6, "Barley malt", 6, 5931),
+	YANILLIAN(PatchType.HOPS, "Yanillian", 16, "Yanillian seed", 7, "Tomatoes(5)", 1, 5998),
+	KRANDORIAN(PatchType.HOPS, "Krandorian", 21, "Krandorian seed", 8, "Cabbages(10)", 3, 6000),
+	WILDBLOOD(PatchType.HOPS, "Wildblood", 28, "Wildblood seed", 9, "Nasturtiums", 1, 6002),
+
+	// Cactus (potato cactus grows every 10 minutes, not 80).
+	CACTUS(PatchType.CACTUS, "Cactus", 55, "Cactus seed", 8, "Cadava berries", 6, 6016),
+	POTATO_CACTUS(PatchType.CACTUS, "Potato cactus", 64, "Potato cactus seed", 8, "Snape grass", 8, 3138),
+
+	// Special trees.
+	CALQUAT(PatchType.CALQUAT, "Calquat", 72, "Calquat sapling", 9, "Poison ivy berries", 8, 5980),
+	SPIRIT_TREE(PatchType.SPIRIT_TREE, "Spirit tree", 83, "Spirit sapling", 13, "Monkey nuts", 5, 6063),
+	CELASTRUS(PatchType.CELASTRUS, "Celastrus", 85, "Celastrus sapling", 6, "Potato cactus", 8, 22935),
+	REDWOOD(PatchType.REDWOOD, "Redwood", 90, "Redwood sapling", 11, "Dragonfruit", 6, 19669);
 
 	private final PatchType type;
 	private final String displayName;
@@ -81,10 +108,33 @@ public enum Crop
 		this.paymentQuantity = paymentQuantity;
 	}
 
-	/** Allotments take 3 seeds; everything else 1 seed or sapling. */
+	/** Allotments take 3 seeds, hops 4 (jute 3); everything else 1 seed or sapling. */
 	public int getSeedsPerPatch()
 	{
+		if (type == PatchType.HOPS)
+		{
+			return this == JUTE ? 3 : 4;
+		}
 		return type == PatchType.ALLOTMENT ? 3 : 1;
+	}
+
+	/**
+	 * Other things the gardener wants on top of {@link #getPaymentItem()}: name and quantity
+	 * pairs. Spirit trees: 5 monkey nuts, plus 1 monkey bar and 1 ground tooth (OSRS Wiki).
+	 */
+	public String[][] getExtraPayments()
+	{
+		if (this == SPIRIT_TREE)
+		{
+			return new String[][]{{"Monkey bar", "1"}, {"Ground tooth", "1"}};
+		}
+		return new String[0][];
+	}
+
+	/** Minutes between growth ticks: the patch type's, except potato cactus (10, per RuneLite). */
+	public int getTickMinutes()
+	{
+		return this == POTATO_CACTUS ? 10 : type.getTickMinutes();
 	}
 
 	public PatchType getType()
@@ -116,7 +166,7 @@ public enum Crop
 
 	public int getGrowthMinutes()
 	{
-		return (stages - 1) * type.getTickMinutes();
+		return (stages - 1) * getTickMinutes();
 	}
 
 	public int getIconItemId()
@@ -159,21 +209,34 @@ public enum Crop
 				return "Teak seed";
 			case MAHOGANY:
 				return "Mahogany seed";
+			case CALQUAT:
+				return "Calquat tree seed";
+			case SPIRIT_TREE:
+				return "Spirit seed";
+			case CELASTRUS:
+				return "Celastrus seed";
+			case REDWOOD:
+				return "Redwood tree seed";
 			default:
 				return null;
 		}
 	}
 
-	/** Seedling in a plant pot before watering, e.g. "Maple seedling". Null for herbs. */
+	/** Seedling in a plant pot before watering, e.g. "Maple seedling". Null for seeds planted directly. */
 	public String getSeedlingName()
 	{
-		return type == PatchType.HERB ? null : displayName + " seedling";
+		if (!type.usesSaplings())
+		{
+			return null;
+		}
+		return this == SPIRIT_TREE ? "Spirit seedling" : displayName + " seedling";
 	}
 
-	/** Watered seedling, growing into a sapling, e.g. "Maple seedling (w)". Null for herbs. */
+	/** Watered seedling, growing into a sapling, e.g. "Maple seedling (w)". Null for seeds planted directly. */
 	public String getWateredSeedlingName()
 	{
-		return type == PatchType.HERB ? null : displayName + " seedling (w)";
+		String s = getSeedlingName();
+		return s == null ? null : s + " (w)";
 	}
 
 	public String getPaymentItem()

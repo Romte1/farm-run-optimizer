@@ -11,7 +11,9 @@ from pathlib import Path
 
 LETTER = {c: 4771 + i for i, c in enumerate("ABCDE")}
 LETTER.update({c: 7904 + i for i, c in enumerate("FGHIJKLMN")})
-TYPE = {"ALLOTMENT": "ALLOTMENT", "HERB": "HERB", "TREE": "TREE", "FRUIT_TREE": "FRUIT_TREE", "HARDWOOD": "HARDWOOD_TREE"}
+TYPE = {"ALLOTMENT": "ALLOTMENT", "HERB": "HERB", "TREE": "TREE", "FRUIT_TREE": "FRUIT_TREE", "HARDWOOD": "HARDWOOD_TREE",
+        "BUSH": "BUSH", "HOPS": "HOPS", "CACTUS": "CACTUS", "CALQUAT": "CALQUAT", "SPIRIT_TREE": "SPIRIT_TREE",
+        "CELASTRUS": "CELASTRUS", "REDWOOD": "REDWOOD"}
 
 
 def runelite_patches(world):

@@ -65,6 +65,20 @@ public final class GrowthClock
 		return Math.floorDiv(now - phase, tick) * tick + phase + tick;
 	}
 
+	/** A crop's own tick length (potato cactus grows faster than its patch type). */
+	public static long tickMillis(Crop crop)
+	{
+		return crop.getTickMinutes() * 60_000L;
+	}
+
+	/** The crop's next growth tick after now (lined up with its patch type's learned timing). */
+	public synchronized long nextTick(Crop crop, long now)
+	{
+		long tick = tickMillis(crop);
+		long phase = Math.floorMod(phaseMillis.getOrDefault(crop.getType(), 0L), tick);
+		return Math.floorDiv(now - phase, tick) * tick + phase + tick;
+	}
+
 	/** Ready time for a crop seen at this growth stage right now. */
 	public long readyFromLive(Crop crop, int stage, long now)
 	{
@@ -73,13 +87,13 @@ public final class GrowthClock
 		{
 			return now;
 		}
-		return nextTick(crop.getType(), now) + (long) (last - 1 - stage) * tickMillis(crop.getType());
+		return nextTick(crop, now) + (long) (last - 1 - stage) * tickMillis(crop);
 	}
 
 	/** Ready time for a crop that reached this stage at changedAt. */
 	public static long readyFromChange(Crop crop, int stage, long changedAt)
 	{
 		int last = crop.getStages() - 1;
-		return changedAt + (long) Math.max(0, last - stage) * tickMillis(crop.getType());
+		return changedAt + (long) Math.max(0, last - stage) * tickMillis(crop);
 	}
 }

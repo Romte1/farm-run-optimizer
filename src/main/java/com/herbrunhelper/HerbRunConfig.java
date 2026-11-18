@@ -50,6 +50,48 @@ public interface HerbRunConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(keyName = "includeBushes", name = "Bush run", description = "Include bush patches (redberries up to poison ivy): Champions' Guild, Rimmington, Ardougne, Etceteria, Farming Guild", position = 4, section = runSection)
+	default boolean includeBushes()
+	{
+		return false;
+	}
+
+	@ConfigItem(keyName = "includeHops", name = "Hops run", description = "Include hops patches (barley up to wildblood): Lumbridge, Seers' Village, Yanille, Entrana, Aldarin", position = 4, section = runSection)
+	default boolean includeHops()
+	{
+		return false;
+	}
+
+	@ConfigItem(keyName = "includeCactus", name = "Cactus run", description = "Include cactus patches (cactus, potato cactus): Al Kharid, Farming Guild", position = 4, section = runSection)
+	default boolean includeCactus()
+	{
+		return false;
+	}
+
+	@ConfigItem(keyName = "includeCalquat", name = "Calquat run", description = "Include calquat patches: Tai Bwo Wannai, Kastori", position = 4, section = runSection)
+	default boolean includeCalquat()
+	{
+		return false;
+	}
+
+	@ConfigItem(keyName = "includeSpiritTrees", name = "Spirit tree run", description = "Include spirit tree patches: Port Sarim, Etceteria, Brimhaven, Hosidius, Farming Guild (how many you can plant depends on your Farming level)", position = 4, section = runSection)
+	default boolean includeSpiritTrees()
+	{
+		return false;
+	}
+
+	@ConfigItem(keyName = "includeCelastrus", name = "Celastrus run", description = "Include the Farming Guild celastrus patch", position = 4, section = runSection)
+	default boolean includeCelastrus()
+	{
+		return false;
+	}
+
+	@ConfigItem(keyName = "includeRedwood", name = "Redwood run", description = "Include the Farming Guild redwood patch", position = 4, section = runSection)
+	default boolean includeRedwood()
+	{
+		return false;
+	}
+
 	@ConfigItem(keyName = "payGardeners", name = "Pay gardeners", description = "Bring payment so gardeners protect your trees", position = 3, section = runSection)
 	default boolean payGardeners()
 	{

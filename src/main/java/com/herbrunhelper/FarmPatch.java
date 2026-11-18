@@ -140,6 +140,103 @@ public enum FarmPatch
 		walk("Next patch along", "FOSSIL_HARDWOOD_MIDDLE"),
 		via(Teleport.DIGSITE_PENDANT, "Fossil Island, patches by the camp")),
 
+	// ---- Bushes (1 seed; check health, pick the berries, dig up to replant)
+	CHAMPIONS_GUILD_BUSH("Champions' Guild bush", PatchType.BUSH, Requirement.NONE, 3182, 3356, r(12596), 4771, null, "Varrock West bank",
+		via(Teleport.VARROCK_TAB, "run south-west past the Champions' Guild"),
+		via(Teleport.VARROCK_SPELL, "run south-west past the Champions' Guild")),
+	RIMMINGTON_BUSH("Rimmington bush", PatchType.BUSH, Requirement.NONE, 2938, 3223, r(11570, 11826), 4771, null, "Draynor Village bank",
+		via(Teleport.EXPLORERS_RING, "cabbage patch teleport, run south-west to Rimmington"),
+		via(Teleport.FAIRY_AIQ, "run north to Rimmington"),
+		via(Teleport.FALADOR_TAB, "run south to Rimmington"),
+		via(Teleport.FALADOR_SPELL, "run south to Rimmington")),
+	ARDOUGNE_BUSH("Ardougne bush", PatchType.BUSH, Requirement.NONE, 2615, 3224, r(10290, 10546), 4771, null, "Ardougne South bank",
+		via(Teleport.ARDOUGNE_CLOAK, "Kandarin Monastery teleport, bush is just east"),
+		via(Teleport.ARDOUGNE_TAB, "run south past the zoo"),
+		via(Teleport.ARDOUGNE_SPELL, "run south past the zoo")),
+	ETCETERIA_BUSH("Etceteria bush", PatchType.BUSH, Requirement.FREMENNIK_TRIALS, 2589, 3862, r(10300), 4771, null, null,
+		via(Teleport.FAIRY_CIP, "run east over the bridge to Etceteria"),
+		via(Teleport.RING_OF_WEALTH, "run east over the bridge to Etceteria")),
+	GUILD_BUSH("Farming Guild bush", PatchType.BUSH, Requirement.FARMING_45, 1259, 3729, r(4922, 4665, 4666, 4667, 4921, 4923, 5177, 5178, 5179), 4772, "CIR", "Farming Guild bank",
+		walk("Walk from the guild herb patch", "FARMING_GUILD_HERB"),
+		beatsFairy(Teleport.FARMING_CAPE, "east wing"),
+		via(Teleport.SKILLS_NECKLACE, "Farming Guild, east wing"),
+		via(Teleport.FAIRY_CIR, "run south-west, then the guild's east wing")),
+
+	// ---- Hops (4 seeds, jute 3; harvesting empties the patch)
+	LUMBRIDGE_HOPS("Lumbridge hops", PatchType.HOPS, Requirement.NONE, 3224, 3313, r(12851), 4771, null, "Lumbridge Castle bank (top floor)",
+		via(Teleport.LUMBRIDGE_TAB, "run north past the farms"),
+		via(Teleport.LUMBRIDGE_SPELL, "run north past the farms"),
+		walk("Walk south-east from the Champions' Guild bush", "CHAMPIONS_GUILD_BUSH")),
+	SEERS_HOPS("Seers' Village hops", PatchType.HOPS, Requirement.NONE, 2661, 3523, r(10551, 10550), 4771, "ALS", "Seers' Village bank",
+		via(Teleport.FAIRY_ALS, "run north past McGrubor's Wood"),
+		via(Teleport.CAMELOT_TAB, "run west past Seers' Village"),
+		via(Teleport.CAMELOT_SPELL, "run west past Seers' Village")),
+	YANILLE_HOPS("Yanille hops", PatchType.HOPS, Requirement.NONE, 2572, 3102, r(10288), 4771, "CIQ", "Yanille bank",
+		via(Teleport.FAIRY_CIQ, "run south to Yanille")),
+	ENTRANA_HOPS("Entrana hops", PatchType.HOPS, Requirement.NONE, 2812, 3334, r(11060, 11316), 4771, null, null,
+		via(Teleport.FALADOR_TAB, "run south to Port Sarim, monks' boat to Entrana (no weapons or armour)"),
+		via(Teleport.FALADOR_SPELL, "run south to Port Sarim, monks' boat to Entrana (no weapons or armour)"),
+		via(Teleport.EXPLORERS_RING, "cabbage patch teleport, run south to Port Sarim, monks' boat (no weapons or armour)")),
+	ALDARIN_HOPS("Aldarin hops", PatchType.HOPS, Requirement.CHILDREN_OF_THE_SUN, 1367, 2938, r(5421, 5165, 5166, 5422, 5677, 5678), 4771, null, null,
+		via(Teleport.CIVITAS_SPELL, "quetzal from Civitas illa Fortis to Aldarin, run north")),
+
+	// ---- Cactus (1 seed; check health, pick, dig up to replant)
+	AL_KHARID_CACTUS("Al Kharid cactus", PatchType.CACTUS, Requirement.NONE, 3313, 3201, r(13106, 13362, 13105), 4771, null, "Al Kharid bank",
+		via(Teleport.AMULET_OF_GLORY, "run south-east to the cactus patch"),
+		via(Teleport.LUMBRIDGE_TAB, "run east through the Al Kharid toll gate"),
+		via(Teleport.LUMBRIDGE_SPELL, "run east through the Al Kharid toll gate")),
+	GUILD_CACTUS("Farming Guild cactus", PatchType.CACTUS, Requirement.FARMING_45, 1264, 3745, r(4922, 4665, 4666, 4667, 4921, 4923, 5177, 5178, 5179), 7904, "CIR", "Farming Guild bank",
+		walk("Walk from the guild bush patch", "GUILD_BUSH"),
+		beatsFairy(Teleport.FARMING_CAPE, "east wing"),
+		via(Teleport.SKILLS_NECKLACE, "Farming Guild, east wing"),
+		via(Teleport.FAIRY_CIR, "run south-west, then the guild's east wing")),
+
+	// ---- Calquat (sapling; check health, pay the gardener to clear)
+	TAI_BWO_WANNAI_CALQUAT("Tai Bwo Wannai calquat", PatchType.CALQUAT, Requirement.NONE, 2795, 3102, r(11056), 4771, "CKR", null,
+		via(Teleport.FAIRY_CKR, "run north to Tai Bwo Wannai"),
+		via(Teleport.BRIMHAVEN_TAB, "run south to Tai Bwo Wannai")),
+	KASTORI_CALQUAT("Kastori calquat", PatchType.CALQUAT, Requirement.CHILDREN_OF_THE_SUN, 1366, 3033, r(5423, 5167, 5424), 4771, null, null,
+		walk("Walk from the Kastori fruit tree", "KASTORI_FRUIT"),
+		via(Teleport.PENDANT_OF_ATES, "Kastori"),
+		via(Teleport.QUETZAL_WHISTLE, "Kastori")),
+
+	// ---- Spirit trees (sapling; check health, dig up to replant). Tiles: Shortest Path's patch boxes.
+	PORT_SARIM_SPIRIT("Port Sarim spirit tree", PatchType.SPIRIT_TREE, Requirement.NONE, 3060, 3258, r(12082, 12083), 4771, null, "Draynor Village bank",
+		via(Teleport.EXPLORERS_RING, "cabbage patch teleport, run south"),
+		via(Teleport.FALADOR_TAB, "run south to Port Sarim"),
+		via(Teleport.FALADOR_SPELL, "run south to Port Sarim")),
+	ETCETERIA_SPIRIT("Etceteria spirit tree", PatchType.SPIRIT_TREE, Requirement.FREMENNIK_TRIALS, 2613, 3857, r(10300), 4772, null, null,
+		walk("Walk east from the Etceteria bush", "ETCETERIA_BUSH"),
+		via(Teleport.FAIRY_CIP, "run east over the bridge to Etceteria"),
+		via(Teleport.RING_OF_WEALTH, "run east over the bridge to Etceteria")),
+	BRIMHAVEN_SPIRIT("Brimhaven spirit tree", PatchType.SPIRIT_TREE, Requirement.NONE, 2802, 3203, r(11058, 11057), 4772, null, "Ardougne South bank",
+		walk("Walk east from the Brimhaven fruit tree", "BRIMHAVEN_FRUIT"),
+		via(Teleport.BRIMHAVEN_TAB, "run east"),
+		via(Teleport.ARDOUGNE_TAB, "boat from Ardougne docks to Brimhaven (30 coins), run east"),
+		via(Teleport.ARDOUGNE_SPELL, "boat from Ardougne docks to Brimhaven (30 coins), run east")),
+	HOSIDIUS_SPIRIT("Hosidius spirit tree", PatchType.SPIRIT_TREE, Requirement.NONE, 1693, 3542, r(6967, 6711), 7904, null, "Hosidius kitchen bank",
+		walk("Walk west from the Hosidius herb patch", "HOSIDIUS_HERB"),
+		via(Teleport.XERICS_TALISMAN, "Xeric's Glade, run south-west"),
+		via(Teleport.KHAREDSTS_MEMOIRS, "Hosidius, run south-west"),
+		via(Teleport.KOUREND_SPELL, "run south")),
+	GUILD_SPIRIT("Farming Guild spirit tree", PatchType.SPIRIT_TREE, Requirement.FARMING_85, 1253, 3750, r(4922, 4665, 4666, 4667, 4921, 4923, 5177, 5178, 5179), 4771, "CIR", "Farming Guild bank",
+		walk("Into the guild's top tier", "FARMING_GUILD_FRUIT"),
+		beatsFairy(Teleport.FARMING_CAPE, "top tier"),
+		via(Teleport.SKILLS_NECKLACE, "Farming Guild, top tier"),
+		via(Teleport.FAIRY_CIR, "run south-west, then the guild's top tier")),
+
+	// ---- Farming Guild top tier: celastrus and redwood
+	GUILD_CELASTRUS("Farming Guild celastrus", PatchType.CELASTRUS, Requirement.FARMING_85, 1244, 3752, r(4922, 4665, 4666, 4667, 4921, 4923, 5177, 5178, 5179), 7910, "CIR", "Farming Guild bank",
+		walk("Next to the guild fruit tree", "FARMING_GUILD_FRUIT"),
+		beatsFairy(Teleport.FARMING_CAPE, "top tier"),
+		via(Teleport.SKILLS_NECKLACE, "Farming Guild, top tier"),
+		via(Teleport.FAIRY_CIR, "run south-west, then the guild's top tier")),
+	GUILD_REDWOOD("Farming Guild redwood", PatchType.REDWOOD, Requirement.FARMING_85, 1233, 3754, r(4922, 4665, 4666, 4667, 4921, 4923, 5177, 5178, 5179), 7907, "CIR", "Farming Guild bank",
+		walk("West side of the guild's top tier", "FARMING_GUILD_FRUIT"),
+		beatsFairy(Teleport.FARMING_CAPE, "top tier, west side"),
+		via(Teleport.SKILLS_NECKLACE, "Farming Guild, top tier, west side"),
+		via(Teleport.FAIRY_CIR, "run south-west, then the guild's top tier")),
+
 	// ---- Allotments (3 seeds each; the gardener can protect them)
 	FALADOR_ALLOTMENT_A("Falador allotment (north-west)", PatchType.ALLOTMENT, Requirement.NONE, 3049, 3312,
 		r(12083), 4771, null, "Falador East bank",
@@ -302,6 +399,7 @@ public enum FarmPatch
 		MAKING_FRIENDS_WITH_MY_ARM("Making Friends with My Arm"),
 		CHILDREN_OF_THE_SUN("Children of the Sun"),
 		BONE_VOYAGE("Bone Voyage"),
+		FREMENNIK_TRIALS("The Fremennik Trials"),
 		MOURNINGS_END("Mourning's End Part I"),
 		FARMING_45("45 Farming"),
 		FARMING_65("65 Farming"),
@@ -330,6 +428,7 @@ public enum FarmPatch
 				case MAKING_FRIENDS_WITH_MY_ARM:
 				case CHILDREN_OF_THE_SUN:
 				case BONE_VOYAGE:
+				case FREMENNIK_TRIALS:
 				case MOURNINGS_END:
 					return description;
 				default:

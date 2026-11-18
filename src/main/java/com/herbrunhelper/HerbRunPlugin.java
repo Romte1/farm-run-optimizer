@@ -1296,27 +1296,45 @@ public class HerbRunPlugin extends Plugin
 	private Set<PatchType> runs()
 	{
 		Set<PatchType> runs = EnumSet.noneOf(PatchType.class);
-		if (config.includeHerbs())
+		for (PatchType t : PatchType.values())
 		{
-			runs.add(PatchType.HERB);
-		}
-		if (config.includeTrees())
-		{
-			runs.add(PatchType.TREE);
-		}
-		if (config.includeFruitTrees())
-		{
-			runs.add(PatchType.FRUIT_TREE);
-		}
-		if (config.includeHardwood())
-		{
-			runs.add(PatchType.HARDWOOD);
-		}
-		if (config.includeAllotments())
-		{
-			runs.add(PatchType.ALLOTMENT);
+			if (runOn(t))
+			{
+				runs.add(t);
+			}
 		}
 		return runs;
+	}
+
+	private boolean runOn(PatchType t)
+	{
+		switch (t)
+		{
+			case HERB:
+				return config.includeHerbs();
+			case TREE:
+				return config.includeTrees();
+			case FRUIT_TREE:
+				return config.includeFruitTrees();
+			case HARDWOOD:
+				return config.includeHardwood();
+			case ALLOTMENT:
+				return config.includeAllotments();
+			case BUSH:
+				return config.includeBushes();
+			case HOPS:
+				return config.includeHops();
+			case CACTUS:
+				return config.includeCactus();
+			case CALQUAT:
+				return config.includeCalquat();
+			case SPIRIT_TREE:
+				return config.includeSpiritTrees();
+			case CELASTRUS:
+				return config.includeCelastrus();
+			default:
+				return config.includeRedwood();
+		}
 	}
 
 	private void recompute()
@@ -1858,7 +1876,7 @@ public class HerbRunPlugin extends Plugin
 		if (next != null && next.getType().hasGardenerPayment())
 		{
 			learnApproach(next);
-			WorldPoint approach = approachTiles.get(next);
+			WorldPoint approach = Gardeners.sharedAcrossTypes(next) ? null : approachTiles.get(next);
 			if (approach != null)
 			{
 				pathTarget = approach; // the patch itself can't be walked on
@@ -2012,7 +2030,8 @@ public class HerbRunPlugin extends Plugin
 		boolean onto = false;
 		// Stops with a gardener: aim at the spot you stood on when you last paid them, the same
 		// fixed, walkable tile the Shortest Path plugin is sent (the gardener himself wanders).
-		WorldPoint gardenerSpot = !leading && next.getType().hasGardenerPayment() ? approachTiles.get(next) : null;
+		WorldPoint gardenerSpot = !leading && next.getType().hasGardenerPayment() && !Gardeners.sharedAcrossTypes(next)
+			? approachTiles.get(next) : null;
 		NPC gardener = gardenerSpot == null && payLabel != null ? getGardenerToPay() : null;
 		TileObject lead = leading ? navLeadObject : null;
 		GameObject patchObj = leading ? null : objectFor(next);
@@ -2751,25 +2770,7 @@ public class HerbRunPlugin extends Plugin
 	/** Called from the panel's run checkboxes. */
 	private void setRun(PatchType type, boolean on)
 	{
-		String key;
-		switch (type)
-		{
-			case HERB:
-				key = "includeHerbs";
-				break;
-			case TREE:
-				key = "includeTrees";
-				break;
-			case FRUIT_TREE:
-				key = "includeFruitTrees";
-				break;
-			case ALLOTMENT:
-				key = "includeAllotments";
-				break;
-			default:
-				key = "includeHardwood";
-		}
-		configManager.setConfiguration(HerbRunConfig.GROUP, key, on);
+		configManager.setConfiguration(HerbRunConfig.GROUP, type.getConfigKey(), on);
 	}
 
 	/** Called from the panel's Settings section. Saving fires ConfigChanged. */

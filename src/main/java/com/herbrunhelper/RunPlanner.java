@@ -151,7 +151,7 @@ public final class RunPlanner
 					&& !options.doneThisRun.contains(p) && !options.diseased.contains(p))));
 		for (PatchType t : doing)
 		{
-			if (t.isTreeLike())
+			if (t.usesSaplings())
 			{
 				addSeedlingTips(plan, t, owned, options);
 			}
@@ -194,7 +194,8 @@ public final class RunPlanner
 		for (RunPlan.RouteStep s : plan.route)
 		{
 			// Only pay to clear a tree you're replacing; with no sapling, leave it standing.
-			if (s.patch.getType().isTreeLike() && s.crop != null && !options.doneThisRun.contains(s.patch))
+			if (s.patch.getType().getClear() == PatchType.Clear.GARDENER && s.crop != null
+				&& !options.doneThisRun.contains(s.patch))
 			{
 				s.coins = TREE_REMOVAL_COINS;
 			}
@@ -518,7 +519,11 @@ public final class RunPlanner
 			FarmPatch guild = type == PatchType.HERB ? FarmPatch.FARMING_GUILD_HERB
 				: type == PatchType.TREE ? FarmPatch.FARMING_GUILD_TREE
 				: type == PatchType.FRUIT_TREE ? FarmPatch.FARMING_GUILD_FRUIT
-				: type == PatchType.ALLOTMENT ? FarmPatch.GUILD_ALLOTMENT_A : null;
+				: type == PatchType.ALLOTMENT ? FarmPatch.GUILD_ALLOTMENT_A
+				: type == PatchType.BUSH ? FarmPatch.GUILD_BUSH
+				: type == PatchType.CACTUS ? FarmPatch.GUILD_CACTUS
+				: type == PatchType.CELASTRUS ? FarmPatch.GUILD_CELASTRUS
+				: type == PatchType.REDWOOD ? FarmPatch.GUILD_REDWOOD : null;
 			if (guild != null && order.contains(guild))
 			{
 				if (owned.getOrDefault(contract.getSeedName(), 0) >= contract.getSeedsPerPatch() && contract.getLevel() <= plan.farmingLevel)
@@ -532,6 +537,30 @@ public final class RunPlanner
 					plan.warnings.add("Farming contract: bring " + aOrAn(contract.getSeedName()) + " "
 						+ contract.getSeedName().toLowerCase() + " for the Farming Guild patch.");
 				}
+			}
+		}
+		if (type == PatchType.SPIRIT_TREE)
+		{
+			// A spirit tree is kept once planted (grown, it's a teleport), so patches with one in
+			// aren't replanted, and each counts towards how many you may have planted at once,
+			// which depends on your Farming level (OSRS Wiki).
+			int allowed = spiritTreeLimit(plan.farmingLevel);
+			int occupied = 0;
+			for (FarmPatch p : FarmPatch.values())
+			{
+				if (p.getType() == PatchType.SPIRIT_TREE && options.growingCrops.containsKey(p))
+				{
+					occupied++;
+				}
+			}
+			order.removeIf(options.growingCrops::containsKey);
+			int cap = Math.max(0, allowed - occupied);
+			if (order.size() > cap)
+			{
+				plan.warnings.add("Spirit trees: at Farming " + plan.farmingLevel + " you can have " + allowed
+					+ " planted at once" + (occupied > 0 ? " (" + occupied + " already planted)" : "")
+					+ ", so " + (cap == 0 ? "none are" : "only " + cap + " " + (cap == 1 ? "is" : "are")) + " planted this run.");
+				order = new ArrayList<>(order.subList(0, cap));
 			}
 		}
 		int next = 0;
@@ -550,16 +579,25 @@ public final class RunPlanner
 		if (unplanted > 0 && !order.isEmpty())
 		{
 			Crop best = plantable.get(plantable.size() - 1);
-			String what = !type.isTreeLike() ? "seeds" : "saplings";
-			String patchName = type == PatchType.HERB ? "herb" : type == PatchType.ALLOTMENT ? "allotment" : type == PatchType.TREE ? "tree"
-				: type == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
+			String what = type.seedWord();
+			String patchName = type.patchName();
 			String rest = !type.isTreeLike() ? "the others are only harvested"
 				: "the others are just checked for health if grown (and left standing), or left off";
 			plan.warnings.add((order.size() == unplanted ? "No " + what + " for your " + patchName + " patches: "
-				+ (!type.isTreeLike() ? "patches are only harvested" : "grown trees are just checked for health and left standing")
+				+ (!type.isTreeLike() ? "patches are only harvested" : "grown ones are just checked for health and left standing")
 				: "Only enough " + what + " for " + (order.size() - unplanted) + " of " + order.size()
 				+ " " + patchName + " patches: " + rest) + ". Best you can plant: " + best.getSeedName() + ".");
 		}
+	}
+
+	/** Spirit trees you may have planted at once: 1 at 83, 2 at 88, 3 at 93, 4 at 96, any at 99. */
+	static int spiritTreeLimit(int farmingLevel)
+	{
+		if (farmingLevel >= 99)
+		{
+			return Integer.MAX_VALUE / 2;
+		}
+		return farmingLevel >= 96 ? 4 : farmingLevel >= 93 ? 3 : farmingLevel >= 88 ? 2 : farmingLevel >= 83 ? 1 : 0;
 	}
 
 	/** Remind you to pot and water tree seeds, so you have saplings for later runs. */
@@ -705,6 +743,10 @@ public final class RunPlanner
 			if (s.paymentItem != null && !s.done)
 			{
 				need.merge(s.paymentItem, s.paymentQuantity, Integer::sum);
+				for (String[] extra : s.crop.getExtraPayments())
+				{
+					need.merge(extra[0], Integer.parseInt(extra[1]), Integer::sum);
+				}
 			}
 		}
 		need.forEach((item, qty) ->
@@ -967,6 +1009,10 @@ public final class RunPlanner
 			if (s.paymentItem != null)
 			{
 				stackTypes.add(s.paymentItem + " (noted)");
+				for (String[] extra : s.crop.getExtraPayments())
+				{
+					stackTypes.add(extra[0] + " (noted)");
+				}
 			}
 			if (s.coins > 0)
 			{
@@ -1045,6 +1091,10 @@ public final class RunPlanner
 			if (s.paymentItem != null)
 			{
 				pay.merge(s.paymentItem, s.paymentQuantity, Integer::sum);
+				for (String[] extra : s.crop.getExtraPayments())
+				{
+					pay.merge(extra[0], Integer.parseInt(extra[1]), Integer::sum);
+				}
 			}
 			coins += s.coins;
 		}

@@ -34,6 +34,8 @@ public enum Teleport
 	HUNTER_CAPE(Kind.ITEM, "Hunter cape (Hunter Guild)", 9948, 0, null, null, null, "Hunter cape"),
 	PENDANT_OF_ATES(Kind.ITEM, "Pendant of ates", 29893, 0, null, null, null, "Pendant of ates"),
 	TELEPORT_CRYSTAL(Kind.ITEM, "Teleport crystal", 6099, 0, null, null, null, "Teleport crystal"),
+	AMULET_OF_GLORY(Kind.ITEM, "Amulet of glory (Al Kharid)", 1712, 0, null, null, null, "Amulet of glory("),
+	RING_OF_WEALTH(Kind.ITEM, "Ring of wealth (Miscellania)", 11980, 0, null, null, null, "Ring of wealth ("),
 	DIGSITE_PENDANT(Kind.ITEM, "Digsite pendant", 11194, 0, null, null, null, "Digsite pendant"),
 
 	// ---- Teleport tablets
@@ -66,6 +68,10 @@ public enum Teleport
 	FAIRY_AJP(Kind.FAIRY_RING, "Fairy ring AJP", -1, 0, null, "AJP", null),
 	FAIRY_AIS(Kind.FAIRY_RING, "Fairy ring AIS", -1, 0, null, "AIS", null),
 	FAIRY_CIQ(Kind.FAIRY_RING, "Fairy ring CIQ", -1, 0, null, "CIQ", null),
+	FAIRY_AIQ(Kind.FAIRY_RING, "Fairy ring AIQ", -1, 0, null, "AIQ", null),
+	FAIRY_ALS(Kind.FAIRY_RING, "Fairy ring ALS", -1, 0, null, "ALS", null),
+	FAIRY_CIP(Kind.FAIRY_RING, "Fairy ring CIP", -1, 0, null, "CIP", null),
+	FAIRY_CKR(Kind.FAIRY_RING, "Fairy ring CKR", -1, 0, null, "CKR", null),
 
 	// ---- Other
 	SPIRIT_TREE(Kind.OTHER, "Spirit tree", 6063, 0, null, null, null);

@@ -5,12 +5,14 @@ import java.util.Map;
 
 /**
  * Farming experience per crop (OSRS Wiki): planting, harvesting each item, and checking a
- * grown tree's health. Used for the "about X XP" estimate before a run.
+ * grown tree's, bush's or cactus's health. Used for the "about X XP" estimate before a run.
  */
 public final class FarmingXp
 {
 	/** Rough crops per allotment patch with compost. */
 	public static final double ALLOTMENT_YIELD = 10.0;
+	/** Rough hops per patch (at least 3, more with compost and level). */
+	public static final double HOPS_YIELD = 6.0;
 
 	private static final Map<Crop, double[]> XP = new EnumMap<>(Crop.class);
 
@@ -59,6 +61,25 @@ public final class FarmingXp
 
 		put(Crop.TEAK, 35, 0, 7290);
 		put(Crop.MAHOGANY, 63, 0, 15720);
+		put(Crop.REDBERRIES, 11.5, 4.5, 64);
+		put(Crop.CADAVABERRIES, 18, 7, 102.5);
+		put(Crop.DWELLBERRIES, 31.5, 12, 177.5);
+		put(Crop.JANGERBERRIES, 50.5, 19, 284.5);
+		put(Crop.WHITEBERRIES, 78, 29, 437.5);
+		put(Crop.POISON_IVY, 120, 45, 675);
+		put(Crop.BARLEY, 8.5, 9.5, 0);
+		put(Crop.HAMMERSTONE, 9, 10, 0);
+		put(Crop.ASGARNIAN, 10.9, 12, 0);
+		put(Crop.JUTE, 13, 14.5, 0);
+		put(Crop.YANILLIAN, 14.5, 16, 0);
+		put(Crop.KRANDORIAN, 17.5, 19.5, 0);
+		put(Crop.WILDBLOOD, 23, 26, 0);
+		put(Crop.CACTUS, 66.5, 25, 374);
+		put(Crop.POTATO_CACTUS, 68, 68, 230);
+		put(Crop.CALQUAT, 129.5, 48.5, 12096);
+		put(Crop.SPIRIT_TREE, 199.5, 0, 19301);
+		put(Crop.CELASTRUS, 204, 23.5, 14130);
+		put(Crop.REDWOOD, 230, 0, 22450);
 	}
 
 	private FarmingXp()
@@ -90,6 +111,8 @@ public final class FarmingXp
 				return x[1] * herbYield;
 			case ALLOTMENT:
 				return x[1] * ALLOTMENT_YIELD;
+			case HOPS:
+				return x[1] * HOPS_YIELD;
 			default:
 				return x[2]; // fruit you pick is optional, so only the health check counts
 		}

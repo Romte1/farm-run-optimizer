@@ -11,8 +11,8 @@ public final class FarmingContract
 	/** Varbit that's set once the contract crop has been grown (go claim the reward). */
 	public static final int COMPLETE_VARBIT = 7961;
 
-	private static final String[] NAMES = new String[50];
-	private static final String[] PATCHES = new String[50];
+	private static final String[] NAMES = new String[52];
+	private static final String[] PATCHES = new String[52];
 
 	static
 	{
@@ -65,6 +65,8 @@ public final class FarmingContract
 		put(47, "Snape grass", "allotment");
 		put(48, "Cactus", "cactus");
 		put(49, "Potato cactus", "cactus");
+		put(50, "Redwood", "redwood");
+		put(51, "Celastrus", "celastrus");
 	}
 
 	private static void put(int value, String name, String patch)
@@ -99,8 +101,7 @@ public final class FarmingContract
 
 	private static String kind(PatchType t)
 	{
-		return t == PatchType.HERB ? "herb" : t == PatchType.ALLOTMENT ? "allotment" : t == PatchType.TREE ? "tree"
-			: t == PatchType.FRUIT_TREE ? "fruit tree" : "hardwood";
+		return t.patchName();
 	}
 
 	/** Null when there's no contract (or the value is unknown). */
@@ -130,6 +131,14 @@ public final class FarmingContract
 				return FarmPatch.FARMING_GUILD_FRUIT;
 			case ALLOTMENT:
 				return FarmPatch.GUILD_ALLOTMENT_A;
+			case BUSH:
+				return FarmPatch.GUILD_BUSH;
+			case CACTUS:
+				return FarmPatch.GUILD_CACTUS;
+			case CELASTRUS:
+				return FarmPatch.GUILD_CELASTRUS;
+			case REDWOOD:
+				return FarmPatch.GUILD_REDWOOD;
 			default:
 				return null;
 		}

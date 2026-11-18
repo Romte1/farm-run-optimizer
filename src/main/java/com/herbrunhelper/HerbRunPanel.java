@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.9.0";
+	static final String VERSION = "1.10.0";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -900,7 +900,9 @@ public class HerbRunPanel extends PluginPanel
 		body.setBackground(new Color(34, 34, 34));
 		body.setBorder(new EmptyBorder(8, 3, 10, 2));
 		body.addRow(sectionTitle(type == PatchType.HERB ? "Herbs to plant"
-			: type == PatchType.ALLOTMENT ? "Crops to plant (3 seeds each)" : "Trees to plant"), 4);
+			: type == PatchType.ALLOTMENT ? "Crops to plant (3 seeds each)"
+			: type == PatchType.HOPS ? "Hops to plant (4 seeds each, jute 3)"
+			: !type.usesSaplings() ? type.getDisplayName() + " to plant" : "Trees to plant"), 4);
 		JPanel crops = new JPanel(new GridLayout(0, 4, 6, 6));
 		crops.setOpaque(false);
 		for (Crop c : Crop.values())

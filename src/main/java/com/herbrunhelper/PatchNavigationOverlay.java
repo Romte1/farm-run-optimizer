@@ -113,7 +113,7 @@ public class PatchNavigationOverlay extends Overlay
 			if (hull == null)
 			{
 				LocalPoint centre = best.getLocalLocation();
-				int size = next.getType().isTreeLike() ? 3 : 2;
+				int size = next.getType().patchSize();
 				hull = centre == null ? null : Perspective.getCanvasTileAreaPoly(client, centre, size);
 			}
 			if (hull != null)

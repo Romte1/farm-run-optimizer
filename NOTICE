@@ -102,6 +102,10 @@ Shortest Path's license (its LICENSE file, as published):
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+Patch tiles for bushes, hops, cactus, calquat, celastrus and redwood are from RuneLite's World Map
+plugin (FarmingPatchLocation.java, BSD 2-Clause); spirit tree patch tiles are the patch boxes in
+Shortest Path's spirit-tree-patches.tsv; calquat tiles were checked against Quest Helper's tree run.
+
 Quest Helper
 ------------
 https://github.com/Zoinkwiz/quest-helper

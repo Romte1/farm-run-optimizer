@@ -86,7 +86,7 @@ public final class StepItems
 		}
 		if (checkHealthDue && type.isTreeLike())
 		{
-			return new Next(null, "Check the tree's health");
+			return new Next(null, "Check the " + StopWork.plantName(type, planting != null ? planting.crop : null) + "'s health");
 		}
 		boolean ready = planting != null && planting.isReady(now);
 		if (ready && !type.isTreeLike())
@@ -95,8 +95,13 @@ public final class StepItems
 		}
 		if (ready && type.isTreeLike())
 		{
-			// No sapling to replant: just check health, don't pay to clear it.
-			return step.crop == null ? null : new Next("Coins", "Pay the gardener to clear it");
+			// Nothing to replant: just check health, don't clear it.
+			if (step.crop == null)
+			{
+				return null;
+			}
+			return type.getClear() == PatchType.Clear.GARDENER ? new Next("Coins", "Pay the gardener to clear it")
+				: new Next("Spade", "Dig it up");
 		}
 		if (step.crop != null)
 		{

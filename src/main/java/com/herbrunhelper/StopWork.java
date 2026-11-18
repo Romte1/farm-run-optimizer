@@ -43,21 +43,22 @@ public final class StopWork
 		}
 		else
 		{
-			String tree = planting != null ? planting.crop.getDisplayName().toLowerCase() + " tree" : "tree";
+			String tree = plantName(type, planting != null ? planting.crop : null);
 			if (ready)
 			{
 				out.add("Check the " + tree + "'s health");
-				if (type == PatchType.FRUIT_TREE)
+				String pick = pickLine(type, planting.crop);
+				if (pick != null)
 				{
-					out.add("Pick the fruit if you want it (note at the leprechaun)");
+					out.add(pick);
 				}
 				if (seed != null)
 				{
-					out.add("Pay the gardener " + RunPlanner.TREE_REMOVAL_COINS + " coins to chop it down");
+					out.add(clearLine(type));
 				}
 				else
 				{
-					out.add("Leave it standing: no sapling to replant (it won't die)");
+					out.add("Leave it standing: nothing to replant (it won't die)");
 				}
 			}
 			else if (status == PatchTimers.Status.STUMP)
@@ -78,8 +79,9 @@ public final class StopWork
 			}
 			else if (planting == null && status == null)
 			{
-				out.add(seed != null ? "If a grown tree is there: check health, pay "
-					+ RunPlanner.TREE_REMOVAL_COINS + " coins to clear it" : "If a grown tree is there: check its health");
+				out.add(seed != null ? "If a grown " + tree + " is there: check its health, then "
+					+ clearLine(type).substring(0, 1).toLowerCase() + clearLine(type).substring(1)
+					: "If a grown " + tree + " is there: check its health");
 			}
 		}
 
@@ -105,9 +107,71 @@ public final class StopWork
 		}
 		if (step.paymentItem != null && seed != null)
 		{
-			out.add("Pay the gardener " + step.paymentQuantity + " x " + step.paymentItem + " to protect it");
+			StringBuilder pay = new StringBuilder("Pay the gardener " + step.paymentQuantity + " x " + step.paymentItem);
+			String[][] extra = step.crop.getExtraPayments();
+			for (int i = 0; i < extra.length; i++)
+			{
+				pay.append(i == extra.length - 1 ? " and " : ", ").append(extra[i][1]).append(" x ").append(extra[i][0]);
+			}
+			out.add(pay + " to protect it");
 		}
 		return out;
+	}
+
+	/** "maple tree", "redberry bush", "potato cactus", "spirit tree"... */
+	static String plantName(PatchType type, Crop crop)
+	{
+		String name = crop == null ? null : crop.getDisplayName().toLowerCase();
+		switch (type)
+		{
+			case BUSH:
+				return name == null ? "bush" : name + " bush";
+			case CACTUS:
+				return name == null ? "cactus" : name;
+			case SPIRIT_TREE:
+				return "spirit tree";
+			default:
+				return name == null ? "tree" : name + " tree";
+		}
+	}
+
+	/** What there is to take from a grown plant before clearing it, if anything. */
+	static String pickLine(PatchType type, Crop crop)
+	{
+		switch (type)
+		{
+			case FRUIT_TREE:
+				return "Pick the fruit if you want it (note at the leprechaun)";
+			case BUSH:
+				return "Pick the berries (note at the leprechaun)";
+			case CACTUS:
+				return crop == Crop.POTATO_CACTUS ? "Pick the potato cacti" : "Pick the cactus spines";
+			case CALQUAT:
+				return "Pick the calquat fruit if you want it";
+			case CELASTRUS:
+				return "Harvest the bark (it doesn't grow back)";
+			default:
+				return null;
+		}
+	}
+
+	/** How to get rid of the grown plant so you can replant. */
+	static String clearLine(PatchType type)
+	{
+		switch (type)
+		{
+			case BUSH:
+				return "Dig up the bush with your spade";
+			case CACTUS:
+				return "Dig up the cactus with your spade";
+			case SPIRIT_TREE:
+				return "Dig it up with your spade (it can't be cut down)";
+			case CELASTRUS:
+			case REDWOOD:
+				return "Chop it down, then dig up the stump with your spade";
+			default:
+				return "Pay the gardener " + RunPlanner.TREE_REMOVAL_COINS + " coins to chop it down";
+		}
 	}
 
 	/**
@@ -132,7 +196,7 @@ public final class StopWork
 		}
 		if (a.startsWith("check the"))
 		{
-			return l.startsWith("check the") || l.startsWith("if a grown tree");
+			return l.startsWith("check the") || l.startsWith("if a grown");
 		}
 		if (a.startsWith("pay the gardener to clear"))
 		{

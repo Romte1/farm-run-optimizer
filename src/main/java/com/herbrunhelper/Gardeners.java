@@ -45,6 +45,27 @@ final class Gardeners
 		put(FarmPatch.VARLAMORE_ALLOTMENT_B, 12766);
 		put(FarmPatch.GUILD_ALLOTMENT_A, 8535);
 		put(FarmPatch.GUILD_ALLOTMENT_B, 8535);
+		put(FarmPatch.CHAMPIONS_GUILD_BUSH, 2674);
+		put(FarmPatch.RIMMINGTON_BUSH, 2675);
+		put(FarmPatch.ARDOUGNE_BUSH, 2677);
+		put(FarmPatch.ETCETERIA_BUSH, 2676);
+		put(FarmPatch.GUILD_BUSH, 8535);
+		put(FarmPatch.LUMBRIDGE_HOPS, 2672);
+		put(FarmPatch.SEERS_HOPS, 2673);
+		put(FarmPatch.YANILLE_HOPS, 2671);
+		put(FarmPatch.ENTRANA_HOPS, 2667);
+		put(FarmPatch.ALDARIN_HOPS, 14030);
+		put(FarmPatch.AL_KHARID_CACTUS, 310);
+		put(FarmPatch.GUILD_CACTUS, 8535);
+		put(FarmPatch.TAI_BWO_WANNAI_CALQUAT, 2688);
+		put(FarmPatch.KASTORI_CALQUAT, 14515);
+		put(FarmPatch.PORT_SARIM_SPIRIT, 2684);
+		put(FarmPatch.ETCETERIA_SPIRIT, 2685);
+		put(FarmPatch.BRIMHAVEN_SPIRIT, 2686);
+		put(FarmPatch.HOSIDIUS_SPIRIT, 6814);
+		put(FarmPatch.GUILD_SPIRIT, 8537);
+		put(FarmPatch.GUILD_CELASTRUS, 8629);
+		put(FarmPatch.GUILD_REDWOOD, 8536);
 	}
 
 	private Gardeners()
@@ -55,6 +76,27 @@ final class Gardeners
 	{
 		IDS.put(patch, id);
 		ALL.add(id);
+	}
+
+	/**
+	 * Does this patch's gardener also look after a different kind of patch (the Farming Guild's
+	 * Alan: allotments, bush and cactus)? Then where they stand says little about this patch.
+	 */
+	static boolean sharedAcrossTypes(FarmPatch patch)
+	{
+		int id = idFor(patch);
+		if (id < 0)
+		{
+			return false;
+		}
+		for (Map.Entry<FarmPatch, Integer> e : IDS.entrySet())
+		{
+			if (e.getValue() == id && e.getKey().getType() != patch.getType())
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** The gardener's NPC id for this patch, or -1. */
