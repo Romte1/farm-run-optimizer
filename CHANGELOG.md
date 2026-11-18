@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.2 (2026-11-18)
+- **Tree, fruit tree and hardwood stops go in the right order.** When the game says a grown tree's health hasn't been checked yet, the step is "Check the tree's health" first (that's where the XP is). Only after that does it highlight your coins and the gardener for "Pay 200 coins to chop it down". Before, it jumped straight to paying.
+- **The step you're on is marked in the stop's card:** that line turns bright white with an arrow, and the others stay orange. Works for every step: rake, dig, check health, pay to clear, plant, compost, pay to protect.
+- Checked fruit tree and hardwood gardeners (all 14 NPC ids match RuneLite's Time Tracking) and payments (all match the OSRS Wiki: e.g. 15 papaya fruit for palm, 25 Yanillian hops for mahogany, 15 limpwurt roots for teak).
+
 ## 1.8.1 (2026-11-17)
 - **Game hint arrow is back** as a setting, "Game hint arrow" (on by default): the game's own yellow arrow, which also shows on the minimap. It sits on the same thing the guide line goes to: the gardener you need to pay (it follows them), the fairy ring or spirit tree to use, or the patch. It's only moved when that target changes, so it no longer jumps about, and it waits until you've done a stop's teleport. It won't clear an arrow another plugin (like Quest Helper) has set. The plugin's own "Arrow over target" stays available; turn either off if you only want one.
 - The walking map now loads on RuneLite's own background worker.

@@ -50,6 +50,16 @@ public final class StepItems
 	public static Next next(RunPlan.RouteStep step, PatchTimers.Planting planting, PatchTimers.Status status,
 		Progress progress, long now)
 	{
+		return next(step, planting, status, progress, now, false);
+	}
+
+	/**
+	 * @param checkHealthDue the game says this grown tree's health hasn't been checked yet: do
+	 *     that first (it's where the XP is), then pay the gardener to clear it
+	 */
+	public static Next next(RunPlan.RouteStep step, PatchTimers.Planting planting, PatchTimers.Status status,
+		Progress progress, long now, boolean checkHealthDue)
+	{
 		PatchType type = step.patch.getType();
 		boolean planted = progress != null && now - progress.plantedAt < PROGRESS_WINDOW_MILLIS;
 
@@ -73,6 +83,10 @@ public final class StepItems
 		if (status == PatchTimers.Status.DEAD || status == PatchTimers.Status.STUMP)
 		{
 			return new Next("Spade", "Dig it up");
+		}
+		if (checkHealthDue && type.isTreeLike())
+		{
+			return new Next(null, "Check the tree's health");
 		}
 		boolean ready = planting != null && planting.isReady(now);
 		if (ready && !type.isTreeLike())

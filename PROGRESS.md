@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-16.
 
 ## Status
 
-Version **1.8.1**. Live on the Plugin Hub.
+Version **1.8.2**. Live on the Plugin Hub.
 
 ## Done
 
@@ -37,6 +37,7 @@ Version **1.8.1**. Live on the Plugin Hub.
 - [x] Patch data generated from RuneLite source (`scripts/`), all 28 patches verified
 
 ## Recent fixes
+- 1.8.2: Decoded.checkHealth from patch-states 'check' flag -> healthCheckDue set -> StepItems 'Check the tree's health' before 'Pay the gardener to clear it'; panel marks current line (StopWork.isCurrent). Test FruitHardCheck (26). Not yet added: Anglers' Retreat hardwood patch (gardener 15065).
 - 1.8.1: gameHintArrow setting (default on): client hint arrow on gardener NPC / lead object / patch object / nav target; set only on change; not before teleport; doesn't clear other plugins' arrows.
 - 1.8.0: PathGuide.find floods the window then picks the goal like SP's ReachableGoalRule (ring 1 tiers: open side, walled side, corner; rings 2-5 any reachable); gardener-payment stops target the learned approach tile (onto); stuck-start step allowed; fairy ring log (group 381) code tagged green + scrolled once.
 - 1.7.1: guideStyle (line/tiles/both), guideStatus debug box in LeadHintOverlay, no line >60 tiles from a teleport stop until travelDone. Tree-run missing line still being diagnosed (routes OK offline on real map with exact footprints).

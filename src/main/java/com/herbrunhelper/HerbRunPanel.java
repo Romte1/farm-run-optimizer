@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.8.1";
+	static final String VERSION = "1.8.2";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -700,9 +700,19 @@ public class HerbRunPanel extends PluginPanel
 		StringBuilder html = new StringBuilder();
 		html.append("<b>").append(number).append(". ").append(esc(step.patch.getDisplayName())).append("</b><br>");
 		html.append("<font color='#c8c8c8'>").append(travel).append("</font>");
+		boolean marked = false;
 		for (String line : StopWork.describe(step, timers.get(step.patch), timers.getStatus(step.patch), now))
 		{
-			html.append("<br><font color='#ffb040'>• ").append(esc(line)).append("</font>");
+			if (!marked && step.patch == hintPatch && StopWork.isCurrent(line, hintAction))
+			{
+				// The step you're on now: bright, with an arrow.
+				marked = true;
+				html.append("<br><font color='#ffffff'><b>&#9654; ").append(esc(line)).append("</b></font>");
+			}
+			else
+			{
+				html.append("<br><font color='#ffb040'>• ").append(esc(line)).append("</font>");
+			}
 		}
 
 		JPanel card = (JPanel) iconCard(iconIdFor(step.teleport, step.teleportItem), spellSprite(step.teleport), html.toString(),

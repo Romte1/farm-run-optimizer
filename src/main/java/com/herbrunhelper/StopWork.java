@@ -109,4 +109,47 @@ public final class StopWork
 		}
 		return out;
 	}
+
+	/**
+	 * Is this to-do line the step the plugin is pointing you at right now (the action shown at
+	 * the top of the panel and highlighted in game)?
+	 */
+	public static boolean isCurrent(String line, String action)
+	{
+		if (line == null || action == null)
+		{
+			return false;
+		}
+		String l = line.toLowerCase();
+		String a = action.toLowerCase();
+		if (a.startsWith("rake"))
+		{
+			return l.startsWith("rake");
+		}
+		if (a.startsWith("dig"))
+		{
+			return l.contains("dig");
+		}
+		if (a.startsWith("check the"))
+		{
+			return l.startsWith("check the") || l.startsWith("if a grown tree");
+		}
+		if (a.startsWith("pay the gardener to clear"))
+		{
+			return l.contains("chop it down") || l.contains("to clear it");
+		}
+		if (a.startsWith("pay the gardener"))
+		{
+			return l.contains("to protect it");
+		}
+		if (a.startsWith("plant"))
+		{
+			return l.startsWith("plant");
+		}
+		if (a.startsWith("add compost"))
+		{
+			return l.startsWith("add ") || l.startsWith("use your bottomless");
+		}
+		return false;
+	}
 }

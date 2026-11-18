@@ -45,13 +45,21 @@ public final class PatchStates
 		public final int stage;
 		/** Tree still standing that must be chopped down before replanting. */
 		public final boolean fell;
+		/** Grown tree (or fruit tree, or hardwood) whose health hasn't been checked yet. */
+		public final boolean checkHealth;
 
 		Decoded(State state, Crop crop, int stage, boolean fell)
+		{
+			this(state, crop, stage, fell, false);
+		}
+
+		Decoded(State state, Crop crop, int stage, boolean fell, boolean checkHealth)
 		{
 			this.state = state;
 			this.crop = crop;
 			this.stage = stage;
 			this.fell = fell;
+			this.checkHealth = checkHealth;
 		}
 	}
 
@@ -160,7 +168,7 @@ public final class PatchStates
 				case "GROWING":
 					if ("check".equals(row.flag))
 					{
-						return new Decoded(State.READY, crop, stage, false);
+						return new Decoded(State.READY, crop, stage, false, true);
 					}
 					return new Decoded(State.GROWING, crop, stage, false);
 				case "HARVESTABLE":

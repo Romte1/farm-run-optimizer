@@ -202,6 +202,8 @@ public class HerbRunPlugin extends Plugin
 	private final Map<FarmPatch, WorldPoint> approachTiles = new EnumMap<>(FarmPatch.class);
 	private static final String APPROACH_KEY = "gardenerTiles";
 	private boolean ourHintArrow;
+	/** Grown trees the game says still need their health checked (seen while you were nearby). */
+	private final Set<FarmPatch> healthCheckDue = java.util.EnumSet.noneOf(FarmPatch.class);
 	private RunPlan lastPlan;
 
 	/** What's happened at each stop since you planted there (for the step highlight). */
@@ -1160,7 +1162,8 @@ public class HerbRunPlugin extends Plugin
 		}
 
 		StepItems.Next next = focus == null ? null
-			: StepItems.next(focus, timers.get(focus.patch), timers.getStatus(focus.patch), progress.get(focus.patch), now);
+			: StepItems.next(focus, timers.get(focus.patch), timers.getStatus(focus.patch), progress.get(focus.patch), now,
+				healthCheckDue.contains(focus.patch));
 		String spell = null;
 		if (travelling)
 		{
@@ -1543,6 +1546,14 @@ public class HerbRunPlugin extends Plugin
 			}
 			int value = client.getVarbitValue(patch.getVarbit());
 			PatchStates.Decoded d = PatchStates.get().decode(patch.getType(), value);
+			if (d.checkHealth)
+			{
+				healthCheckDue.add(patch);
+			}
+			else
+			{
+				healthCheckDue.remove(patch);
+			}
 
 			Integer last = lastSeenValue.put(patch, value);
 			if (last != null && last != value && d.crop != null
