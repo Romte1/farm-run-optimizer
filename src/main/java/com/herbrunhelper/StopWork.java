@@ -206,6 +206,14 @@ public final class StopWork
 		{
 			return l.contains("to protect it");
 		}
+		if (a.startsWith("pick") || a.startsWith("harvest"))
+		{
+			return l.startsWith(a.split(" ")[0]);
+		}
+		if (a.startsWith("chop it down"))
+		{
+			return l.startsWith("chop it down");
+		}
 		if (a.startsWith("plant"))
 		{
 			return l.startsWith("plant");

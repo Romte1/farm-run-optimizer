@@ -28,14 +28,13 @@ public class HerbRunInventoryOverlay extends WidgetItemOverlay
 	@Override
 	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
 	{
-		String wanted = plugin.getStepItem();
-		if (!config.highlightInventory() || wanted == null)
+		if (!config.highlightInventory() || plugin.getStepItem() == null)
 		{
 			return;
 		}
 		// Noted items (gardener payments) canonicalize to the unnoted item's name.
 		String name = itemManager.getItemComposition(itemManager.canonicalize(itemId)).getName();
-		if (!wanted.equals(name))
+		if (!plugin.isStepItem(name))
 		{
 			return;
 		}

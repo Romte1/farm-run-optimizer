@@ -207,6 +207,10 @@ public class HerbRunPlugin extends Plugin
 	/** What's happened at each stop since you planted there (for the step highlight). */
 	private final Map<FarmPatch, StepItems.Progress> progress = new EnumMap<>(FarmPatch.class);
 	private volatile String stepItem;
+	/** More items the current step needs at once (the spirit tree's other payments). */
+	private volatile java.util.Set<String> stepExtras = java.util.Collections.emptySet();
+	/** What's on each grown plant you've seen (berries left, harvested...). */
+	private final Map<FarmPatch, StepItems.Grown> grownStates = new EnumMap<>(FarmPatch.class);
 	private FarmPatch stepPatch;
 	private String stepAction;
 
@@ -1088,6 +1092,40 @@ public class HerbRunPlugin extends Plugin
 		return stepItem;
 	}
 
+	/** True if this item should be highlighted for the current step. */
+	boolean isStepItem(String name)
+	{
+		return name != null && (name.equals(stepItem) || stepExtras.contains(name));
+	}
+
+	/**
+	 * What the game shows on a grown plant: produce still to pick (bushes, cactus, celastrus
+	 * bark), a harvested celastrus to chop, or nothing left. Null if not grown or not one of those.
+	 */
+	static StepItems.Grown grownState(PatchType type, int value, PatchStates.Decoded d)
+	{
+		if (d.state != PatchStates.State.READY || d.checkHealth)
+		{
+			return null;
+		}
+		switch (type)
+		{
+			case BUSH:
+			case CACTUS:
+				// Harvestable values count the produce left; the first one is the empty plant.
+				return d.stage > 0 ? StepItems.Grown.PRODUCE : StepItems.Grown.CLEAR;
+			case CELASTRUS:
+				// 14-16: bark to harvest; 17: harvested, chop it down (RuneLite's PatchImplementation).
+				if (value >= 14 && value <= 16)
+				{
+					return StepItems.Grown.PRODUCE;
+				}
+				return value == 17 ? StepItems.Grown.CHOP : null;
+			default:
+				return null;
+		}
+	}
+
 	// ================================================================ step highlight
 
 	private RunPlan.RouteStep stepFor(FarmPatch patch)
@@ -1175,7 +1213,7 @@ public class HerbRunPlugin extends Plugin
 
 		StepItems.Next next = focus == null ? null
 			: StepItems.next(focus, timers.get(focus.patch), timers.getStatus(focus.patch), progress.get(focus.patch), now,
-				healthCheckDue.contains(focus.patch));
+				healthCheckDue.contains(focus.patch), grownStates.get(focus.patch));
 		String spell = null;
 		if (travelling)
 		{
@@ -1209,6 +1247,16 @@ public class HerbRunPlugin extends Plugin
 		String action = next == null ? null : next.action;
 		FarmPatch patch = next == null ? null : focus.patch;
 		stepItem = item;
+		java.util.Set<String> extras = new java.util.HashSet<>();
+		if (item != null && action != null && action.startsWith("Pay the gardener") && !action.contains("clear")
+			&& focus.crop != null)
+		{
+			for (String[] extra : focus.crop.getExtraPayments())
+			{
+				extras.add(extra[0]); // e.g. the spirit tree's monkey bar and ground tooth
+			}
+		}
+		stepExtras = extras;
 		if (action != null && action.startsWith("Pay the gardener") && config.highlightGardener())
 		{
 			payPatch = patch;
@@ -1575,6 +1623,15 @@ public class HerbRunPlugin extends Plugin
 			}
 			int value = client.getVarbitValue(patch.getVarbit());
 			PatchStates.Decoded d = PatchStates.get().decode(patch.getType(), value);
+			StepItems.Grown g = grownState(patch.getType(), value, d);
+			if (g != null)
+			{
+				grownStates.put(patch, g);
+			}
+			else
+			{
+				grownStates.remove(patch);
+			}
 			if (d.checkHealth)
 			{
 				healthCheckDue.add(patch);

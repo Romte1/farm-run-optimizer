@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.2 (2026-11-18)
+- **Checked every run type's steps after planting:** herb, tree, fruit tree, hardwood, bush, hops, cactus, calquat, spirit tree, celastrus and redwood. Each goes add compost (highlighted), then pay the gardener (payment highlighted, gardener outlined), then done. Poison ivy skips the payment, because the game doesn't let you protect it.
+- **Bushes, cactus and celastrus: pick before you dig.** A fully grown bush or cactus used to highlight your spade straight away, so following the highlight would dig up a full bush. The plugin now reads how many berries or spines are left from the game:
+  - While there are some left, the step is "Pick the berries" or "Pick the cactus spines", with no item highlighted.
+  - Only once it's empty is your spade highlighted to dig it up.
+  - Celastrus goes harvest the bark, then chop it down, then dig up the stump.
+- **Spirit trees: all three payment items are highlighted** (5 monkey nuts, the monkey bar and the ground tooth), not just the monkey nuts.
+
 ## 1.12.1 (2026-11-18)
 - **Compost and pay-the-gardener steps after planting now always show.** They used to start only when the plugin read the game's "You plant..." chat message, and when that wording didn't match (as happened with fruit tree saplings), your compost and the gardener's payment were never highlighted. The plugin now also notices the patch itself turn freshly planted, for all 57 crops, so the steps run: add compost, then pay the gardener (payment highlighted in your inventory, gardener outlined).
 

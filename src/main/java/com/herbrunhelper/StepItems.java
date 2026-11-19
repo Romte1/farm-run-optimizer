@@ -60,6 +60,26 @@ public final class StepItems
 	public static Next next(RunPlan.RouteStep step, PatchTimers.Planting planting, PatchTimers.Status status,
 		Progress progress, long now, boolean checkHealthDue)
 	{
+		return next(step, planting, status, progress, now, checkHealthDue, null);
+	}
+
+	/** What the game shows on a grown plant, so the steps go in the right order. */
+	public enum Grown
+	{
+		/** Berries, spines or bark still on it: pick them before digging it up. */
+		PRODUCE,
+		/** Harvested celastrus: chop it down (then dig up the stump). */
+		CHOP,
+		/** Nothing left to take: clear it. */
+		CLEAR
+	}
+
+	/**
+	 * @param grown what's on the grown plant right now (from the game), or null if not known
+	 */
+	public static Next next(RunPlan.RouteStep step, PatchTimers.Planting planting, PatchTimers.Status status,
+		Progress progress, long now, boolean checkHealthDue, Grown grown)
+	{
 		PatchType type = step.patch.getType();
 		boolean planted = progress != null && now - progress.plantedAt < PROGRESS_WINDOW_MILLIS;
 
@@ -88,17 +108,30 @@ public final class StepItems
 		{
 			return new Next(null, "Check the " + StopWork.plantName(type, planting != null ? planting.crop : null) + "'s health");
 		}
-		boolean ready = planting != null && planting.isReady(now);
+		boolean ready = grown != null || (planting != null && planting.isReady(now));
 		if (ready && !type.isTreeLike())
 		{
 			return null; // harvest by clicking the patch
 		}
 		if (ready && type.isTreeLike())
 		{
+			// Pick the berries / spines / bark first (no item needed), then clear it.
+			if (grown == Grown.PRODUCE)
+			{
+				String pick = StopWork.pickLine(type, planting != null ? planting.crop : null);
+				if (pick != null)
+				{
+					return new Next(null, pick);
+				}
+			}
 			// Nothing to replant: just check health, don't clear it.
 			if (step.crop == null)
 			{
 				return null;
+			}
+			if (grown == Grown.CHOP)
+			{
+				return new Next(null, "Chop it down");
 			}
 			return type.getClear() == PatchType.Clear.GARDENER ? new Next("Coins", "Pay the gardener to clear it")
 				: new Next("Spade", "Dig it up");
