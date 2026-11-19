@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.11.0 (2026-11-18)
+- **Guide line uses Shortest Path's rules for when to redraw it.** Ported from its scheduler (PathScheduler and RefreshCoordinator):
+  - The line is worked out once, from where you stand, when there's a new place to go.
+  - It then stays exactly where it is on the ground while you're within 10 tiles of any part of it, wherever you walk.
+  - Only when you're 10 or more tiles from every part of it (you walked off, or teleported) is it worked out again, from where you are.
+  - Before, it was only redrawn after a teleport, so walking off it left a line that no longer started near you. It was also redrawn from scratch the moment the patch or ring loaded in, which put a hook at your feet halfway along the route.
+- **When the patch loads in, the line is kept.** Only its last few tiles are redone to end beside the real patch.
+- **The line no longer chases the gardener.** It goes to the spot you stood on when you last paid them, or else to the patch, so it doesn't keep re-aiming as they wander. The game hint arrow still follows the gardener.
+- **Where the line ends now matches Shortest Path's goal rule exactly:** a side with no wall, then a side behind a wall, then an open corner, then a walled corner, and never the tile you're already standing on.
+- The search, the map data and the game-walk order already matched Shortest Path's. Checked again line by line against its CollisionMap, ReachableGoalRule and AStarWalkCanonicalizer.
+
 ## 1.10.0 (2026-11-18)
 - **Seven new run types** (all off by default; switch them on in the panel or settings):
   - **Bushes:** Champions' Guild, Rimmington, Ardougne, Etceteria, Farming Guild. Redberry up to poison ivy. Check health, pick the berries, dig up with a spade to replant.

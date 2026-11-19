@@ -256,21 +256,22 @@ final class PathGuide
 		int goal = -1;
 		if (onto)
 		{
-			goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, 0, -1, map, tz, minX, minY, maxX, maxY);
+			goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, 0, -1, map, tz, minX, minY, maxX, maxY, -1);
 		}
 		for (int ring = 1; goal < 0 && ring <= GOAL_RINGS; ring++)
 		{
 			if (ring == 1)
 			{
-				// Beside it: open side, side behind a wall, then corner.
-				for (int tier = 0; goal < 0 && tier < 3; tier++)
+				// Beside it, Shortest Path's interaction tiers: open side, side behind a wall,
+				// open corner, corner behind a wall.
+				for (int tier = 0; goal < 0 && tier < 4; tier++)
 				{
-					goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, 1, tier, map, tz, minX, minY, maxX, maxY);
+					goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, 1, tier, map, tz, minX, minY, maxX, maxY, start);
 				}
 			}
 			else
 			{
-				goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, ring, -1, map, tz, minX, minY, maxX, maxY);
+				goal = cheapest(cost, wx0, wy0, w, h, (tz - z0) * w * h, ring, -1, map, tz, minX, minY, maxX, maxY, start);
 			}
 		}
 		if (goal < 0)
@@ -287,11 +288,12 @@ final class PathGuide
 	}
 
 	/**
-	 * The cheapest reached tile on the given ring around the box (ring 0: the box itself).
-	 * On ring 1, tier 0 = sides with no wall, 1 = sides behind a wall, 2 = corners; -1 = any.
+	 * The cheapest reached tile on the given ring around the box (ring 0: the box itself), never
+	 * the tile you start on (Shortest Path's goal rule). On ring 1: tier 0 = sides with no wall,
+	 * 1 = sides behind a wall, 2 = open corners, 3 = corners behind a wall; -1 = any.
 	 */
 	private static int cheapest(int[] cost, int wx0, int wy0, int w, int h, int planeOffset, int ring, int tier,
-		Walkable map, int z, int minX, int minY, int maxX, int maxY)
+		Walkable map, int z, int minX, int minY, int maxX, int maxY, int skip)
 	{
 		int best = -1;
 		int bestCost = Integer.MAX_VALUE;
@@ -310,25 +312,24 @@ final class PathGuide
 					continue;
 				}
 				int i = planeOffset + lx * h + ly;
-				if (cost[i] == Integer.MAX_VALUE || cost[i] >= bestCost)
+				if (i == skip || cost[i] == Integer.MAX_VALUE || cost[i] >= bestCost)
 				{
 					continue;
 				}
 				if (tier >= 0)
 				{
 					boolean side = (x >= minX && x <= maxX) || (y >= minY && y <= maxY);
-					if (tier == 2 ? side : !side)
+					if ((tier >= 2) == side)
 					{
 						continue;
 					}
-					if (tier < 2)
+					// The box tile it touches, and whether a wall is in the way (both ways round
+					// a corner, as Shortest Path's wallSeparated).
+					int tx = Math.max(minX, Math.min(maxX, x));
+					int ty = Math.max(minY, Math.min(maxY, y));
+					if (wallSeparated(map, z, tx, ty, x, y) != (tier % 2 == 1))
 					{
-						int dx = x < minX ? 1 : x > maxX ? -1 : 0;
-						int dy = y < minY ? 1 : y > maxY ? -1 : 0;
-						if (map.wall(x, y, z, dx, dy) != (tier == 1))
-						{
-							continue;
-						}
+						continue;
 					}
 				}
 				best = i;
@@ -336,6 +337,19 @@ final class PathGuide
 			}
 		}
 		return best;
+	}
+
+	/** Shortest Path's TargetGoals.wallSeparated: a wall edge between a tile and its neighbour. */
+	static boolean wallSeparated(Walkable map, int z, int x, int y, int nx, int ny)
+	{
+		int dx = nx - x;
+		int dy = ny - y;
+		if (dx == 0 || dy == 0)
+		{
+			return map.wall(x, y, z, dx, dy);
+		}
+		return (map.wall(x, y, z, dx, 0) || map.wall(x + dx, y, z, 0, dy))
+			&& (map.wall(x, y, z, 0, dy) || map.wall(x, y + dy, z, dx, 0));
 	}
 
 	/** Chebyshev distance from a tile to a box (0 inside it). */

@@ -72,7 +72,11 @@ are installed and the setting is on, Farm Run Optimizer can also send Shortest P
 
 The guide line's end-point rule (nearest reachable tile around the target, sides before corners)
 and the fairy ring travel log highlight follow how Shortest Path does them (ReachableGoalRule and
-PathAnnotator); they were written anew here, not copied.
+PathAnnotator); they were written anew here, not copied. RouteSession.java ports the rules
+Shortest Path's scheduler uses to decide when to work a route out again (PathScheduler.isNearPath
+and RefreshCoordinator.offRouteTick, with its default recalculate distance of 10 tiles), and
+PathGuide's end-point tiers and wallSeparated check follow ReachableGoalRule and
+TargetGoals.wallSeparated, under the license below.
 
 Shortest Path's license (its LICENSE file, as published):
 
