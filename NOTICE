@@ -58,25 +58,11 @@ Shortest Path
 -------------
 https://github.com/Skretzo/shortest-path by Skretzo and contributors
 
-The walking map used for the guide line (src/main/resources/com/herbrunhelper/walk-map.zip) is
-Shortest Path's collision map (src/main/resources/collision-map.zip, from commit a7dd4a2), included
-unchanged. The doors, gates, stairs, ladders and shortcuts the line can use
-(src/main/resources/com/herbrunhelper/walk-links.tsv) and what they need
-(src/main/resources/com/herbrunhelper/walk-reqs.tsv: skill levels, quests, items, varbits and
-varplayers) are taken from its transport lists (transports/transports.tsv and
-transports/agility_shortcuts.tsv), with item group names turned into item ids from its
-item-variations.tsv, by scripts/build_walk_links.py. WalkRequirements.java checks them the way
-Shortest Path defines them; that code is written anew, not copied. When both plugins
-are installed and the setting is on, Farm Run Optimizer can also send Shortest Path the next stop
-(through RuneLite's plugin messages) so it draws its own line.
-
-The guide line's end-point rule (nearest reachable tile around the target, sides before corners)
-and the fairy ring travel log highlight follow how Shortest Path does them (ReachableGoalRule and
-PathAnnotator); they were written anew here, not copied. RouteSession.java ports the rules
-Shortest Path's scheduler uses to decide when to work a route out again (PathScheduler.isNearPath
-and RefreshCoordinator.offRouteTick, with its default recalculate distance of 10 tiles), and
-PathGuide's end-point tiers and wallSeparated check follow ReachableGoalRule and
-TargetGoals.wallSeparated, under the license below.
+Farm Run Optimizer has no walking line of its own. When both plugins are installed and the
+setting is on, it sends Shortest Path each leg of the run (the fairy ring or spirit tree to use,
+then the patch or gardener) through RuneLite's plugin messages, and Shortest Path draws the line.
+The fairy ring travel log highlight follows how Shortest Path does it (PathAnnotator); it was
+written anew here, not copied.
 
 Shortest Path's license (its LICENSE file, as published):
 

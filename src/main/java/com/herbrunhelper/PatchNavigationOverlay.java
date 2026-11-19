@@ -41,7 +41,6 @@ public class PatchNavigationOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		renderGuideLine(graphics);
 		renderGardener(graphics);
 		FarmPatch next = plugin.getNextPatch();
 		if (!config.highlightPatch() || next == null)
@@ -212,88 +211,6 @@ public class PatchNavigationOverlay extends Overlay
 				OverlayUtil.renderTextLocation(graphics, textLoc, text, gold);
 				drawArrow(graphics, textLoc, graphics.getFontMetrics().stringWidth(text), gold);
 			}
-		}
-	}
-
-	/** The built-in walking line: through the middle of each tile of the route, on the ground. */
-	private void renderGuideLine(Graphics2D graphics)
-	{
-		GuideStyle style = config.guideStyle();
-		if (style == GuideStyle.TILES || style == GuideStyle.BOTH)
-		{
-			renderGuideTiles(graphics);
-			if (style == GuideStyle.TILES)
-			{
-				return;
-			}
-		}
-		java.util.List<LocalPoint> points = plugin.guideLinePoints();
-		if (points.size() < 2)
-		{
-			return;
-		}
-		java.util.List<WorldPoint> corners = plugin.getGuidePath();
-		if (corners.isEmpty())
-		{
-			return;
-		}
-		int plane = client.getLocalPlayer() != null && client.getLocalPlayer().getWorldLocation() != null
-			? client.getLocalPlayer().getWorldLocation().getPlane() : corners.get(0).getPlane();
-		java.awt.geom.Path2D.Double line = new java.awt.geom.Path2D.Double();
-		boolean started = false;
-		for (LocalPoint lp : points)
-		{
-			Point p = lp == null ? null : Perspective.localToCanvas(client, lp, plane);
-			if (p == null)
-			{
-				started = false; // off the loaded area or off screen: break the line here
-				continue;
-			}
-			if (started)
-			{
-				line.lineTo(p.getX(), p.getY());
-			}
-			else
-			{
-				line.moveTo(p.getX(), p.getY());
-				started = true;
-			}
-		}
-		Color c = config.patchColor();
-		graphics.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		graphics.setColor(new Color(0, 0, 0, 120));
-		graphics.draw(line);
-		graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		graphics.setColor(c);
-		graphics.draw(line);
-	}
-
-	/** The route as highlighted tiles, one per step, fixed on the ground. */
-	private void renderGuideTiles(Graphics2D graphics)
-	{
-		java.util.List<LocalPoint> points = plugin.guideLinePoints();
-		if (points.size() < 2)
-		{
-			return;
-		}
-		Color c = config.patchColor();
-		Color fill = new Color(c.getRed(), c.getGreen(), c.getBlue(), 50);
-		graphics.setStroke(new BasicStroke(1.5f));
-		for (LocalPoint lp : points)
-		{
-			if (lp == null)
-			{
-				continue;
-			}
-			java.awt.Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-			if (poly == null)
-			{
-				continue;
-			}
-			graphics.setColor(fill);
-			graphics.fill(poly);
-			graphics.setColor(c);
-			graphics.draw(poly);
 		}
 	}
 }

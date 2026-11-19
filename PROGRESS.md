@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-18.
 
 ## Status
 
-Version **1.11.0**. Live on the Plugin Hub.
+Version **1.12.0**. Live on the Plugin Hub.
 
 ## Done
 
@@ -45,6 +45,7 @@ Version **1.11.0**. Live on the Plugin Hub.
 - 1.7.1: guideStyle (line/tiles/both), guideStatus debug box in LeadHintOverlay, no line >60 tiles from a teleport stop until travelDone. Tree-run missing line still being diagnosed (routes OK offline on real map with exact footprints).
 - 1.7.0: line A to B, untrimmed, hidden once reached (guideReached) until a new target or teleport; travelDone per stop (at destination ring, or a jump that brought you >30 tiles closer and within 200) stops ring/tree leads; 28 FarmPatch tiles corrected from Quest Helper (verify_patches OK).
 - 1.6.2: line points via LocalPoint.fromWorld per tile (was offset from the player's interpolated local position, so it slid); no re-plan when the box turns exact or the Agility boost changes.
+- 1.12.0: built-in guide line removed (PathGuide, WorldWalkMap, WalkRequirements, RouteSession, walk-map/links/reqs). Shortest Path gets each leg: lead ring/tree, then patch/gardener spot after travel, nothing before a teleport (within 60 tiles counts as arrived).
 - 1.11.0: guide line re-plan rules ported from Shortest Path (RouteSession): re-plan on new target or 10+ tiles off every line tile; refined target keeps the line and redoes its end; no gardener chasing; SP goal tiers (4) and never the start tile. SessionCheck 12 tests.
 - 1.6.1: guide line static: re-planned only on target change, teleport (>15 tiles in one move) or >40 tiles from the line; walked part trimmed only while on the line.
 - 1.6.0: guide line follows Shortest Path's approach: A* in ticks, walking legs rewritten to the game's BFS walk (order W,E,S,N,SW,SE,NW,NE), route kept until >10 tiles off, walked part hidden, gardener slack 3 tiles.

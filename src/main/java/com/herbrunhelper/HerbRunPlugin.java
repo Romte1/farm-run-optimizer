@@ -33,7 +33,6 @@ import net.runelite.api.Player;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameObjectDespawned;
@@ -89,9 +88,6 @@ public class HerbRunPlugin extends Plugin
 
 	@Inject
 	private Client client;
-
-	@Inject
-	private java.util.concurrent.ScheduledExecutorService executor;
 
 	@Inject
 	private HerbRunConfig config;
@@ -184,6 +180,8 @@ public class HerbRunPlugin extends Plugin
 	private volatile Set<Integer> highlightIds = Collections.emptySet();
 	private volatile FarmPatch nextPatch;
 	private WorldPoint shortestPathTarget;
+	/** Send Shortest Path the same target again (after a teleport or a settings change). */
+	private boolean shortestPathResend;
 	private WorldPoint lastPlayerTile;
 	/** Where to go right now: the patch, or the fairy ring to use first. */
 	private volatile WorldPoint navTarget;
@@ -221,7 +219,6 @@ public class HerbRunPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		loadWorldMap();
 		panel = new HerbRunPanel(itemManager, timers, this::resetTimers, this::setRun,
 			this::toggleTeleport, this::setUseSpells, this::setUseTabs, this::toggleCrop, this::togglePatch,
 			this::setSetting);
@@ -611,7 +608,7 @@ public class HerbRunPlugin extends Plugin
 		}
 		if ("pathMinigameTeleports".equals(event.getKey()))
 		{
-			shortestPathTarget = null; // send the route again with the new setting
+			shortestPathResend = true; // send the route again with the new setting
 		}
 		if (!config.gameHintArrow())
 		{
@@ -1501,7 +1498,6 @@ public class HerbRunPlugin extends Plugin
 		long totalProfit = history.totalProfit();
 		FarmingContract contractNow = contract;
 		Map<String, Boolean> settings = new java.util.LinkedHashMap<>();
-		settings.put("guideLine", config.guideLine());
 		settings.put("shortestPathLine", config.useShortestPath());
 		settings.put("pathMinigameTeleports", config.pathMinigameTeleports());
 		settings.put("highlightPatch", config.highlightPatch());
@@ -1859,415 +1855,76 @@ public class HerbRunPlugin extends Plugin
 		navTarget = target;
 		navRingLabel = ringLabel;
 
-		// Shortest Path plugin: always aim it at the patch itself, so it plans the whole trip
-		// (including the fairy ring or spirit tree) and draws it. Post again whenever the tile changes.
-		// After a teleport, ask Shortest Path again from where you landed: a route worked out
-		// from the other side of the map can come back "could not be reached" and isn't retried.
+		// Shortest Path plugin draws the walking line, one leg of this run at a time, so its line
+		// always matches the panel: first the fairy ring or spirit tree the panel says to use, then
+		// (once you've travelled) the patch or the gardener's spot. Before a stop's teleport it gets
+		// nothing, so it can't pick a different teleport of its own.
+		// After a teleport, ask again from where you landed: a route worked out from the other
+		// side of the map can come back "could not be reached" and isn't retried.
 		if (me != null)
 		{
 			if (lastPlayerTile != null && (lastPlayerTile.getPlane() != me.getPlane()
 				|| dist(me, lastPlayerTile.getX(), lastPlayerTile.getY()) > 15))
 			{
-				shortestPathTarget = null;
+				shortestPathResend = true;
 			}
 			lastPlayerTile = me;
 		}
-		WorldPoint pathTarget = patchTarget;
 		if (next != null && next.getType().hasGardenerPayment())
 		{
 			learnApproach(next);
-			WorldPoint approach = Gardeners.sharedAcrossTypes(next) ? null : approachTiles.get(next);
-			if (approach != null)
+		}
+		WorldPoint pathTarget;
+		if (ringLabel != null)
+		{
+			pathTarget = target; // the ring or spirit tree to use
+		}
+		else if (next != null && step != null && step.teleport != null && !travelDone
+			&& (me == null || patchTarget == null || me.getPlane() != patchTarget.getPlane()
+			|| dist(me, patchTarget.getX(), patchTarget.getY()) > TELEPORT_FIRST_TILES))
+		{
+			pathTarget = null; // far away: teleport first, as the panel says
+		}
+		else
+		{
+			pathTarget = patchTarget;
+			if (next != null && next.getType().hasGardenerPayment())
 			{
-				pathTarget = approach; // the patch itself can't be walked on
+				WorldPoint approach = Gardeners.sharedAcrossTypes(next) ? null : approachTiles.get(next);
+				if (approach != null)
+				{
+					pathTarget = approach; // the patch itself can't be walked on
+				}
 			}
 		}
-		target = pathTarget;
-		if (config.useShortestPath() && !java.util.Objects.equals(target, shortestPathTarget))
+		if (config.useShortestPath())
 		{
-			if (target == null)
+			if (pathTarget == null)
 			{
 				clearShortestPath();
 			}
-			else
+			else if (shortestPathResend || !pathTarget.equals(shortestPathTarget))
 			{
 				Map<String, Object> data = new HashMap<>();
-				data.put("target", target);
+				data.put("target", pathTarget);
 				// Our own settings for the line, applied by Shortest Path to this route only
 				// (cleared again when we clear the path).
 				Map<String, Object> overrides = new HashMap<>();
 				overrides.put("useTeleportationMinigames", config.pathMinigameTeleports());
 				data.put("config", overrides);
 				eventBus.post(new PluginMessage("shortestpath", "path", data));
-				shortestPathTarget = target;
+				shortestPathTarget = pathTarget;
 			}
 		}
+		shortestPathResend = false;
 
-		updateGuideLine(next, ringLabel != null);
 		updateGameHintArrow(next, step, ringLabel != null);
 	}
 
-	// ================================================================ built-in guide line
-
-	/** Corners of the line to draw (world tiles), from you to the target. */
-	private volatile List<WorldPoint> guidePath = Collections.emptyList();
-	/** The current route and when it's worked out again (Shortest Path's rules). */
-	private final RouteSession guideSession = new RouteSession();
-	/** For the "Guide line status" box. */
-	private volatile String guideStatusText;
-	private String guideMapName = "";
-	/** Walking map of the whole world, loaded in the background at start-up. */
-	private volatile WorldWalkMap worldMap;
-	/** What its doors, stairs and shortcuts need (quests, levels, items, game state). */
-	private volatile WalkRequirements walkReqs = WalkRequirements.empty();
-	/** Finished quests, by name, cached for a minute (asking the game runs a script each time). */
-	private final Map<String, Boolean> questCache = new java.util.HashMap<>();
-	private long questCacheAt;
-	private volatile boolean worldMapLoading;
-
-	String getGuideStatus()
-	{
-		return config.guideStatus() ? guideStatusText : null;
-	}
-
-	List<WorldPoint> getGuidePath()
-	{
-		return guidePath;
-	}
-
-	private void loadWorldMap()
-	{
-		if (worldMap != null || worldMapLoading)
-		{
-			return;
-		}
-		worldMapLoading = true;
-		executor.submit(() ->
-		{
-			try (java.io.InputStream in = HerbRunPlugin.class.getResourceAsStream("walk-map.zip"))
-			{
-				if (in != null)
-				{
-					WorldWalkMap m = WorldWalkMap.load(in);
-					try (java.io.InputStream links = HerbRunPlugin.class.getResourceAsStream("walk-links.tsv"))
-					{
-						if (links != null)
-						{
-							m.loadLinks(links);
-						}
-					}
-					try (java.io.InputStream reqs = HerbRunPlugin.class.getResourceAsStream("walk-reqs.tsv"))
-					{
-						if (reqs != null)
-						{
-							walkReqs = WalkRequirements.load(reqs);
-						}
-					}
-					worldMap = m;
-				}
-			}
-			catch (Exception e)
-			{
-				log.warn("Couldn't load the walking map; the guide line will use the loaded area only", e);
-			}
-		});
-	}
-
-	/**
-	 * Works out the walking route: to the gardener when you need to pay them, to the fairy ring /
-	 * spirit tree first, otherwise to a tile beside the patch. Uses the whole-world walking map, so
-	 * the route is right even before the target area has loaded.
-	 */
-	private void updateGuideLine(FarmPatch next, boolean leading)
-	{
-		WorldPoint target = navTarget;
-		Player player = client.getLocalPlayer();
-		if (!config.guideLine() || next == null || target == null || player == null)
-		{
-			clearGuide();
-			guideStatusText = !config.guideLine() ? "Guide line is off" : next == null ? "No next stop" : "Waiting for the game";
-			return;
-		}
-		WorldPoint me = player.getWorldLocation();
-		LocalPoint meLocal = player.getLocalLocation();
-		boolean otherFloor = me != null && me.getPlane() != target.getPlane() && worldMap == null;
-		if (me == null || meLocal == null || otherFloor
-			|| dist(me, target.getX(), target.getY()) > MAX_GUIDE_TILES)
-		{
-			clearGuide(); // far away: teleport first
-			guideStatusText = otherFloor
-				? "Next stop is on another floor (walking map still loading)"
-				: "Next stop " + (me == null ? "?" : String.valueOf(dist(me, target.getX(), target.getY())))
-					+ " tiles away: teleport first (no line past " + MAX_GUIDE_TILES + ")";
-			return;
-		}
-		RunPlan.RouteStep step = stepFor(next);
-		int away = dist(me, target.getX(), target.getY());
-		if (!leading && !travelDone && step != null && step.teleport != null && away > TELEPORT_FIRST_TILES)
-		{
-			// This stop starts with a teleport you haven't done yet: no walking line until then.
-			clearGuide();
-			guideStatusText = "Teleport first (" + step.teleport.getLabel() + "), next stop " + away + " tiles away";
-			return;
-		}
-		int baseX = me.getX() - meLocal.getSceneX();
-		int baseY = me.getY() - meLocal.getSceneY();
-
-		// The target box, in world tiles: the real object when it's loaded, else the known tile.
-		int minX = target.getX();
-		int minY = target.getY();
-		int maxX = minX;
-		int maxY = minY;
-		boolean exact = false;
-		boolean onto = false;
-		// Stops with a gardener: aim at the spot you stood on when you last paid them, the same
-		// fixed, walkable tile the Shortest Path plugin is sent. The line never chases the gardener
-		// himself (he wanders, which would keep moving the target); the hint arrow follows him.
-		WorldPoint gardenerSpot = !leading && next.getType().hasGardenerPayment() && !Gardeners.sharedAcrossTypes(next)
-			? approachTiles.get(next) : null;
-		TileObject lead = leading ? navLeadObject : null;
-		GameObject patchObj = leading ? null : objectFor(next);
-		int targetPlane = target.getPlane();
-		if (gardenerSpot != null)
-		{
-			minX = maxX = gardenerSpot.getX();
-			minY = maxY = gardenerSpot.getY();
-			targetPlane = gardenerSpot.getPlane();
-			exact = true;
-			onto = true;
-		}
-		else if (lead instanceof GameObject)
-		{
-			GameObject g = (GameObject) lead;
-			targetPlane = me.getPlane(); // loaded objects are on your floor
-			minX = baseX + g.getSceneMinLocation().getX();
-			minY = baseY + g.getSceneMinLocation().getY();
-			maxX = baseX + g.getSceneMaxLocation().getX();
-			maxY = baseY + g.getSceneMaxLocation().getY();
-			exact = true;
-		}
-		else if (lead != null && lead.getWorldLocation() != null)
-		{
-			minX = maxX = lead.getWorldLocation().getX();
-			minY = maxY = lead.getWorldLocation().getY();
-			exact = true;
-		}
-		else if (patchObj != null)
-		{
-			targetPlane = me.getPlane();
-			minX = baseX + patchObj.getSceneMinLocation().getX();
-			minY = baseY + patchObj.getSceneMinLocation().getY();
-			maxX = baseX + patchObj.getSceneMaxLocation().getX();
-			maxY = baseY + patchObj.getSceneMaxLocation().getY();
-			exact = true;
-		}
-		else if (!leading)
-		{
-			// Only the remembered tile (the patch isn't loaded yet): use the patch's size, so the
-			// route doesn't change once it loads.
-			// (a remembered object tile is its middle).
-			int size = next.getType().patchSize();
-			minX -= size / 2;
-			minY -= size / 2;
-			maxX = minX + size - 1;
-			maxY = minY + size - 1;
-		}
-		if (leading && navRingLabel != null && navRingLabel.startsWith("Fairy ring"))
-		{
-			onto = true; // you stand in a fairy ring
-		}
-
-		String what = gardenerSpot != null ? "gardener spot" : lead != null ? (navRingLabel != null ? navRingLabel : "lead")
-			: patchObj != null ? "patch" : leading && navRingLabel != null ? navRingLabel + " (not loaded)" : "patch (not loaded, remembered tile)";
-		// One target per stop (and per ring or tree on the way), like the single point the
-		// Shortest Path plugin is given.
-		String kind = (leading && navRingLabel != null ? navRingLabel : gardenerSpot != null ? "gardener" : "patch") + "|" + next;
-		RouteSession.Target goal = new RouteSession.Target(kind, minX, minY, maxX, maxY, targetPlane, onto, exact);
-		final boolean exactBox = exact;
-		guideSession.update(me.getX(), me.getY(), me.getPlane(), goal, (x, y, z, t) -> planRoute(x, y, z, t, exactBox));
-		List<int[]> line = guideSession.line();
-		guideStatusText = "Aiming at " + goal + " | " + guideMapName + " | "
-			+ (guideSession.steps().isEmpty() ? "NO ROUTE FOUND from " + me.getX() + "," + me.getY()
-			: guideSession.reached() ? "reached the end (line hidden)" : guideSession.steps().size() + " steps")
-			+ " | planned " + guideSession.plans() + "x (last: " + guideSession.why() + ")";
-		if (line.size() < 2)
-		{
-			guidePath = Collections.emptyList();
-			return;
-		}
-		// The whole line from A to B: nothing is trimmed while you walk.
-		List<WorldPoint> out = new ArrayList<>(line.size());
-		for (int[] t : line)
-		{
-			out.add(new WorldPoint(t[0], t[1], PathGuide.plane(t, me.getPlane())));
-		}
-		guidePath = out;
-	}
-
-	/** A walking route from (x, y, z) to the target, as the game walks it. Client thread. */
-	private List<int[]> planRoute(int x, int y, int z, RouteSession.Target t, boolean exact)
-	{
-		PathGuide.Walkable map;
-		WorldWalkMap world = worldMap;
-		if (world != null && world.hasRegion(x, y))
-		{
-			world.setAllowed(walkReqs.check(walkPlayer()));
-			map = world;
-		}
-		else
-		{
-			Player player = client.getLocalPlayer();
-			LocalPoint meLocal = player == null ? null : player.getLocalLocation();
-			net.runelite.api.CollisionData[] maps = client.getCollisionMaps();
-			if (meLocal == null || maps == null || z >= maps.length || maps[z] == null)
-			{
-				guideMapName = "no map data yet";
-				return Collections.emptyList();
-			}
-			map = PathGuide.scene(maps[z].getFlags(), x - meLocal.getSceneX(), y - meLocal.getSceneY());
-		}
-		int tz = map == world ? t.plane : z;
-		List<int[]> steps = PathGuide.find(map, z, x, y, tz, t.minX, t.minY, t.maxX, t.maxY, t.onto, GUIDE_MARGIN);
-		// Only the rough tile known: it may be off by a tile or two, so allow a slightly bigger box.
-		for (int grow = 1; steps.isEmpty() && !exact && grow <= 2; grow++)
-		{
-			steps = PathGuide.find(map, z, x, y, tz, t.minX - grow, t.minY - grow, t.maxX + grow, t.maxY + grow, false, GUIDE_MARGIN);
-		}
-		guideMapName = map == world ? "world map" : "loaded area only";
-		return PathGuide.gameWalk(map, z, steps);
-	}
-
-	private static boolean atStep(int[] t, WorldPoint me)
-	{
-		return t[0] == me.getX() && t[1] == me.getY() && PathGuide.plane(t, me.getPlane()) == me.getPlane();
-	}
-
-	/** You, as the guide line's door / stairs / shortcut checks see you. Call on the client thread. */
-	private WalkRequirements.Player walkPlayer()
-	{
-		long now = System.currentTimeMillis();
-		if (now - questCacheAt > 60_000L)
-		{
-			questCache.clear();
-			questCacheAt = now;
-		}
-		Map<Integer, Integer> carried = new java.util.HashMap<>();
-		for (int container : new int[]{INVENTORY_CONTAINER, WORN_CONTAINER})
-		{
-			ItemContainer c = client.getItemContainer(container);
-			if (c == null)
-			{
-				continue;
-			}
-			for (net.runelite.api.Item item : c.getItems())
-			{
-				if (item != null && item.getId() >= 0)
-				{
-					carried.merge(item.getId(), item.getQuantity(), Integer::sum);
-				}
-			}
-		}
-		return new WalkRequirements.Player()
-		{
-			@Override
-			public int level(String skill)
-			{
-				for (Skill sk : Skill.values())
-				{
-					if (sk.getName().equalsIgnoreCase(skill))
-					{
-						return client.getBoostedSkillLevel(sk);
-					}
-				}
-				return -1;
-			}
-
-			@Override
-			public boolean questDone(String quest)
-			{
-				return questCache.computeIfAbsent(quest, q ->
-				{
-					for (net.runelite.api.Quest qu : net.runelite.api.Quest.values())
-					{
-						if (qu.getName().equals(q))
-						{
-							return qu.getState(client) == net.runelite.api.QuestState.FINISHED;
-						}
-					}
-					return false;
-				});
-			}
-
-			@Override
-			public int varbit(int id)
-			{
-				return client.getVarbitValue(id);
-			}
-
-			@Override
-			public int varp(int id)
-			{
-				return client.getVarpValue(id);
-			}
-
-			@Override
-			public int carried(int itemId)
-			{
-				return carried.getOrDefault(itemId, 0);
-			}
-		};
-	}
-
-	/** Inventory and worn-equipment containers (RuneLite's gameval InventoryID INV and WORN). */
-	private static final int INVENTORY_CONTAINER = 93;
-	private static final int WORN_CONTAINER = 94;
-
-	private void clearGuide()
-	{
-		guidePath = Collections.emptyList();
-		guideSession.clear();
-	}
-
-	/**
-	 * The guide line as points to draw, a tile apart (so it follows the ground), in local
-	 * coordinates; null entries are off the loaded area (break the line there).
-	 */
-	List<LocalPoint> guideLinePoints()
-	{
-		List<WorldPoint> path = guidePath;
-		if (path.size() < 2)
-		{
-			return Collections.emptyList();
-		}
-		// Each point is pinned to its own tile on the map (not worked out from where your
-		// character is standing), so the line stays fixed on the ground while you move.
-		Player player = client.getLocalPlayer();
-		int floor = player == null || player.getWorldLocation() == null ? path.get(0).getPlane()
-			: player.getWorldLocation().getPlane();
-		List<LocalPoint> out = new ArrayList<>(path.size());
-		for (WorldPoint wp : path)
-		{
-			// Only the part of the route on your floor is drawn (the rest is up or down stairs).
-			LocalPoint lp = wp.getPlane() == floor ? LocalPoint.fromWorld(client, wp) : null;
-			if (lp != null)
-			{
-				int sx = lp.getSceneX();
-				int sy = lp.getSceneY();
-				if (sx < 1 || sy < 1 || sx >= SCENE_TILES - 1 || sy >= SCENE_TILES - 1)
-				{
-					lp = null;
-				}
-			}
-			out.add(lp);
-		}
-		return out;
-	}
-
-	private static final int MAX_GUIDE_TILES = 250;
-	/** Further than this from a stop that starts with a teleport: teleport before any line. */
+	/** The hint arrow waits until you're this close to a stop that starts with a teleport. */
 	private static final int TELEPORT_FIRST_TILES = 60;
-	private static final int GUIDE_MARGIN = 48;
-	private static final int SCENE_TILES = 104;
+	/** Never point the hint arrow at something further away than this. */
+	private static final int MAX_ARROW_TILES = 250;
 
 	private static final int RING_LEAD_RANGE = 120;
 	/** The spirit tree just north-west of the Grand Exchange. */
@@ -2552,7 +2209,7 @@ public class HerbRunPlugin extends Plugin
 	private WorldPoint hintPoint;
 
 	/**
-	 * The game's own hint arrow, on the same thing the guide line goes to: the gardener to pay
+	 * The game's own hint arrow, on the next thing to go to: the gardener to pay
 	 * (it follows them), the fairy ring or spirit tree to use, else the patch (or the gardener's
 	 * spot). It's set only when that target changes, so it doesn't jump about, and not before a
 	 * stop's teleport (nothing nearby to point at yet).
@@ -2568,7 +2225,7 @@ public class HerbRunPlugin extends Plugin
 		}
 		WorldPoint me = player.getWorldLocation();
 		int away = dist(me, target.getX(), target.getY());
-		if (me.getPlane() != target.getPlane() || away > MAX_GUIDE_TILES
+		if (me.getPlane() != target.getPlane() || away > MAX_ARROW_TILES
 			|| (!leading && !travelDone && step != null && step.teleport != null && away > TELEPORT_FIRST_TILES))
 		{
 			clearHintArrow();

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.12.0 (2026-11-18)
+- **The built-in guide line is gone.** It kept disagreeing with the panel and with Shortest Path, so the plugin no longer draws a walking line of its own. That also removes its 1.6 MB walking map, so the plugin is much smaller. The "Guide line", "Guide line style" and "Guide line status" settings are gone too.
+- **Shortest Path now follows your run.** Before, it was only given the next patch and picked its own way there, often a different teleport from the panel. Now it gets one leg at a time:
+  - On a fairy ring or spirit tree stop, it walks you to the ring or tree the panel says to use.
+  - Once you've travelled, it walks you to the patch, or to where you stand to pay the gardener.
+  - Before a stop's teleport it gets nothing, so it can't pick a teleport of its own. Use the one the panel names.
+- "Shortest Path walking line" is now on by default. It does nothing unless you have the Shortest Path plugin installed.
+- These all stay: the game's yellow hint arrow, the patch, ring, tree and gardener highlights, the minimap arrow, the fairy ring code highlight, and the "Dial AKR for Hosidius herb" banner.
+
 ## 1.11.0 (2026-11-18)
 - **Guide line uses Shortest Path's rules for when to redraw it.** Ported from its scheduler (PathScheduler and RefreshCoordinator):
   - The line is worked out once, from where you stand, when there's a new place to go.

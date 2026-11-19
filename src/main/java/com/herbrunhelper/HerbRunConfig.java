@@ -254,36 +254,12 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(keyName = "guideLine", name = "Guide line",
-		description = "Draw this plugin's own walking line to the next patch, fairy ring, spirit tree or gardener (no other plugin needed)",
-		position = 3, section = navSection)
-	default boolean guideLine()
-	{
-		return true;
-	}
-
-	@ConfigItem(keyName = "guideStyle", name = "Guide line style",
-		description = "Draw the guide as a line through the middle of each tile, as highlighted tiles (like Shortest Path's tile mode), or both",
-		position = 3, section = navSection)
-	default GuideStyle guideStyle()
-	{
-		return GuideStyle.LINE;
-	}
-
-	@ConfigItem(keyName = "guideStatus", name = "Guide line status",
-		description = "Show a small status box saying what the guide line is aiming at and, if there's no line, why. Handy for bug reports.",
-		position = 3, section = navSection)
-	default boolean guideStatus()
-	{
-		return false;
-	}
-
-	@ConfigItem(keyName = "shortestPathLine", name = "Use Shortest Path plugin",
-		description = "Also send each stop to the Shortest Path plugin (if installed) for its own walking line",
+	@ConfigItem(keyName = "shortestPathLine", name = "Shortest Path walking line",
+		description = "Send each leg of the run to the Shortest Path plugin (if installed) so it draws the walking line: first the fairy ring or spirit tree the panel says to use, then the patch or gardener. Its line then always matches the panel.",
 		position = 3, section = navSection)
 	default boolean useShortestPath()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(keyName = "pathMinigameTeleports", name = "Path: minigame teleports",

@@ -29,23 +29,12 @@ class LeadHintOverlay extends OverlayPanel
 	public Dimension render(Graphics2D graphics)
 	{
 		String hint = plugin.getOnScreenLeadHint();
-		String status = plugin.getGuideStatus();
-		if (hint == null && status == null)
+		if (hint == null)
 		{
 			return null;
 		}
-		int width = 150;
-		if (hint != null)
-		{
-			width = Math.max(width, graphics.getFontMetrics().stringWidth(hint) + 20);
-			panelComponent.getChildren().add(TitleComponent.builder().text(hint).color(new Color(127, 212, 255)).build());
-		}
-		if (status != null)
-		{
-			width = Math.max(width, Math.min(520, graphics.getFontMetrics().stringWidth(status) + 20));
-			panelComponent.getChildren().add(net.runelite.client.ui.overlay.components.LineComponent.builder()
-				.left("Line: " + status).leftColor(Color.WHITE).build());
-		}
+		int width = Math.max(150, graphics.getFontMetrics().stringWidth(hint) + 20);
+		panelComponent.getChildren().add(TitleComponent.builder().text(hint).color(new Color(127, 212, 255)).build());
 		panelComponent.setPreferredSize(new Dimension(width, 0));
 		return super.render(graphics);
 	}

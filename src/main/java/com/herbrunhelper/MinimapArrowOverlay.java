@@ -60,57 +60,6 @@ class MinimapArrowOverlay extends Overlay
 			return null;
 		}
 		Color color = config.patchColor();
-		// With a guide line: draw the route on the minimap too, and point the arrow along it.
-		java.util.List<LocalPoint> route = plugin.guideLinePoints();
-		if (route.size() >= 2)
-		{
-			drawRoute(graphics, route, color);
-			if (!plugin.showArrow())
-			{
-				return null;
-			}
-			// The line runs from A to B; count ahead from the point nearest you.
-			int from = 0;
-			int best = Integer.MAX_VALUE;
-			for (int i = 0; i < route.size(); i++)
-			{
-				LocalPoint lp = route.get(i);
-				if (lp == null)
-				{
-					continue;
-				}
-				int d = Math.max(Math.abs(lp.getX() - meLocal.getX()), Math.abs(lp.getY() - meLocal.getY()));
-				if (d < best)
-				{
-					best = d;
-					from = i;
-				}
-			}
-			LocalPoint ahead = null;
-			for (LocalPoint lp : route.subList(from, route.size()))
-			{
-				if (lp == null)
-				{
-					break;
-				}
-				ahead = lp;
-				if (Math.max(Math.abs(lp.getX() - meLocal.getX()), Math.abs(lp.getY() - meLocal.getY()))
-					>= EDGE_TILES * Perspective.LOCAL_TILE_SIZE)
-				{
-					break;
-				}
-			}
-			WorldPoint end = plugin.getGuidePath().get(plugin.getGuidePath().size() - 1);
-			if (ahead != null && dist2(end, me) > EDGE_TILES)
-			{
-				int tx = (ahead.getX() - meLocal.getX()) / Perspective.LOCAL_TILE_SIZE;
-				int ty = (ahead.getY() - meLocal.getY()) / Perspective.LOCAL_TILE_SIZE;
-				if (tx != 0 || ty != 0)
-				{
-					target = new WorldPoint(me.getX() + tx * 4, me.getY() + ty * 4, me.getPlane());
-				}
-			}
-		}
 		if (!plugin.showArrow())
 		{
 			return null;
@@ -118,7 +67,7 @@ class MinimapArrowOverlay extends Overlay
 		int dx = target.getX() - me.getX();
 		int dy = target.getY() - me.getY();
 		double dist = Math.sqrt((double) dx * dx + (double) dy * dy);
-		if (dist < 1 || (dist > 120 && route.size() < 2))
+		if (dist < 1 || dist > 120)
 		{
 			return null; // further than that you teleport first, so no arrow across the map
 		}
@@ -171,42 +120,5 @@ class MinimapArrowOverlay extends Overlay
 		graphics.setColor(color);
 		graphics.fill(arrow);
 		return null;
-	}
-
-	private static double dist2(WorldPoint a, WorldPoint b)
-	{
-		double dx = a.getX() - b.getX();
-		double dy = a.getY() - b.getY();
-		return Math.sqrt(dx * dx + dy * dy);
-	}
-
-	private void drawRoute(Graphics2D graphics, java.util.List<LocalPoint> route, Color color)
-	{
-		java.awt.geom.Path2D.Double line = new java.awt.geom.Path2D.Double();
-		boolean started = false;
-		for (LocalPoint lp : route)
-		{
-			Point p = lp == null ? null : Perspective.localToMinimap(client, lp);
-			if (p == null)
-			{
-				started = false;
-				continue;
-			}
-			if (started)
-			{
-				line.lineTo(p.getX(), p.getY());
-			}
-			else
-			{
-				line.moveTo(p.getX(), p.getY());
-				started = true;
-			}
-		}
-		graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		graphics.setColor(new Color(0, 0, 0, 140));
-		graphics.draw(line);
-		graphics.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		graphics.setColor(color);
-		graphics.draw(line);
 	}
 }
