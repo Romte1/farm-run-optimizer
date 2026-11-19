@@ -255,11 +255,19 @@ public interface HerbRunConfig extends Config
 	}
 
 	@ConfigItem(keyName = "shortestPathLine", name = "Shortest Path walking line",
-		description = "Send each leg of the run to the Shortest Path plugin (if installed) so it draws the walking line: first the fairy ring or spirit tree the panel says to use, then the patch or gardener. Its line then always matches the panel.",
+		description = "Send each stop to the Shortest Path plugin (if installed): it plans the whole trip with your own Shortest Path settings and draws the walking line.",
 		position = 3, section = navSection)
 	default boolean useShortestPath()
 	{
 		return true;
+	}
+
+	@ConfigItem(keyName = "pathMinigameTeleports", name = "Path: minigame teleports",
+		description = "Let the Shortest Path line use minigame teleports (e.g. Rat Pits). Off keeps the line closer to this plugin's plan.",
+		position = 4, section = navSection)
+	default boolean pathMinigameTeleports()
+	{
+		return false;
 	}
 
 	@ConfigItem(keyName = "patchColor", name = "Patch colour", description = "Colour of the next-patch highlight", position = 4, section = navSection)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.4 (2026-11-19)
+- **Shortest Path works the way it did before 1.12.** It's given the next patch (or the gardener's spot) and plans the whole trip itself, with your own Shortest Path settings: teleports, fairy rings, spirit trees, everything. This undoes 1.12.0's one-leg-at-a-time targets and 1.12.3's walking-only routes, which changed the routes it picked.
+- "Path: minigame teleports" is back.
+- Everything else from 1.12 stays: no built-in line, compost and payment steps that start from the patch itself, pick before dig, and the spirit tree payments.
+
 ## 1.12.3 (2026-11-19)
 - **Shortest Path only walks now.** Every leg we send it (to the fairy ring or spirit tree, then to the patch) turns off its teleports, fairy rings, spirit trees, boats, POH and bank trips for that route. So it can't head off towards a teleport of its own, like going the wrong way back to AKR from the Hosidius patch. The teleport is always the one the panel names. Your own Shortest Path settings come back as soon as we clear the route.
 - **The line ends on the nearest side of the patch.** Shortest Path is given every tile around the patch and goes to whichever is quickest to reach, instead of one corner.

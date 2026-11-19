@@ -59,8 +59,8 @@ Shortest Path
 https://github.com/Skretzo/shortest-path by Skretzo and contributors
 
 Farm Run Optimizer has no walking line of its own. When both plugins are installed and the
-setting is on, it sends Shortest Path each leg of the run (the fairy ring or spirit tree to use,
-then the patch or gardener) through RuneLite's plugin messages, and Shortest Path draws the line.
+setting is on, it sends Shortest Path each stop (the patch or the gardener's spot) through RuneLite's
+plugin messages, and Shortest Path draws the line.
 The fairy ring travel log highlight follows how Shortest Path does it (PathAnnotator); it was
 written anew here, not copied.
 
