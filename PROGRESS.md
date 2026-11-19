@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-18.
 
 ## Status
 
-Version **1.12.2**. Live on the Plugin Hub.
+Version **1.12.3**. Live on the Plugin Hub.
 
 ## Done
 
@@ -45,6 +45,7 @@ Version **1.12.2**. Live on the Plugin Hub.
 - 1.7.1: guideStyle (line/tiles/both), guideStatus debug box in LeadHintOverlay, no line >60 tiles from a teleport stop until travelDone. Tree-run missing line still being diagnosed (routes OK offline on real map with exact footprints).
 - 1.7.0: line A to B, untrimmed, hidden once reached (guideReached) until a new target or teleport; travelDone per stop (at destination ring, or a jump that brought you >30 tiles closer and within 200) stops ring/tree leads; 28 FarmPatch tiles corrected from Quest Helper (verify_patches OK).
 - 1.6.2: line points via LocalPoint.fromWorld per tile (was offset from the player's interpolated local position, so it slid); no re-plan when the box turns exact or the Agility boost changes.
+- 1.12.3: SP legs sent walk-only (walkOnlyOverrides: all teleports/transports off, items None, no bank path) and patch targets as the ring of tiles around the patch (tilesAround). pathMinigameTeleports setting removed.
 - 1.12.2: StepItems.Grown (PRODUCE/CHOP/CLEAR) from varbit for bush/cactus/celastrus: pick before dig; spirit tree extra payments highlighted (isStepItem). AllRunsCheck 70 tests: compost -> pay -> done for all 11 run types.
 - 1.12.1: planting also detected from the patch varbit turning GROWING stage 0 (not only the chat message), so compost/pay steps start for saplings.
 - 1.12.0: built-in guide line removed (PathGuide, WorldWalkMap, WalkRequirements, RouteSession, walk-map/links/reqs). Shortest Path gets each leg: lead ring/tree, then patch/gardener spot after travel, nothing before a teleport (within 60 tiles counts as arrived).

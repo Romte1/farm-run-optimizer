@@ -625,10 +625,6 @@ public class HerbRunPlugin extends Plugin
 		{
 			clearShortestPath();
 		}
-		if ("pathMinigameTeleports".equals(event.getKey()))
-		{
-			shortestPathResend = true; // send the route again with the new setting
-		}
 		if (!config.gameHintArrow())
 		{
 			clearHintArrow();
@@ -1562,7 +1558,6 @@ public class HerbRunPlugin extends Plugin
 		FarmingContract contractNow = contract;
 		Map<String, Boolean> settings = new java.util.LinkedHashMap<>();
 		settings.put("shortestPathLine", config.useShortestPath());
-		settings.put("pathMinigameTeleports", config.pathMinigameTeleports());
 		settings.put("highlightPatch", config.highlightPatch());
 		settings.put("highlightGardener", config.highlightGardener());
 		settings.put("pointerArrow", config.hintArrow());
@@ -1987,12 +1982,13 @@ public class HerbRunPlugin extends Plugin
 			else if (shortestPathResend || !pathTarget.equals(shortestPathTarget))
 			{
 				Map<String, Object> data = new HashMap<>();
-				data.put("target", pathTarget);
-				// Our own settings for the line, applied by Shortest Path to this route only
-				// (cleared again when we clear the path).
-				Map<String, Object> overrides = new HashMap<>();
-				overrides.put("useTeleportationMinigames", config.pathMinigameTeleports());
-				data.put("config", overrides);
+				// The patch itself can't be stood on: give every tile around it, and Shortest Path
+				// goes to whichever side is quickest to reach.
+				data.put("target", pathTarget == patchTarget && next != null
+					? tilesAround(pathTarget, next.getType().patchSize()) : pathTarget);
+				// Every leg we send is a walk (the teleport is the panel's), so Shortest Path may
+				// only walk, never pick a teleport of its own. Applies to this route only.
+				data.put("config", walkOnlyOverrides());
 				eventBus.post(new PluginMessage("shortestpath", "path", data));
 				shortestPathTarget = pathTarget;
 			}
@@ -2342,6 +2338,43 @@ public class HerbRunPlugin extends Plugin
 			hintNpc = null;
 			ourHintArrow = true;
 		}
+	}
+
+	/** Shortest Path settings that leave it walking only: no teleports, rings, trees or boats. */
+	static Map<String, Object> walkOnlyOverrides()
+	{
+		Map<String, Object> o = new HashMap<>();
+		for (String key : new String[]{"useTeleportationSpells", "useTeleportationSpellsHome",
+			"useTeleportationMinigames", "useTeleportationLevers", "useTeleportationPortals", "useFairyRings",
+			"useSpiritTrees", "useGnomeGliders", "useCharterShips", "useShips", "useBoats", "useCanoes",
+			"useMinecarts", "useQuetzals", "useMagicCarpets", "useHotAirBalloons", "useMagicMushtrees",
+			"useWildernessObelisks", "useSeasonalTransports", "usePoh", "useSailingMoves", "includeBankPath"})
+		{
+			o.put(key, false);
+		}
+		o.put("useTeleportationItems", "None");
+		return o;
+	}
+
+	/** The tiles right around a patch (its remembered tile is the middle of it). */
+	static java.util.Set<WorldPoint> tilesAround(WorldPoint centre, int size)
+	{
+		int minX = centre.getX() - size / 2;
+		int minY = centre.getY() - size / 2;
+		int maxX = minX + size - 1;
+		int maxY = minY + size - 1;
+		java.util.Set<WorldPoint> out = new java.util.LinkedHashSet<>();
+		for (int x = minX - 1; x <= maxX + 1; x++)
+		{
+			for (int y = minY - 1; y <= maxY + 1; y++)
+			{
+				if (x < minX || x > maxX || y < minY || y > maxY)
+				{
+					out.add(new WorldPoint(x, y, centre.getPlane()));
+				}
+			}
+		}
+		return out;
 	}
 
 	private void clearShortestPath()

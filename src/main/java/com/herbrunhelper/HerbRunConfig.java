@@ -262,14 +262,6 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(keyName = "pathMinigameTeleports", name = "Path: minigame teleports",
-		description = "Let the Shortest Path line use minigame teleports (e.g. Rat Pits). Off keeps the line closer to this plugin's plan.",
-		position = 4, section = navSection)
-	default boolean pathMinigameTeleports()
-	{
-		return false;
-	}
-
 	@ConfigItem(keyName = "patchColor", name = "Patch colour", description = "Colour of the next-patch highlight", position = 4, section = navSection)
 	default Color patchColor()
 	{

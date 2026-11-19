@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.3 (2026-11-19)
+- **Shortest Path only walks now.** Every leg we send it (to the fairy ring or spirit tree, then to the patch) turns off its teleports, fairy rings, spirit trees, boats, POH and bank trips for that route. So it can't head off towards a teleport of its own, like going the wrong way back to AKR from the Hosidius patch. The teleport is always the one the panel names. Your own Shortest Path settings come back as soon as we clear the route.
+- **The line ends on the nearest side of the patch.** Shortest Path is given every tile around the patch and goes to whichever is quickest to reach, instead of one corner.
+- Removed the "Path: minigame teleports" setting, since Shortest Path only walks for us now.
+
 ## 1.12.2 (2026-11-18)
 - **Checked every run type's steps after planting:** herb, tree, fruit tree, hardwood, bush, hops, cactus, calquat, spirit tree, celastrus and redwood. Each goes add compost (highlighted), then pay the gardener (payment highlighted, gardener outlined), then done. Poison ivy skips the payment, because the game doesn't let you protect it.
 - **Bushes, cactus and celastrus: pick before you dig.** A fully grown bush or cactus used to highlight your spade straight away, so following the highlight would dig up a full bush. The plugin now reads how many berries or spines are left from the game:
