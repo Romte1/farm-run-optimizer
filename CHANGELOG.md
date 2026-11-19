@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.12.1 (2026-11-18)
+- **Compost and pay-the-gardener steps after planting now always show.** They used to start only when the plugin read the game's "You plant..." chat message, and when that wording didn't match (as happened with fruit tree saplings), your compost and the gardener's payment were never highlighted. The plugin now also notices the patch itself turn freshly planted, for all 57 crops, so the steps run: add compost, then pay the gardener (payment highlighted in your inventory, gardener outlined).
+
 ## 1.12.0 (2026-11-18)
 - **The built-in guide line is gone.** It kept disagreeing with the panel and with Shortest Path, so the plugin no longer draws a walking line of its own. That also removes its 1.6 MB walking map, so the plugin is much smaller. The "Guide line", "Guide line style" and "Guide line status" settings are gone too.
 - **Shortest Path now follows your run.** Before, it was only given the next patch and picked its own way there, often a different teleport from the panel. Now it gets one leg at a time:

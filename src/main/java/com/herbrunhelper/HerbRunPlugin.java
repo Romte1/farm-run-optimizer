@@ -386,12 +386,27 @@ public class HerbRunPlugin extends Plugin
 			log.debug("Planted {} but no known patch at {}", crop, where);
 			return;
 		}
-		timers.planted(patch, crop, System.currentTimeMillis());
-		history.planted(patch, System.currentTimeMillis());
+		if (progress.containsKey(patch) && System.currentTimeMillis() - progress.get(patch).plantedAt < 60_000L)
+		{
+			return; // already seen from the patch itself
+		}
+		planted(patch, crop);
+	}
+
+	/**
+	 * You've just planted this patch: start its timer and the compost / pay-the-gardener steps.
+	 * Called from the "You plant..." message, or from the patch itself turning newly planted (so
+	 * it works even when the game words the message differently, like for saplings).
+	 */
+	private void planted(FarmPatch patch, Crop crop)
+	{
+		long now = System.currentTimeMillis();
+		timers.planted(patch, crop, now);
+		history.planted(patch, now);
 		saveHistory();
 		RunPlan.RouteStep step = stepFor(patch);
 		progress.clear();
-		progress.put(patch, new StepItems.Progress(System.currentTimeMillis(),
+		progress.put(patch, new StepItems.Progress(now,
 			step == null || step.compost == null ? 0 : inventoryItems.getOrDefault(step.compost, 0),
 			step == null || step.paymentItem == null ? 0 : inventoryItems.getOrDefault(step.paymentItem, 0)));
 		notifiedReady.remove(patch);
@@ -1570,6 +1585,15 @@ public class HerbRunPlugin extends Plugin
 			}
 
 			Integer last = lastSeenValue.put(patch, value);
+			if (last != null && last != value && d.state == PatchStates.State.GROWING && d.crop != null && d.stage == 0
+				&& !(progress.containsKey(patch) && now - progress.get(patch).plantedAt < 60_000L))
+			{
+				PatchStates.Decoded before = PatchStates.get().decode(patch.getType(), last);
+				if (before.state != PatchStates.State.GROWING || before.crop != d.crop || before.stage != 0)
+				{
+					planted(patch, d.crop); // just planted (whatever the chat said)
+				}
+			}
 			if (last != null && last != value && d.crop != null
 				&& (d.state == PatchStates.State.GROWING || d.state == PatchStates.State.READY))
 			{
