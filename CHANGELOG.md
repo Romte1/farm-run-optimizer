@@ -3,6 +3,7 @@
 ## 1.12.4 (2026-11-19)
 - **Shortest Path works the way it did before 1.12.** It's given the next patch (or the gardener's spot) and plans the whole trip itself, with your own Shortest Path settings: teleports, fairy rings, spirit trees, everything. This undoes 1.12.0's one-leg-at-a-time targets and 1.12.3's walking-only routes, which changed the routes it picked.
 - "Path: minigame teleports" is back.
+- Plugin Hub description now lists all eleven run types.
 - Everything else from 1.12 stays: no built-in line, compost and payment steps that start from the patch itself, pick before dig, and the spirit tree payments.
 
 ## 1.12.3 (2026-11-19)
