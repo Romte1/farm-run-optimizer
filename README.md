@@ -13,6 +13,17 @@
   <img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/bank-and-timers.png" alt="Items to withdraw outlined in the bank, with every patch timer in the sidebar" width="100%">
 </p>
 
+## Patch notes
+
+**Latest: 1.13.1**
+- **Seven new runs** (turn them on in the panel): bushes, hops, cactus, calquat, spirit trees, celastrus and redwood, each with timers, steps, gardener payments and Farming Guild contracts.
+- **Steps at each stop are more reliable:** compost and pay the gardener now show after planting for every run type, including fruit trees. Paying the gardener ends the step as soon as they agree to look after the patch. Bushes and cactus have you pick before you dig.
+- **Walking lines come from Shortest Path:** the plugin hands each stop to the [Shortest Path](https://runelite.net/plugin-hub/show/shortest-path) plugin, and tells you if it isn't installed or is turned off. The built-in line is gone, which also makes the plugin much smaller.
+- **More travel:** any Ardougne cloak (even cloak 1) for the Ardougne bush, plus amulet of glory, ring of wealth and more fairy rings.
+- **Panel:** game hint arrow on/off in Settings, and channel buttons at the bottom.
+
+Every change, version by version, is in the [changelog](CHANGELOG.md).
+
 ## Getting started
 
 1. Install **Farm Run Optimizer** from the Plugin Hub.
@@ -47,8 +58,8 @@ Your Farming level, quests and diaries are read automatically, so the plan only 
 - **On the ground**: the next patch is outlined, with a steady arrow over it and a marker or arrow on the minimap (no extra plugin needed); on fairy ring and spirit tree stops the ring or tree is marked with what to pick. The game's own yellow hint arrow points at the next ring, tree, gardener or patch. For a walking line, install the **[Shortest Path](https://runelite.net/plugin-hub/show/shortest-path)** plugin: Farm Run Optimizer hands it each stop and it draws the whole trip.
 - **Gardeners** you need to pay are outlined, with what to give them.
 
-<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/walking-path-ardougne.png" alt="Walking path to the Ardougne herb patch with the run-ready box" width="100%"></p>
-<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/tree-run-nemus.png" alt="Tree run at Nemus Retreat: patch outlined, gardener highlighted, path and stop card" width="100%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/walking-path-ardougne.png" alt="Ardougne herb patch with the run-ready box" width="100%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/triggleman/farm-run-optimizer/main/images/screenshots/tree-run-nemus.png" alt="Tree run at Nemus Retreat: patch outlined, gardener highlighted, and the stop card" width="100%"></p>
 
 ### At each patch
 - **A to-do card for every stop**: harvest, check health, pay the gardener, dig up a stump, plant, compost, pay for protection. The next stop is gold and finished stops turn green.
