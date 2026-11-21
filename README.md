@@ -103,3 +103,7 @@ Everything can be switched on or off in the panel's **Settings** section or in R
 - **[Old School RuneScape Wiki](https://oldschool.runescape.wiki/)**: items, payments, growth times, teleports, directions and fairy ring codes.
 
 Released under the [BSD 2-Clause License](LICENSE). Full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of Jagex Ltd; this plugin is not affiliated with or endorsed by Jagex.
+
+## Channels
+
+Made by ToadFx: [YouTube](https://www.youtube.com/@toadfxx) · [Twitch](https://www.twitch.tv/toadfxx) · [Kick](https://kick.com/toadfx) · [TikTok](https://www.tiktok.com/@toadfx)

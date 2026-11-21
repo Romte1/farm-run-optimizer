@@ -133,6 +133,10 @@ public class HerbRunPlugin extends Plugin
 
 	@Inject
 	private net.runelite.client.game.SpriteManager spriteManager;
+	@Inject
+	private net.runelite.client.plugins.PluginManager pluginManager;
+	/** Told you about the Shortest Path plugin this session (in chat). */
+	private boolean toldAboutShortestPath;
 
 	private static final String HISTORY_KEY = "runHistory";
 	private static final String CURRENT_RUN_KEY = "currentRun";
@@ -638,6 +642,16 @@ public class HerbRunPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		if (!toldAboutShortestPath && client.getGameState() == GameState.LOGGED_IN)
+		{
+			toldAboutShortestPath = true;
+			String notice = shortestPathNotice();
+			if (notice != null)
+			{
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
+					"<col=0099ff>Farm Run Optimizer:</col> " + notice, null);
+			}
+		}
 		if (!timersLoaded)
 		{
 			loadTimers();
@@ -1562,6 +1576,8 @@ public class HerbRunPlugin extends Plugin
 		FarmingContract contractNow = contract;
 		Map<String, Boolean> settings = new java.util.LinkedHashMap<>();
 		settings.put("shortestPathLine", config.useShortestPath());
+		settings.put("gameHintArrow", config.gameHintArrow());
+		settings.put("showSocials", config.showSocials());
 		settings.put("pathMinigameTeleports", config.pathMinigameTeleports());
 		settings.put("highlightPatch", config.highlightPatch());
 		settings.put("highlightGardener", config.highlightGardener());
@@ -1586,8 +1602,10 @@ public class HerbRunPlugin extends Plugin
 		settings.put("harmonyUnlocked", config.harmonyUnlocked());
 		settings.put("showTimers", config.showTimers());
 		settings.put("showTravel", config.showTravel());
+		String spNotice = shortestPathNotice();
 		SwingUtilities.invokeLater(() ->
 		{
+			panel.setShortestPathNotice(spNotice);
 			panel.setSettings(settings);
 			panel.setRuns(runs);
 			panel.setPicks(offCrops, offPatches);
@@ -2324,6 +2342,40 @@ public class HerbRunPlugin extends Plugin
 			hintNpc = null;
 			ourHintArrow = true;
 		}
+	}
+
+	/**
+	 * A note to show when the walking line can't appear: the Shortest Path plugin isn't installed,
+	 * or it's turned off. Null when it's there and on (or you've turned our line setting off).
+	 */
+	String shortestPathNotice()
+	{
+		if (!config.useShortestPath())
+		{
+			return null;
+		}
+		for (Plugin p : pluginManager.getPlugins())
+		{
+			PluginDescriptor d = p.getClass().getAnnotation(PluginDescriptor.class);
+			if (d != null && "Shortest Path".equals(d.name()))
+			{
+				return pluginManager.isPluginEnabled(p) ? null
+					: "Turn on the Shortest Path plugin (it's installed but off) to get a walking line to each stop.";
+			}
+		}
+		return "Install Shortest Path from the Plugin Hub to get a walking line to each stop. Farm Run Optimizer sends it every patch.";
+	}
+
+	@Subscribe
+	public void onPluginChanged(net.runelite.client.events.PluginChanged event)
+	{
+		dirty = true; // Shortest Path installed or turned on/off: update the panel note
+	}
+
+	@Subscribe
+	public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event)
+	{
+		dirty = true;
 	}
 
 	private void clearShortestPath()

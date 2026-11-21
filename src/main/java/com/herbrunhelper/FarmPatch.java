@@ -150,7 +150,7 @@ public enum FarmPatch
 		via(Teleport.FALADOR_TAB, "run south to Rimmington"),
 		via(Teleport.FALADOR_SPELL, "run south to Rimmington")),
 	ARDOUGNE_BUSH("Ardougne bush", PatchType.BUSH, Requirement.NONE, 2615, 3224, r(10290, 10546), 4771, null, "Ardougne South bank",
-		via(Teleport.ARDOUGNE_CLOAK, "Kandarin Monastery teleport, bush is just east"),
+		via(Teleport.ARDOUGNE_CLOAK_MONASTERY, "Kandarin Monastery teleport (any Ardougne cloak, even cloak 1), bush is just east"),
 		via(Teleport.ARDOUGNE_TAB, "run south past the zoo"),
 		via(Teleport.ARDOUGNE_SPELL, "run south past the zoo")),
 	ETCETERIA_BUSH("Etceteria bush", PatchType.BUSH, Requirement.FREMENNIK_TRIALS, 2589, 3862, r(10300), 4771, null, null,

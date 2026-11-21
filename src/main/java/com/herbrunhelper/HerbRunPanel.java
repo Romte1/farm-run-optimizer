@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.12.4";
+	static final String VERSION = "1.13.0";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -89,6 +89,10 @@ public class HerbRunPanel extends PluginPanel
 	private String hintItem;
 
 	private final JPanel runsSection = new JPanel();
+	/** A note about the Shortest Path plugin (not installed / turned off), or empty. */
+	private final JPanel noticeSection = new JPanel();
+	private String shortestPathNotice;
+	private final JPanel socialsRow = SocialLinks.row();
 	private final JPanel liveSection = new JPanel();
 	private BiConsumer<PatchType, Boolean> onRunChanged;
 	private final JPanel planSection = new JPanel();
@@ -154,6 +158,9 @@ public class HerbRunPanel extends PluginPanel
 		title.setIconTextGap(6);
 		root.addRow(title, 2);
 
+		noticeSection.setOpaque(false);
+		noticeSection.setLayout(new BorderLayout());
+		root.addRow(noticeSection, 0);
 		liveSection.setOpaque(false);
 		runsSection.setOpaque(false);
 		planSection.setOpaque(false);
@@ -162,6 +169,7 @@ public class HerbRunPanel extends PluginPanel
 		root.addRow(planSection, 0);
 
 		root.addRow(new JSeparator(), 4);
+		root.addRow(socialsRow, 4);
 		JLabel credit = new JLabel(CREDIT, SwingConstants.CENTER);
 		credit.setFont(FontManager.getRunescapeSmallFont());
 		credit.setForeground(MUTED);
@@ -186,6 +194,37 @@ public class HerbRunPanel extends PluginPanel
 	void setSettings(Map<String, Boolean> settings)
 	{
 		this.settings = settings;
+		boolean socials = setting("showSocials");
+		if (socialsRow.isVisible() != socials)
+		{
+			socialsRow.setVisible(socials);
+			revalidate();
+		}
+	}
+
+	/** Shown at the top while the Shortest Path plugin isn't installed or is off; null hides it. */
+	void setShortestPathNotice(String notice)
+	{
+		if (java.util.Objects.equals(notice, shortestPathNotice))
+		{
+			return;
+		}
+		shortestPathNotice = notice;
+		noticeSection.removeAll();
+		if (notice != null)
+		{
+			JPanel card = new JPanel(new BorderLayout());
+			card.setBackground(new Color(58, 50, 28));
+			card.setBorder(new EmptyBorder(5, 6, 5, 6));
+			card.add(wrapped("\u26A0 " + esc(notice), ORANGE), BorderLayout.CENTER);
+			JPanel gap = new JPanel(new BorderLayout());
+			gap.setOpaque(false);
+			gap.setBorder(new EmptyBorder(0, 0, 4, 0));
+			gap.add(card, BorderLayout.CENTER);
+			noticeSection.add(gap, BorderLayout.CENTER);
+		}
+		noticeSection.revalidate();
+		noticeSection.repaint();
 	}
 
 	/** What the stop you're at needs right now, shown in a banner above the stops. */
@@ -758,6 +797,7 @@ public class HerbRunPanel extends PluginPanel
 
 	private static final String[][] SETTINGS = {
 		{"shortestPathLine", "Shortest Path walking line", "Send each stop to Shortest Path (if installed) for its walking line"},
+		{"gameHintArrow", "Game hint arrow", "The game's yellow arrow (also on the minimap) over the next patch, ring, tree or gardener"},
 		{"pathMinigameTeleports", "Path: minigame teleports", "Let Shortest Path's line use minigame teleports like Rat Pits"},
 		{"highlightPatch", "Highlight next patch", "Outline the next patch on the ground"},
 		{"highlightGardener", "Highlight gardener to pay", "Outline the gardener when you need to pay them"},
@@ -782,6 +822,7 @@ public class HerbRunPanel extends PluginPanel
 		{"harmonyUnlocked", "Morytania Elite done", "Unlocks the Harmony Island herb patch"},
 		{"showTimers", "Show patch timers", "Show the timer list at the top"},
 		{"showTravel", "Show Travel section", "Show your teleports section"},
+		{"showSocials", "Channel links", "Buttons to ToadFx's YouTube, Twitch, Kick and TikTok at the bottom"},
 	};
 
 	private JComponent settingsSection()

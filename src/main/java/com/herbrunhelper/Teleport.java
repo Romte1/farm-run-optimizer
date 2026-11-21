@@ -20,6 +20,10 @@ public enum Teleport
 	// Only cloak 2+ has the teleport to the farming patch (cloak 1 goes to the monastery).
 	ARDOUGNE_CLOAK(Kind.ITEM, "Ardougne cloak 2+", 13122, 0, null, null, null,
 		"Ardougne cloak 2", "Ardougne cloak 3", "Ardougne cloak 4"),
+	// Every Ardougne cloak (1 to 4, and the Ardougne max cape) teleports to Kandarin Monastery,
+	// right beside the Ardougne bush patch.
+	ARDOUGNE_CLOAK_MONASTERY(Kind.ITEM, "Ardougne cloak (Kandarin Monastery)", 13121, 0, null, null, null,
+		"Ardougne cloak 1", "Ardougne cloak 2", "Ardougne cloak 3", "Ardougne cloak 4", "Ardougne max cape"),
 	ECTOPHIAL(Kind.ITEM, "Ectophial", 4251, 0, null, null, null, "Ectophial"),
 	XERICS_TALISMAN(Kind.ITEM, "Xeric's talisman", 13393, 0, null, null, null, "Xeric's talisman"),
 	KHAREDSTS_MEMOIRS(Kind.ITEM, "Kharedst's memoirs / Book of the dead", 21760, 0, null, null, null,

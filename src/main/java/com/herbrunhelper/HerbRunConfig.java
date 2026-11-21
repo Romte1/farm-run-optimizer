@@ -270,6 +270,14 @@ public interface HerbRunConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(keyName = "showSocials", name = "Channel links in panel",
+		description = "Show buttons to ToadFx's YouTube, Twitch, Kick and TikTok at the bottom of the panel",
+		position = 5, section = navSection)
+	default boolean showSocials()
+	{
+		return true;
+	}
+
 	@ConfigItem(keyName = "patchColor", name = "Patch colour", description = "Colour of the next-patch highlight", position = 4, section = navSection)
 	default Color patchColor()
 	{

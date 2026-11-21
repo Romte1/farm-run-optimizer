@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0 (2026-11-21)
+- **Shortest Path check.** If the Shortest Path plugin isn't installed, or is installed but turned off, the panel shows a note at the top saying so, and you get one chat message after logging in. The note goes away as soon as Shortest Path is installed and on. It also goes away if you turn off "Shortest Path walking line".
+- **"Game hint arrow" is in the panel's Settings**, so you can turn the yellow arrow on or off without opening RuneLite's config.
+- **Ardougne cloak 1 counts as travel.** Every Ardougne cloak (1 to 4, and the Ardougne max cape) teleports to Kandarin Monastery, right beside the Ardougne bush patch, so the bush run now suggests it even if you only have cloak 1. The farm teleport for the Ardougne herb and allotments still needs cloak 2 or higher.
+- **Channel buttons** at the bottom of the panel (YouTube, Twitch, Kick, TikTok), all one light grey. Turn them off with "Channel links" in Settings.
+
 ## 1.12.4 (2026-11-19)
 - **Shortest Path works the way it did before 1.12.** It's given the next patch (or the gardener's spot) and plans the whole trip itself, with your own Shortest Path settings: teleports, fairy rings, spirit trees, everything. This undoes 1.12.0's one-leg-at-a-time targets and 1.12.3's walking-only routes, which changed the routes it picked.
 - "Path: minigame teleports" is back.
