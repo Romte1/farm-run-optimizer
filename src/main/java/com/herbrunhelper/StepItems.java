@@ -63,6 +63,23 @@ public final class StepItems
 		return next(step, planting, status, progress, now, checkHealthDue, null);
 	}
 
+	/**
+	 * True if a gardener's line says they're now looking after the patch (you've paid), or already
+	 * were. From the OSRS Wiki gardener transcripts.
+	 */
+	public static boolean saysProtected(String dialogue)
+	{
+		if (dialogue == null)
+		{
+			return false;
+		}
+		String t = dialogue.replaceAll("<[^>]*>", " ").toLowerCase();
+		return t.contains("leave it with me")
+			|| t.contains("make sure that patch grows")
+			|| t.contains("make sure it grows")
+			|| t.contains("already looking after");
+	}
+
 	/** What the game shows on a grown plant, so the steps go in the right order. */
 	public enum Grown
 	{

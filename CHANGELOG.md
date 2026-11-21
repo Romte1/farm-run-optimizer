@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.13.1 (2026-11-21)
+- **Paying the gardener always ends the step.** The plugin used to decide you'd paid only by seeing the payment item leave your inventory. If that didn't match up (for example, you paid with a different form of the item), "Pay the gardener" stayed up after you'd paid. Now it also reads the gardener's reply. As soon as they say "Leave it with me - I'll make sure that patch grows for you" (or that they're already looking after it), the step is done and you move on to the next stop. Asking the price, being refused, or "already fully grown" don't count.
+- The order at each stop is unchanged: add compost, then pay the gardener, then on to the next patch.
+
 ## 1.13.0 (2026-11-21)
 - **Shortest Path check.** If the Shortest Path plugin isn't installed, or is installed but turned off, the panel shows a note at the top saying so, and you get one chat message after logging in. The note goes away as soon as Shortest Path is installed and on. It also goes away if you turn off "Shortest Path walking line".
 - **"Game hint arrow" is in the panel's Settings**, so you can turn the yellow arrow on or off without opening RuneLite's config.

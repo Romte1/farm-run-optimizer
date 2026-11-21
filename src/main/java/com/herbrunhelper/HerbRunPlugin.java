@@ -683,6 +683,7 @@ public class HerbRunPlugin extends Plugin
 			}
 			updateReadyLines();
 		}
+		noticeGardenerPaid();
 		if (dirty)
 		{
 			dirty = false;
@@ -1158,6 +1159,41 @@ public class HerbRunPlugin extends Plugin
 		return null;
 	}
 
+	/** The NPC dialogue box (chat head on the left) and its text: RuneLite's InterfaceID.ChatLeft. */
+	private static final int NPC_DIALOGUE_GROUP = 231;
+	private static final int NPC_DIALOGUE_TEXT = 6;
+
+	/**
+	 * The gardener saying they'll look after the patch means you've paid, whatever you paid with:
+	 * "That'll do nicely. Leave it with me - I'll make sure that patch grows for you." (or that
+	 * they're already looking after it). Checked every tick while a payment step is open.
+	 */
+	private void noticeGardenerPaid()
+	{
+		boolean waiting = false;
+		for (StepItems.Progress p : progress.values())
+		{
+			waiting |= !p.paid;
+		}
+		if (!waiting)
+		{
+			return;
+		}
+		net.runelite.api.widgets.Widget w = client.getWidget(NPC_DIALOGUE_GROUP, NPC_DIALOGUE_TEXT);
+		if (w == null || w.isHidden() || w.getText() == null)
+		{
+			return;
+		}
+		if (StepItems.saysProtected(w.getText()))
+		{
+			for (StepItems.Progress p : progress.values())
+			{
+				p.paid = true;
+			}
+			dirty = true;
+		}
+	}
+
 	/** Compost or payment leaving the inventory after planting means that step is done. */
 	private void noticeItemsUsed()
 	{
@@ -1173,11 +1209,13 @@ public class HerbRunPlugin extends Plugin
 				&& inventoryItems.getOrDefault(step.compost, 0) < p.compostBaseline)
 			{
 				p.composted = true;
+				dirty = true;
 			}
 			if (!p.paid && step.paymentItem != null
 				&& inventoryItems.getOrDefault(step.paymentItem, 0) < p.paymentBaseline)
 			{
 				p.paid = true;
+				dirty = true;
 			}
 		}
 	}
