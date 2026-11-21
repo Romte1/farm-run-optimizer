@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-18.
 
 ## Status
 
-Version **1.13.1**. Live on the Plugin Hub.
+Version **1.14.0**. Live on the Plugin Hub.
 
 ## Done
 
@@ -45,6 +45,7 @@ Version **1.13.1**. Live on the Plugin Hub.
 - 1.7.1: guideStyle (line/tiles/both), guideStatus debug box in LeadHintOverlay, no line >60 tiles from a teleport stop until travelDone. Tree-run missing line still being diagnosed (routes OK offline on real map with exact footprints).
 - 1.7.0: line A to B, untrimmed, hidden once reached (guideReached) until a new target or teleport; travelDone per stop (at destination ring, or a jump that brought you >30 tiles closer and within 200) stops ring/tree leads; 28 FarmPatch tiles corrected from Quest Helper (verify_patches OK).
 - 1.6.2: line points via LocalPoint.fromWorld per tile (was offset from the player's interpolated local position, so it slid); no re-plan when the box turns exact or the Agility boost changes.
+- 1.14.0: Crop CAMPHOR/IRONWOOD/ROSEWOOD (stages 9/9/10 from RuneLite Produce; payments 10 White berries / 10 Curry leaf / 8 Dragonfruit; XP 88/17840, 145/20380, 252/23100; log icons 32904/32907/32910). Anglers' Retreat hardwood (2472,2705) still not added. AllRunsCheck 92.
 - 1.13.1: payment also detected from the NPC dialogue (group 231 child 6) via StepItems.saysProtected ("leave it with me", "make sure that patch grows", "already looking after"); PaidCheck 9 tests.
 - 1.13.0: shortestPathNotice() (PluginManager, descriptor name "Shortest Path") -> panel note + one chat message per session; gameHintArrow + showSocials in panel Settings; Teleport.ARDOUGNE_CLOAK_MONASTERY (cloak 1-4, max cape) for ARDOUGNE_BUSH; SocialLinks (light grey buttons; official icons can be dropped in as resources social/<name>.png).
 - 1.12.4: SP back to pre-1.12 behaviour (send the patch / gardener approach tile, SP plans the whole trip with the user's SP settings; resend after teleports). Todd: SP "used to work perfectly". Don't send SP legs or walk-only overrides again.

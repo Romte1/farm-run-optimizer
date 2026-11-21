@@ -57,6 +57,10 @@ public enum Crop
 	// Hardwood: 640-minute ticks
 	TEAK(PatchType.HARDWOOD, "Teak", 35, "Teak sapling", 8, "Limpwurt root", 15, 6333),
 	MAHOGANY(PatchType.HARDWOOD, "Mahogany", 55, "Mahogany sapling", 9, "Yanillian hops", 25, 6332),
+	// Sailing update hardwoods (19 Nov 2025): stages from RuneLite's Produce, payments from the OSRS Wiki.
+	CAMPHOR(PatchType.HARDWOOD, "Camphor", 66, "Camphor sapling", 9, "White berries", 10, 32904),
+	IRONWOOD(PatchType.HARDWOOD, "Ironwood", 80, "Ironwood sapling", 9, "Curry leaf", 10, 32907),
+	ROSEWOOD(PatchType.HARDWOOD, "Rosewood", 92, "Rosewood sapling", 10, "Dragonfruit", 8, 32910),
 
 	// Bushes: stages and ticks from RuneLite's Produce; levels, payments from the OSRS Wiki.
 	REDBERRIES(PatchType.BUSH, "Redberry", 10, "Redberry seed", 6, "Cabbages(10)", 4, 1951),
@@ -209,6 +213,12 @@ public enum Crop
 				return "Teak seed";
 			case MAHOGANY:
 				return "Mahogany seed";
+			case CAMPHOR:
+				return "Camphor seed";
+			case IRONWOOD:
+				return "Ironwood seed";
+			case ROSEWOOD:
+				return "Rosewood seed";
 			case CALQUAT:
 				return "Calquat tree seed";
 			case SPIRIT_TREE:

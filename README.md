@@ -15,7 +15,8 @@
 
 ## Patch notes
 
-**Latest: 1.13.1**
+**Latest: 1.14.0**
+- **New hardwoods:** camphor, ironwood and rosewood from the Sailing update are planned, timed and tracked in every hardwood patch.
 - **Seven new runs** (turn them on in the panel): bushes, hops, cactus, calquat, spirit trees, celastrus and redwood, each with timers, steps, gardener payments and Farming Guild contracts.
 - **Steps at each stop are more reliable:** compost and pay the gardener now show after planting for every run type, including fruit trees. Paying the gardener ends the step as soon as they agree to look after the patch. Bushes and cactus have you pick before you dig.
 - **Walking lines come from Shortest Path:** the plugin hands each stop to the [Shortest Path](https://runelite.net/plugin-hub/show/shortest-path) plugin, and tells you if it isn't installed or is turned off. The built-in line is gone, which also makes the plugin much smaller.

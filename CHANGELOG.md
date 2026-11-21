@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.14.0 (2026-11-21)
+- **Camphor, ironwood and rosewood hardwoods.** These are the hardwood trees from the Sailing update, and the plugin can now plan, time and track them in every hardwood patch:
+  - **Camphor:** level 66, pay 10 white berries.
+  - **Ironwood:** level 80, pay 10 curry leaves.
+  - **Rosewood:** level 92, pay 8 dragonfruit.
+  - Growth times come from RuneLite and payments and XP from the OSRS Wiki. Before this, a camphor, ironwood or rosewood tree already in a patch showed as an unknown crop.
+- **Hardwood run checked from start to finish** at Fossil Island and Locus Oasis, for all five hardwoods: check health, pay the gardener 200 coins to clear it, plant the sapling, add compost, then pay the gardener (or squirrel) to protect it. On Fossil Island each patch has its own squirrel, and the right one is outlined. Patch tiles match RuneLite's data.
+
 ## 1.13.1 (2026-11-21)
 - **Paying the gardener always ends the step.** The plugin used to decide you'd paid only by seeing the payment item leave your inventory. If that didn't match up (for example, you paid with a different form of the item), "Pay the gardener" stayed up after you'd paid. Now it also reads the gardener's reply. As soon as they say "Leave it with me - I'll make sure that patch grows for you" (or that they're already looking after it), the step is done and you move on to the next stop. Asking the price, being refused, or "already fully grown" don't count.
 - The order at each stop is unchanged: add compost, then pay the gardener, then on to the next patch.

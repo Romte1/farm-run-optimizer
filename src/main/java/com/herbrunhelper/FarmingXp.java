@@ -61,6 +61,9 @@ public final class FarmingXp
 
 		put(Crop.TEAK, 35, 0, 7290);
 		put(Crop.MAHOGANY, 63, 0, 15720);
+		put(Crop.CAMPHOR, 88, 0, 17840);
+		put(Crop.IRONWOOD, 145, 0, 20380);
+		put(Crop.ROSEWOOD, 252, 0, 23100);
 		put(Crop.REDBERRIES, 11.5, 4.5, 64);
 		put(Crop.CADAVABERRIES, 18, 7, 102.5);
 		put(Crop.DWELLBERRIES, 31.5, 12, 177.5);

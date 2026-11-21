@@ -44,7 +44,7 @@ public interface HerbRunConfig extends Config
 		return false;
 	}
 
-	@ConfigItem(keyName = "includeHardwood", name = "Hardwood run", description = "Include teak/mahogany patches", position = 3, section = runSection)
+	@ConfigItem(keyName = "includeHardwood", name = "Hardwood run", description = "Include hardwood patches (teak, mahogany, camphor, ironwood, rosewood)", position = 3, section = runSection)
 	default boolean includeHardwood()
 	{
 		return false;
