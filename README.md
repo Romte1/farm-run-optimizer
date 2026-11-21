@@ -15,7 +15,8 @@
 
 ## Patch notes
 
-**Latest: 1.14.0**
+**Latest: 1.15.0**
+- **Herb profit the OSRS Wiki way:** expected herbs per patch from your level, compost, magic secateurs, Farming cape, diaries and disease, minus seed and compost.
 - **New hardwoods:** camphor, ironwood and rosewood from the Sailing update are planned, timed and tracked in every hardwood patch.
 - **Seven new runs** (turn them on in the panel): bushes, hops, cactus, calquat, spirit trees, celastrus and redwood, each with timers, steps, gardener payments and Farming Guild contracts.
 - **Steps at each stop are more reliable:** compost and pay the gardener now show after planting for every run type, including fruit trees. Paying the gardener ends the step as soon as they agree to look after the patch. Bushes and cactus have you pick before you dig.

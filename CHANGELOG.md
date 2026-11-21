@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.15.0 (2026-11-21)
+- **Herb profit now uses the OSRS Wiki's method.** Before, every herb was priced at a flat 8 herbs a patch (or your own average), minus the seed. Now each herb's expected yield is worked out the way the wiki's herb calculator does it:
+  - **Harvest lives:** 3, plus 1, 2 or 3 for compost, supercompost or ultracompost (the bottomless bucket counts as ultracompost).
+  - **Chance to save a life:** depends on the herb and your Farming level, plus magic secateurs (+10%) and the Farming cape (+5%) if you own them.
+  - **Diary boosts:** Catherby gets +10, +17 or +25 for the Kandarin medium, hard or elite diary; Hosidius and the Farming Guild get +10 for the Kourend hard diary. These are read from the game.
+  - **Disease:** the chance a patch dies is counted, except at disease-free patches (Troll Stronghold, Weiss, Harmony, and Hosidius with the easy Kourend diary).
+  - It's averaged over the herb patches you actually run, and **compost cost** is now taken off along with the seed.
+- The profit list shows each herb's expected herbs a patch, e.g. "Ranarr (8.6)", and a line saying what it assumes. Run history still shows your own real average.
+
 ## 1.14.0 (2026-11-21)
 - **Camphor, ironwood and rosewood hardwoods.** These are the hardwood trees from the Sailing update, and the plugin can now plan, time and track them in every hardwood patch:
   - **Camphor:** level 66, pay 10 white berries.

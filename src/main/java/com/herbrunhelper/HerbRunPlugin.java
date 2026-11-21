@@ -1536,28 +1536,57 @@ public class HerbRunPlugin extends Plugin
 		}
 		FarmingContract c = contract;
 		options.contractCrop = c != null && !c.complete && config.plantContract() ? c.crop : null;
+		options.disabledPatches = readSet(config.disabledPatches(), FarmPatch.class);
 		double herbYield = history.averageHerbYield();
 		herbProfit.clear();
+		// Expected herbs per patch the OSRS Wiki way (see HerbYield), averaged over your herb patches.
+		HerbYield.Setup setup = new HerbYield.Setup();
+		setup.level = farmingLevel();
+		setup.magicSecateurs = owned.containsKey("Magic secateurs");
+		setup.farmingCape = client.getRealSkillLevel(Skill.FARMING) >= 99
+			&& (owned.containsKey("Farming cape") || owned.containsKey("Farming cape(t)") || owned.containsKey("Max cape"));
+		String compost = config.useCompost() ? bestCompost(owned) : null;
+		setup.compostTier = HerbYield.compostTier(compost);
+		long compostCost = compost == null ? 0
+			: compost.startsWith("Bottomless") ? itemManager.getItemPrice(ULTRACOMPOST_ID) / 2
+			: itemManager.getItemPrice(compostId(compost));
+		List<FarmPatch> herbPatches = new ArrayList<>();
+		for (FarmPatch p : unlocked)
+		{
+			if (p.getType() == PatchType.HERB && !options.disabledPatches.contains(p))
+			{
+				herbPatches.add(p);
+			}
+		}
+		herbYieldByCrop.clear();
 		for (Crop crop : Crop.values())
 		{
 			int herb = HerbPrices.grimyId(crop);
-			if (herb > 0)
+			if (herb <= 0 || !HerbYield.known(crop))
 			{
-				long herbPrice = itemManager.getItemPrice(herb);
-				long seedPrice = itemManager.getItemPrice(HerbPrices.seedId(crop));
-				if (herbPrice > 0)
-				{
-					herbProfit.put(crop, HerbPrices.profitPerPatch(herbYield, herbPrice, seedPrice));
-				}
+				continue;
+			}
+			double sum = 0;
+			for (FarmPatch p : herbPatches)
+			{
+				sum += HerbYield.expected(crop, setup, herbDiaryBonus(p), herbDiseaseFree(p));
+			}
+			double yield = herbPatches.isEmpty() ? HerbYield.expected(crop, setup, 0, false) : sum / herbPatches.size();
+			herbYieldByCrop.put(crop, yield);
+			long herbPrice = itemManager.getItemPrice(herb);
+			long seedPrice = itemManager.getItemPrice(HerbPrices.seedId(crop));
+			if (herbPrice > 0)
+			{
+				herbProfit.put(crop, HerbPrices.profitPerPatch(yield, herbPrice, seedPrice + compostCost));
 			}
 		}
+		herbProfitNote = herbNote(setup, compost, herbPatches);
 		if (config.profitFirst())
 		{
 			options.cropRank = HerbPrices.rankByProfit(herbProfit);
 		}
 		options.bankKnown = bankSeen;
 		options.disabledCrops = readSet(config.disabledCrops(), Crop.class);
-		options.disabledPatches = readSet(config.disabledPatches(), FarmPatch.class);
 		for (FarmPatch p : FarmPatch.values())
 		{
 			PatchTimers.Status st = timers.getStatus(p);
@@ -1607,6 +1636,8 @@ public class HerbRunPlugin extends Plugin
 		Set<Crop> offCrops = options.disabledCrops;
 		Set<FarmPatch> offPatches = options.disabledPatches;
 		Map<Crop, Integer> profitCopy = new EnumMap<>(Crop.class);
+		Map<Crop, Double> yieldCopy = new EnumMap<>(herbYieldByCrop);
+		String noteCopy = herbProfitNote;
 		profitCopy.putAll(herbProfit);
 		List<RunHistory.Run> historyRuns = history.runs();
 		RunHistory.Run currentRun = history.current();
@@ -1648,6 +1679,7 @@ public class HerbRunPlugin extends Plugin
 			panel.setRuns(runs);
 			panel.setPicks(offCrops, offPatches);
 			panel.setExtras(profitCopy, herbYield, historyRuns, currentRun, totalProfit, contractNow);
+			panel.setHerbYields(yieldCopy, noteCopy);
 			panel.setPlan(plan, carried, worn, nameToId, disabled, useSpells, useTabs);
 		});
 	}
@@ -2414,6 +2446,111 @@ public class HerbRunPlugin extends Plugin
 	public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event)
 	{
 		dirty = true;
+	}
+
+	private static final int COMPOST_ID = 6032;
+	private static final int SUPERCOMPOST_ID = 6034;
+	private static final int ULTRACOMPOST_ID = 21483;
+	// Achievement diary completion varbits (RuneLite's Varbits.DIARY_*).
+	private static final int DIARY_KANDARIN_MEDIUM = 4476;
+	private static final int DIARY_KANDARIN_HARD = 4477;
+	private static final int DIARY_KANDARIN_ELITE = 4478;
+	private static final int DIARY_KOUREND_EASY = 7925;
+	private static final int DIARY_KOUREND_HARD = 7927;
+
+	/** Expected herbs per patch for each herb (OSRS Wiki method), for the panel. */
+	private final Map<Crop, Double> herbYieldByCrop = new EnumMap<>(Crop.class);
+	private String herbProfitNote;
+
+	private static int compostId(String name)
+	{
+		return name.startsWith("Ultracompost") ? ULTRACOMPOST_ID : name.startsWith("Supercompost") ? SUPERCOMPOST_ID : COMPOST_ID;
+	}
+
+	/** The best compost you have anywhere (bottomless bucket first), or null. */
+	private static String bestCompost(Map<String, Integer> owned)
+	{
+		for (String name : owned.keySet())
+		{
+			if (name.startsWith("Bottomless compost bucket") && owned.get(name) > 0)
+			{
+				return name;
+			}
+		}
+		for (String c : new String[]{"Ultracompost", "Supercompost", "Compost"})
+		{
+			if (owned.getOrDefault(c, 0) > 0)
+			{
+				return c;
+			}
+		}
+		return null;
+	}
+
+	/** The wiki's diary boost to the chance to save, for this herb patch. Client thread. */
+	private int herbDiaryBonus(FarmPatch p)
+	{
+		switch (p)
+		{
+			case CATHERBY_HERB:
+				return client.getVarbitValue(DIARY_KANDARIN_ELITE) == 1 ? 25
+					: client.getVarbitValue(DIARY_KANDARIN_HARD) == 1 ? 17
+					: client.getVarbitValue(DIARY_KANDARIN_MEDIUM) == 1 ? 10 : 0;
+			case HOSIDIUS_HERB:
+			case FARMING_GUILD_HERB:
+				return client.getVarbitValue(DIARY_KOUREND_HARD) == 1 ? 10 : 0;
+			default:
+				return 0;
+		}
+	}
+
+	/** Herb patches that never get diseased: Troll Stronghold, Weiss, Harmony, Hosidius with the easy Kourend diary. */
+	private boolean herbDiseaseFree(FarmPatch p)
+	{
+		switch (p)
+		{
+			case TROLL_HERB:
+			case WEISS_HERB:
+			case HARMONY_HERB:
+				return true;
+			case HOSIDIUS_HERB:
+				return client.getVarbitValue(DIARY_KOUREND_EASY) == 1;
+			default:
+				return false;
+		}
+	}
+
+	/** One line under the herb profit list: what the numbers assume. */
+	private String herbNote(HerbYield.Setup s, String compost, List<FarmPatch> patches)
+	{
+		List<String> parts = new ArrayList<>();
+		parts.add("level " + s.level);
+		parts.add(compost == null ? "no compost" : compost.startsWith("Bottomless") ? "bottomless bucket (ultracompost)" : compost.toLowerCase());
+		if (s.magicSecateurs)
+		{
+			parts.add("magic secateurs");
+		}
+		if (s.farmingCape)
+		{
+			parts.add("Farming cape");
+		}
+		int bonus = 0;
+		int safe = 0;
+		for (FarmPatch p : patches)
+		{
+			bonus += herbDiaryBonus(p) > 0 ? 1 : 0;
+			safe += herbDiseaseFree(p) ? 1 : 0;
+		}
+		if (bonus > 0)
+		{
+			parts.add(bonus + " diary-boosted patch" + (bonus == 1 ? "" : "es"));
+		}
+		if (safe > 0)
+		{
+			parts.add(safe + " disease-free");
+		}
+		return "OSRS Wiki method over your " + patches.size() + " herb patches: " + String.join(", ", parts)
+			+ ". Counts the chance a patch dies; minus seed and compost.";
 	}
 
 	private void clearShortestPath()

@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.14.0";
+	static final String VERSION = "1.15.0";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -112,6 +112,9 @@ public class HerbRunPanel extends PluginPanel
 	private boolean historyExpanded;
 	private Map<Crop, Integer> herbProfit = new java.util.EnumMap<>(Crop.class);
 	private double herbYield = HerbPrices.DEFAULT_YIELD;
+	/** Expected herbs a patch for each herb (OSRS Wiki method), and what that assumes. */
+	private Map<Crop, Double> herbYields = new java.util.EnumMap<>(Crop.class);
+	private String herbNote;
 	private List<RunHistory.Run> historyRuns = new ArrayList<>();
 	private RunHistory.Run currentRun;
 	private long totalProfit;
@@ -326,6 +329,12 @@ public class HerbRunPanel extends PluginPanel
 		this.currentRun = current;
 		this.totalProfit = totalProfit;
 		this.contract = contract;
+	}
+
+	void setHerbYields(Map<Crop, Double> yields, String note)
+	{
+		this.herbYields = yields;
+		this.herbNote = note;
 	}
 
 	void setNextPatch(FarmPatch next)
@@ -967,13 +976,15 @@ public class HerbRunPanel extends PluginPanel
 					continue;
 				}
 				int pr = herbProfit.get(c);
-				JLabel herbName = label((shown == 0 ? "\u2605 " : "   ") + c.getDisplayName(), shown == 0 ? GOLD : Color.WHITE, shown == 0);
+				Double y = herbYields.get(c);
+				JLabel herbName = label((shown == 0 ? "\u2605 " : "   ") + c.getDisplayName()
+					+ (y == null ? "" : String.format(" (%.1f)", y)), shown == 0 ? GOLD : Color.WHITE, shown == 0);
 				JLabel gp = label((pr >= 0 ? "+" : "") + HerbPrices.gp(pr), pr >= 0 ? GREEN : RED, false);
 				body.addRow(row(herbName, gp), 1);
 				shown++;
 			}
-			body.addRow(wrapped(String.format("GE prices, about %.1f herbs a patch%s, minus the seed.", herbYield,
-				herbYield == HerbPrices.DEFAULT_YIELD ? "" : " (your average)"), MUTED), 10);
+			body.addRow(wrapped(herbNote != null ? "GE prices, (herbs a patch). " + herbNote
+				: String.format("GE prices, about %.1f herbs a patch, minus the seed.", herbYield), MUTED), 10);
 		}
 
 		body.addRow(sectionTitle("Patches"), 4);
