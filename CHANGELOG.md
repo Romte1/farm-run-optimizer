@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.17.1 (2026-11-22)
+- **Bank labels sit underneath each item** ("4 unnoted", "15 noted", ✓) instead of on top, so they don't cover the item or the bank's own count.
+- **The Now / next box hides while the bank is open**, so it never covers the bank, and comes back as soon as you close it.
+
 ## 1.17.0 (2026-11-22)
 - **The bank tab is now a real tab you withdraw from.** Click the glowing **Farm run** tab on the bank's title bar and the bank shows just this run's items, through RuneLite's Bank Tags (the same way Quest Helper does it). They're your real bank items, so you withdraw them with normal clicks. Click the tab again to go back to your whole bank.
 - **The tab** sits on the right of the title bar, next to the bank's own buttons. It has a magic secateurs icon, shows how many of the run's items you already carry ("Farm run 2/6"), and has a soft pulsing glow (turn that off with "Glowing bank tab").

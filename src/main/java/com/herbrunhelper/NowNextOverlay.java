@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
+import net.runelite.api.Client;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -21,23 +24,32 @@ class NowNextOverlay extends OverlayPanel
 	private static final Color NEXT = new Color(190, 190, 190);
 	private static final int WIDTH = 240;
 
+	private final Client client;
 	private final HerbRunPlugin plugin;
 	private final HerbRunConfig config;
 
 	@Inject
-	NowNextOverlay(HerbRunPlugin plugin, HerbRunConfig config)
+	NowNextOverlay(Client client, HerbRunPlugin plugin, HerbRunConfig config)
 	{
+		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
 		setPosition(OverlayPosition.TOP_CENTER);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
 
+	/** Hidden while the bank is open, so it doesn't cover it; back as soon as it closes. */
+	private boolean bankOpen()
+	{
+		Widget bank = client.getWidget(InterfaceID.Bankmain.UNIVERSE);
+		return bank != null && !bank.isHidden();
+	}
+
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
 		String now = plugin.getNowText();
-		if (!config.showNowNext() || now == null)
+		if (!config.showNowNext() || now == null || bankOpen())
 		{
 			return null;
 		}

@@ -44,7 +44,7 @@ public class HerbRunBankOverlay extends WidgetItemOverlay
 		graphics.draw(bounds);
 	}
 
-	/** How many to take and noted / unnoted, along the bottom of the item. */
+	/** How many to take and noted / unnoted, underneath the item. */
 	private static void drawLabel(Graphics2D g, String label, Rectangle b)
 	{
 		if (label == null)
@@ -54,8 +54,9 @@ public class HerbRunBankOverlay extends WidgetItemOverlay
 		g.setFont(FontManager.getRunescapeSmallFont());
 		FontMetrics fm = g.getFontMetrics();
 		int w = fm.stringWidth(label) + 4;
+		// Just below the item, so it doesn't cover the icon or the bank's own count.
 		int x = b.x + (b.width - w) / 2;
-		int y = b.y + b.height - fm.getAscent() + 1;
+		int y = b.y + b.height + 1;
 		g.setColor(new Color(0, 0, 0, 170));
 		g.fillRect(x, y, w, fm.getAscent());
 		boolean done = label.startsWith("\u2713");
