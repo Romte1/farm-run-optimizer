@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.1 (2026-11-22)
+- **Romte1's Farm run bank button.** Our square is replaced with Romte1's own button, his code used with his permission. It's a real bank-style button with a spade icon in the bank's title bar, placed just left of where Quest Helper puts its button so the two sit side by side. While the run view is closed it flashes gently and has his garden animation (gold sheen, green halo, ring of leaves, fireflies). Click it to show just the run's items, and click again for your whole bank. "Animated bank button" turns the animation off.
+- The labels, item spacing, Now / next box and "Not in your bank" list stay as they were.
+
 ## 1.18.0 (2026-11-22)
 - **Animated bank button by Romte1.** While the run view is closed, the Farm run square by the bank's close button gets Romte1's garden animation: a breathing gold sheen and green halo, a slow ring of tiny leaves, and golden fireflies rising from it. While the view is open it shows a steady green rim. Turn it off with "Animated bank button".
 - **Cleaner labels:** smaller text on a small dark pill, with a few pixels of space between the item and its label.

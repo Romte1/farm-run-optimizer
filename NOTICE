@@ -100,11 +100,13 @@ Romte1
 ------
 https://github.com/Romte1
 
-The animated Farm run bank button in BankSupplyOverlay.java (the gold sheen, green halo, ring of
-leaves and fireflies: drawGardenGlow and drawLeaf) is Romte1's code from his pull request #1 to
-this repository (FarmBankButtonOverlay.java), used with his permission. The Now / next box and
-spacing out the bank tag's items (RunBankLayout.java) follow ideas from the same pull request; that
-code was written separately here.
+The Farm run bank button, FarmBankButton.java (the button in the bank's title bar that opens the
+Farm run view) and FarmBankButtonOverlay.java (its animation: a gold sheen, green halo, ring of
+leaves and fireflies), is Romte1's code from his pull request #1 to this repository, used with his
+permission. Small changes: it opens this plugin's own run tag, uses this plugin's setting, and
+reports where it is for the "Not in your bank" box. The Now / next box and spacing out the bank
+tag's items (RunBankLayout.java) follow ideas from the same pull request; that code was written
+separately here.
 
 Quest Helper
 ------------

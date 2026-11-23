@@ -130,7 +130,9 @@ public class HerbRunPlugin extends Plugin
 	@Inject
 	private BankSupplyOverlay bankSupplyOverlay;
 	@Inject
-	private net.runelite.client.input.MouseManager mouseManager;
+	private FarmBankButton farmBankButton;
+	@Inject
+	private FarmBankButtonOverlay farmBankButtonOverlay;
 	@Inject
 	private net.runelite.client.callback.ClientThread clientThread;
 	@Inject
@@ -263,7 +265,8 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(leadHintOverlay);
 		overlayManager.add(nowNextOverlay);
 		overlayManager.add(bankSupplyOverlay);
-		mouseManager.registerMouseListener(bankSupplyOverlay);
+		overlayManager.add(farmBankButtonOverlay);
+		clientThread.invokeLater(() -> farmBankButton.init()); // if the bank is already open
 		tagManager.registerTag(RunBankTag.NAME, runBankTag);
 		overlayManager.add(spellHighlightOverlay);
 		overlayManager.add(minimapArrowOverlay);
@@ -285,14 +288,8 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(leadHintOverlay);
 		overlayManager.remove(nowNextOverlay);
 		overlayManager.remove(bankSupplyOverlay);
-		mouseManager.unregisterMouseListener(bankSupplyOverlay);
-		clientThread.invokeLater(() ->
-		{
-			if (RunBankTag.NAME.equals(bankTagsService.getActiveTag()))
-			{
-				bankTagsService.closeBankTag();
-			}
-		});
+		overlayManager.remove(farmBankButtonOverlay);
+		clientThread.invokeLater(() -> farmBankButton.destroy());
 		tagManager.unregisterTag(RunBankTag.NAME);
 		overlayManager.remove(spellHighlightOverlay);
 		overlayManager.remove(minimapArrowOverlay);
@@ -676,6 +673,7 @@ public class HerbRunPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		farmBankButton.onGameTick();
 		if (!toldAboutShortestPath && client.getGameState() == GameState.LOGGED_IN)
 		{
 			toldAboutShortestPath = true;
@@ -1404,22 +1402,6 @@ public class HerbRunPlugin extends Plugin
 	boolean isRunTagOpen()
 	{
 		return RunBankTag.NAME.equals(bankTagsService.getActiveTag());
-	}
-
-	/** The bank tab was clicked: show just the run's items, or go back to the normal bank. */
-	void toggleRunTag()
-	{
-		clientThread.invokeLater(() ->
-		{
-			if (isRunTagOpen())
-			{
-				bankTagsService.closeBankTag();
-			}
-			else
-			{
-				bankTagsService.openBankTag(RunBankTag.NAME, net.runelite.client.plugins.banktags.BankTagsService.OPTION_NO_LAYOUT);
-			}
-		});
 	}
 
 	/** The label for a bank item ("10 noted", "6 unnoted", "\u2713"), or null if it's not for this run. */
@@ -2672,6 +2654,15 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 		return "Install Shortest Path from the Plugin Hub to get a walking line to each stop. Farm Run Optimizer sends it every patch.";
+	}
+
+	@Subscribe
+	public void onWidgetLoaded(net.runelite.api.events.WidgetLoaded event)
+	{
+		if (event.getGroupId() == net.runelite.api.gameval.InterfaceID.BANKMAIN)
+		{
+			farmBankButton.init(); // Romte1's Farm run button in the bank title bar
+		}
 	}
 
 	/** The bank finished (re)building: space out the items while the Farm run tag is open. */
