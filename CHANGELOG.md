@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.18.2 (2026-11-23)
+- **New art.** A new GitHub banner, a new Plugin Hub logo, a "Farm Run Optimizer" banner at the top of the side panel, and a new sidebar icon (the sprout in a circle of arrows).
+
 ## 1.18.1 (2026-11-22)
 - **Romte1's Farm run bank button.** Our square is replaced with Romte1's own button, his code used with his permission. It's a real bank-style button with a spade icon in the bank's title bar, placed just left of where Quest Helper puts its button so the two sit side by side. While the run view is closed it flashes gently and has his garden animation (gold sheen, green halo, ring of leaves, fireflies). Click it to show just the run's items, and click again for your whole bank. "Animated bank button" turns the animation off.
 - The labels, item spacing, Now / next box and "Not in your bank" list stay as they were.
