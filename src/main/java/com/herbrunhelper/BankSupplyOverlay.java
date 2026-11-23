@@ -24,7 +24,7 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
- * A glowing "Farm run" tab with a magic secateurs icon on the right of the bank's title bar.
+ * A small glowing square with the magic secateurs, right next to the bank's close button.
  * Click it and the bank shows just this run's items (through RuneLite's Bank Tags), so you
  * withdraw them with normal clicks; click again to go back to your normal bank. Each item is
  * labelled with how many to take and whether to take it noted or unnoted (see
@@ -41,8 +41,8 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 	private static final Color BORDER = new Color(20, 18, 14);
 	private static final Color SHORT = new Color(255, 95, 85);
 	private static final Color DONE = new Color(120, 230, 95);
-	/** Room left on the right of the title bar for the bank's own buttons (menu and close). */
-	private static final int RIGHT_GAP = 54;
+	/** From the bank frame's right edge to just left of the close button (the old tab ended here, by the X). */
+	private static final int RIGHT_GAP = 55;
 
 	private final Client client;
 	private final HerbRunPlugin plugin;
@@ -51,6 +51,7 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 
 	/** Where the tab was last drawn (canvas coordinates), for clicks. Null when not shown. */
 	private volatile Rectangle tabBounds;
+	private volatile boolean hovered;
 
 	@Inject
 	BankSupplyOverlay(Client client, HerbRunPlugin plugin, HerbRunConfig config, ItemManager itemManager)
@@ -71,6 +72,7 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 		if (!config.bankSupplyTab() || bank == null || bank.isHidden() || rows.isEmpty())
 		{
 			tabBounds = null;
+			hovered = false;
 			return null;
 		}
 		Rectangle frame = bank.getBounds();
@@ -92,13 +94,11 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 		}
 		boolean open = plugin.isRunTagOpen();
 		boolean allDone = done == rows.size();
-		String label = "Farm run " + done + "/" + rows.size();
-		int icon = 16;
-		int w = icon + 6 + fm.stringWidth(label) + 12;
-		int h = 20;
-		int x = frame.x + frame.width - RIGHT_GAP - w;
-		int y = titleBox != null ? titleBox.y + Math.max(0, (titleBox.height - h) / 2) : frame.y + 5;
-		Rectangle tab = new Rectangle(x, y, w, h);
+		// A small square button with the magic secateurs, right next to the bank's close button.
+		int size = 22;
+		int x = frame.x + frame.width - RIGHT_GAP - size;
+		int y = titleBox != null ? titleBox.y + Math.max(0, (titleBox.height - size) / 2) : frame.y + 4;
+		Rectangle tab = new Rectangle(x, y, size, size);
 		tabBounds = tab;
 
 		// A soft pulsing glow, so it's easy to spot.
@@ -107,24 +107,38 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 			double pulse = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 350.0);
 			for (int i = 4; i >= 1; i--)
 			{
-				int alpha = (int) ((open ? 55 : 35 + 45 * pulse) / i);
+				int alpha = (int) ((open ? 60 : 40 + 50 * pulse) / i);
 				g.setColor(new Color(GLOW.getRed(), GLOW.getGreen(), GLOW.getBlue(), Math.min(255, alpha)));
 				g.setStroke(new BasicStroke(i * 2f));
-				g.drawRoundRect(tab.x, tab.y, tab.width, tab.height, 8, 8);
+				g.drawRoundRect(tab.x, tab.y, tab.width, tab.height, 6, 6);
 			}
 		}
 		g.setColor(open ? TAB_OPEN : TAB);
-		g.fillRoundRect(tab.x, tab.y, tab.width, tab.height, 8, 8);
+		g.fillRoundRect(tab.x, tab.y, tab.width, tab.height, 6, 6);
 		g.setStroke(new BasicStroke(1));
-		g.setColor(BORDER);
-		g.drawRoundRect(tab.x, tab.y, tab.width, tab.height, 8, 8);
+		g.setColor(open || allDone ? DONE : BORDER);
+		g.drawRoundRect(tab.x, tab.y, tab.width, tab.height, 6, 6);
 		BufferedImage img = itemManager.getImage(MAGIC_SECATEURS);
 		if (img != null)
 		{
-			g.drawImage(img, tab.x + 4, tab.y + 1, icon + 2, icon + 1, null);
+			// Item sprites are 36x32: fit it in the square, keeping its shape.
+			g.drawImage(img, tab.x + 1, tab.y + 2, size - 2, size - 4, null);
 		}
-		g.setColor(allDone ? DONE : Color.WHITE);
-		g.drawString(label, tab.x + icon + 9, tab.y + (h + fm.getAscent()) / 2 - 1);
+
+		// Hovering: what it is and how many of the run's items you carry.
+		if (hovered)
+		{
+			String tip = "Farm run " + done + "/" + rows.size() + (open ? " - click for your whole bank" : " - click to show the run's items");
+			int tw = fm.stringWidth(tip) + 10;
+			int tx = Math.max(frame.x, tab.x + tab.width - tw);
+			int ty = tab.y + tab.height + 3;
+			g.setColor(new Color(30, 26, 22, 240));
+			g.fillRoundRect(tx, ty, tw, 16, 5, 5);
+			g.setColor(BORDER);
+			g.drawRoundRect(tx, ty, tw, 16, 5, 5);
+			g.setColor(allDone ? DONE : Color.WHITE);
+			g.drawString(tip, tx + 5, ty + 12);
+		}
 
 		// Under the tab, while the run's view is open: anything that isn't in your bank.
 		if (open && !missing.isEmpty())
@@ -143,7 +157,7 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 			int bw = lw + 12;
 			int bh = lines.size() * 13 + 6;
 			int bx = tab.x + tab.width - bw;
-			int by = tab.y + tab.height + 3;
+			int by = tab.y + tab.height + 3 + (hovered ? 19 : 0);
 			g.setColor(new Color(30, 26, 22, 235));
 			g.fillRoundRect(bx, by, bw, bh, 6, 6);
 			g.setColor(BORDER);
@@ -205,6 +219,7 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 	@Override
 	public MouseEvent mouseExited(MouseEvent e)
 	{
+		hovered = false;
 		return e;
 	}
 
@@ -217,6 +232,7 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 	@Override
 	public MouseEvent mouseMoved(MouseEvent e)
 	{
+		hovered = onTab(e);
 		return e;
 	}
 }

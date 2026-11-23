@@ -15,8 +15,8 @@
 
 ## Patch notes
 
-**Latest: 1.17.1**
-- **Farm run bank tab:** click the glowing tab on the bank's title bar to see just the run's items, labelled with how many to take and whether noted or unnoted, and withdraw them with normal clicks.
+**Latest: 1.17.2**
+- **Farm run bank tab:** click the glowing square next to the bank's close button to see just the run's items, labelled with how many to take and whether noted or unnoted, and withdraw them with normal clicks.
 - **Now / next box:** what to do right now and the next stop, at the top of the screen.
 - **Herb profit the OSRS Wiki way:** expected herbs per patch from your level, compost, magic secateurs, Farming cape, diaries and disease, minus seed and compost.
 - **New hardwoods:** camphor, ironwood and rosewood from the Sailing update are planned, timed and tracked in every hardwood patch.

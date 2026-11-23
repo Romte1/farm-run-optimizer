@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.17.2 (2026-11-22)
+- **The bank tab is now a small glowing square** with the magic secateurs emblem, right next to the bank's close button, so it no longer covers the bank's title (like the GE / HA values). Hover over it to see "Farm run 8/10" and what a click does. It turns green once you carry everything. Clicking it still shows just the run's items, and clicking again brings your whole bank back.
+
 ## 1.17.1 (2026-11-22)
 - **Bank labels sit underneath each item** ("4 unnoted", "15 noted", ✓) instead of on top, so they don't cover the item or the bank's own count.
 - **The Now / next box hides while the bank is open**, so it never covers the bank, and comes back as soon as you close it.
