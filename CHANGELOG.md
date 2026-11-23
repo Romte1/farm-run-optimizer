@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.17.0 (2026-11-22)
+- **The bank tab is now a real tab you withdraw from.** Click the glowing **Farm run** tab on the bank's title bar and the bank shows just this run's items, through RuneLite's Bank Tags (the same way Quest Helper does it). They're your real bank items, so you withdraw them with normal clicks. Click the tab again to go back to your whole bank.
+- **The tab** sits on the right of the title bar, next to the bank's own buttons. It has a magic secateurs icon, shows how many of the run's items you already carry ("Farm run 2/6"), and has a soft pulsing glow (turn that off with "Glowing bank tab").
+- **Each item is labelled** along the bottom with how many more to take and how:
+  - **"15 noted"** (blue): gardener payments, which can be handed over noted.
+  - **"3 unnoted"** (yellow): compost, saplings, tools and teleport items you need to use.
+  - A plain number for stackable items, and **✓** once you're carrying enough.
+- Anything the run needs that isn't in your bank is listed under the tab.
+- Needs RuneLite's Bank Tags plugin, which is on by default.
+
 ## 1.16.0 (2026-11-22)
 - **Supply tab in the bank.** A small "Farm run 3/6" tab sits on the bank's title bar and shows how many of the run's items you already carry. Click it to open a quick supply list: each item with how many you carry out of how many you need. Green means you have them all, white means the rest is in your bank, red means you're short. If the run needs a bank stop on the way, it says so. Click the tab again to close it; it stays as you left it. It only draws on screen: it never withdraws anything, and clicks on the open list are ignored so you can't withdraw through it by accident.
 - **"Now / next" box at the top of the screen.** It shows what to do right now and the stop after that, e.g. "Now: Pay: 10 x Coconut at Catherby fruit tree" and "Next: Ardougne herb (Ardougne cloak)". "Now" covers the fairy ring code to dial, the spirit tree to pick, the teleport to use and each step at the patch. It also shows "stop 3 of 7". It replaces the separate "Dial AKR..." box while it's on.

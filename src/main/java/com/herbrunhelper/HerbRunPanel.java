@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.16.0";
+	static final String VERSION = "1.17.0";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -807,7 +807,7 @@ public class HerbRunPanel extends PluginPanel
 	private static final String[][] SETTINGS = {
 		{"shortestPathLine", "Shortest Path walking line", "Send each stop to Shortest Path (if installed) for its walking line"},
 		{"showNowNext", "Now / next box", "A box at the top of the screen: what to do now and the stop after"},
-		{"bankSupplyTab", "Supply tab in bank", "A Farm run tab on the bank title bar with a quick supply list"},
+		{"bankSupplyTab", "Farm run bank tab", "A tab on the bank title bar that shows just the run's items to withdraw"},
 		{"gameHintArrow", "Game hint arrow", "The game's yellow arrow (also on the minimap) over the next patch, ring, tree or gardener"},
 		{"pathMinigameTeleports", "Path: minigame teleports", "Let Shortest Path's line use minigame teleports like Rat Pits"},
 		{"highlightPatch", "Highlight next patch", "Outline the next patch on the ground"},

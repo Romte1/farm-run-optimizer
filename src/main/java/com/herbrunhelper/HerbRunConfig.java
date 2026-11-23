@@ -279,15 +279,17 @@ public interface HerbRunConfig extends Config
 	}
 
 	@ConfigItem(keyName = "bankSupplyTab", name = "Supply tab in bank",
-		description = "A small Farm run tab on the bank's title bar; click it for a quick supply list for the run",
+		description = "A Farm run tab on the bank's title bar; click it to show just the run's items (with how many to take, noted or unnoted)",
 		position = 7, section = navSection)
 	default boolean bankSupplyTab()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "bankSupplyOpen", name = "", description = "", hidden = true)
-	default boolean bankSupplyOpen()
+	@ConfigItem(keyName = "bankTabGlow", name = "Glowing bank tab",
+		description = "Give the Farm run bank tab a soft pulsing glow so it's easy to spot",
+		position = 8, section = navSection)
+	default boolean bankTabGlow()
 	{
 		return true;
 	}

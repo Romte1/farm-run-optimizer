@@ -62,6 +62,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 
 @Slf4j
+@net.runelite.client.plugins.PluginDependency(net.runelite.client.plugins.banktags.BankTagsPlugin.class)
 @PluginDescriptor(
 	name = "Farm Run Optimizer",
 	description = "Plans herb, tree, fruit tree and hardwood farm runs: what to bring, the fastest route, what to do at each patch, and every growth timer",
@@ -130,6 +131,15 @@ public class HerbRunPlugin extends Plugin
 	private BankSupplyOverlay bankSupplyOverlay;
 	@Inject
 	private net.runelite.client.input.MouseManager mouseManager;
+	@Inject
+	private net.runelite.client.callback.ClientThread clientThread;
+	@Inject
+	private net.runelite.client.plugins.banktags.TagManager tagManager;
+	@Inject
+	private net.runelite.client.plugins.banktags.BankTagsService bankTagsService;
+	private final RunBankTag runBankTag = new RunBankTag();
+	/** Per bank item: how many to take and "noted" / "unnoted", for the bank labels. */
+	private volatile Map<Integer, String> bankLabels = Collections.emptyMap();
 
 	@Inject
 	private SpellHighlightOverlay spellHighlightOverlay;
@@ -254,6 +264,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(nowNextOverlay);
 		overlayManager.add(bankSupplyOverlay);
 		mouseManager.registerMouseListener(bankSupplyOverlay);
+		tagManager.registerTag(RunBankTag.NAME, runBankTag);
 		overlayManager.add(spellHighlightOverlay);
 		overlayManager.add(minimapArrowOverlay);
 		dirty = true;
@@ -275,6 +286,14 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(nowNextOverlay);
 		overlayManager.remove(bankSupplyOverlay);
 		mouseManager.unregisterMouseListener(bankSupplyOverlay);
+		clientThread.invokeLater(() ->
+		{
+			if (RunBankTag.NAME.equals(bankTagsService.getActiveTag()))
+			{
+				bankTagsService.closeBankTag();
+			}
+		});
+		tagManager.unregisterTag(RunBankTag.NAME);
 		overlayManager.remove(spellHighlightOverlay);
 		overlayManager.remove(minimapArrowOverlay);
 		saveHistory(); // keeps the run in progress for next time
@@ -1381,14 +1400,32 @@ public class HerbRunPlugin extends Plugin
 		return supplyBankStops;
 	}
 
-	boolean isBankSupplyOpen()
+	/** True while the bank shows just the run's items. */
+	boolean isRunTagOpen()
 	{
-		return config.bankSupplyOpen();
+		return RunBankTag.NAME.equals(bankTagsService.getActiveTag());
 	}
 
-	void toggleBankSupplyOpen()
+	/** The bank tab was clicked: show just the run's items, or go back to the normal bank. */
+	void toggleRunTag()
 	{
-		configManager.setConfiguration("herbrunhelper", "bankSupplyOpen", !config.bankSupplyOpen());
+		clientThread.invokeLater(() ->
+		{
+			if (isRunTagOpen())
+			{
+				bankTagsService.closeBankTag();
+			}
+			else
+			{
+				bankTagsService.openBankTag(RunBankTag.NAME, net.runelite.client.plugins.banktags.BankTagsService.OPTION_NO_LAYOUT);
+			}
+		});
+	}
+
+	/** The label for a bank item ("10 noted", "6 unnoted", "\u2713"), or null if it's not for this run. */
+	String getBankLabel(int itemId)
+	{
+		return bankLabels.get(itemId);
 	}
 
 	String getNowText()
@@ -1782,6 +1819,46 @@ public class HerbRunPlugin extends Plugin
 		}
 		supplyRows = rows;
 		supplyBankStops = plan.bankStops.size();
+		// Gardener payments can be handed over noted; compost, saplings, tools and teleport items
+		// have to be unnoted to use. Stackable or unnotable items don't need a label.
+		Set<String> payments = new HashSet<>();
+		for (RunPlan.RouteStep st : plan.route)
+		{
+			if (st.paymentItem != null)
+			{
+				payments.add(st.paymentItem);
+			}
+			if (st.crop != null)
+			{
+				for (String[] extra : st.crop.getExtraPayments())
+				{
+					payments.add(extra[0]);
+				}
+			}
+		}
+		payments.remove("Coins");
+		Map<Integer, String> labels = new HashMap<>();
+		Set<Integer> tagIds = new HashSet<>();
+		for (SupplyRow r : rows)
+		{
+			if (r.itemId <= 0)
+			{
+				continue;
+			}
+			tagIds.add(r.itemId);
+			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(r.itemId);
+			boolean notable = comp != null && comp.getLinkedNoteId() != -1;
+			boolean stackable = comp != null && comp.isStackable();
+			String how = !notable ? null : payments.contains(r.name) ? "noted" : stackable ? null : "unnoted";
+			int left = r.need - r.carried;
+			labels.put(r.itemId, left <= 0 ? "\u2713" : left + (how == null ? "" : " " + how));
+		}
+		bankLabels = labels;
+		if (runBankTag.set(tagIds) && isRunTagOpen())
+		{
+			// Refresh the open view with the new item list.
+			bankTagsService.openBankTag(RunBankTag.NAME, net.runelite.client.plugins.banktags.BankTagsService.OPTION_NO_LAYOUT);
+		}
 
 		Map<String, Integer> carried = new HashMap<>(inventoryItems);
 		equipmentItems.forEach((k, v) -> carried.merge(k, v, Integer::sum));

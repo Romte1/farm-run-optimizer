@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-18.
 
 ## Status
 
-Version **1.16.0**. Live on the Plugin Hub.
+Version **1.17.0**. Live on the Plugin Hub.
 
 ## Done
 
@@ -45,6 +45,7 @@ Version **1.16.0**. Live on the Plugin Hub.
 - 1.7.1: guideStyle (line/tiles/both), guideStatus debug box in LeadHintOverlay, no line >60 tiles from a teleport stop until travelDone. Tree-run missing line still being diagnosed (routes OK offline on real map with exact footprints).
 - 1.7.0: line A to B, untrimmed, hidden once reached (guideReached) until a new target or teleport; travelDone per stop (at destination ring, or a jump that brought you >30 tiles closer and within 200) stops ring/tree leads; 28 FarmPatch tiles corrected from Quest Helper (verify_patches OK).
 - 1.6.2: line points via LocalPoint.fromWorld per tile (was offset from the player's interpolated local position, so it slid); no re-plan when the box turns exact or the Agility boost changes.
+- 1.17.0: bank tab opens a RunBankTag via TagManager/BankTagsService (OPTION_NO_LAYOUT; @PluginDependency BankTagsPlugin); tab on the right of Bankmain.TITLE (RIGHT_GAP 54) with magic secateurs icon (7409) and pulsing glow (bankTabGlow); per-item labels in HerbRunBankOverlay ("N noted" for gardener payments if notable, "N unnoted" for notable non-stackables, check when carried); floating list replaced by a "Not in your bank" box.
 - 1.16.0 (own build, not Romte1's PR #1): BankSupplyOverlay (tab on Bankmain.TITLE, click toggles hidden config bankSupplyOpen; list from plan.withdrawals via SupplyRow; consumes clicks on tab/list) and NowNextOverlay (TOP_CENTER; updateNowNext from updateStepItem: lead hint / step+pay label / teleport label; next = following route stop needing a visit). LeadHintOverlay hides while Now/next shows.
 - 1.15.0: HerbYield (wiki herb calculator model: CTS table, item/diary boosts, lives by compost, disease (floor(27/r)+1)/128 over 3 stages; Farming-page +0.5 rounding). Profit = avg expected over run herb patches x grimy price - seed - compost. Diary varbits Kandarin 4476-4478, Kourend 7925/7927. Varlamore Champion disease-free not detected. YieldCheck 10.
 - 1.14.0: Crop CAMPHOR/IRONWOOD/ROSEWOOD (stages 9/9/10 from RuneLite Produce; payments 10 White berries / 10 Curry leaf / 8 Dragonfruit; XP 88/17840, 145/20380, 252/23100; log icons 32904/32907/32910). Anglers' Retreat hardwood (2472,2705) still not added. AllRunsCheck 92.
