@@ -48,7 +48,7 @@ class BankSupplyOverlay extends Overlay
 		List<String> lines = new ArrayList<>();
 		for (HerbRunPlugin.SupplyRow r : plugin.getSupplyRows())
 		{
-			int short_ = r.need - r.carried - r.inBank;
+			int short_ = r.need - r.carried - r.inBank - r.atSource;
 			if (short_ > 0)
 			{
 				lines.add(short_ + " x " + r.name);
