@@ -15,7 +15,8 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 
 /**
  * A small box at the top of the screen: what to do right now (dial this code, pay the gardener,
- * plant this seed...) and the stop after that, so the sidebar can stay closed.
+ * plant this seed...) and the stop after that, so the sidebar can stay closed. Thanks to Romte1, whose
+ * on-screen step box (pull request #1) gave the idea.
  */
 class NowNextOverlay extends OverlayPanel
 {

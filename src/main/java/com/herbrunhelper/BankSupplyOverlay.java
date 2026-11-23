@@ -24,7 +24,8 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
- * A small glowing square with the magic secateurs, right next to the bank's close button.
+ * A small square with the magic secateurs, right next to the bank's close button, with Romte1's
+ * animated garden glow while it's closed.
  * Click it and the bank shows just this run's items (through RuneLite's Bank Tags), so you
  * withdraw them with normal clicks; click again to go back to your normal bank. Each item is
  * labelled with how many to take and whether to take it noted or unnoted (see
@@ -101,17 +102,16 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 		Rectangle tab = new Rectangle(x, y, size, size);
 		tabBounds = tab;
 
-		// A soft pulsing glow, so it's easy to spot.
-		if (config.bankTabGlow())
+		if (config.bankTabGlow() && !open)
 		{
-			double pulse = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 350.0);
-			for (int i = 4; i >= 1; i--)
-			{
-				int alpha = (int) ((open ? 60 : 40 + 50 * pulse) / i);
-				g.setColor(new Color(GLOW.getRed(), GLOW.getGreen(), GLOW.getBlue(), Math.min(255, alpha)));
-				g.setStroke(new BasicStroke(i * 2f));
-				g.drawRoundRect(tab.x, tab.y, tab.width, tab.height, 6, 6);
-			}
+			drawGardenGlow(g, tab);
+		}
+		else if (open)
+		{
+			// While the run's view is open: a steady green rim instead of the animation.
+			g.setColor(new Color(GLOW.getRed(), GLOW.getGreen(), GLOW.getBlue(), 60));
+			g.setStroke(new BasicStroke(3f));
+			g.drawRoundRect(tab.x - 1, tab.y - 1, tab.width + 2, tab.height + 2, 7, 7);
 		}
 		g.setColor(open ? TAB_OPEN : TAB);
 		g.fillRoundRect(tab.x, tab.y, tab.width, tab.height, 6, 6);
@@ -171,6 +171,79 @@ class BankSupplyOverlay extends Overlay implements MouseListener
 			}
 		}
 		return null;
+	}
+
+	// ------------------------------------------------------------------ animated button
+	// The growing-garden animation below is by Romte1 (from his Farm run bank button, pull request
+	// #1 on github.com/triggleman/farm-run-optimizer), used here with his permission: a breathing
+	// gold sheen and green halo, a slow ring of tiny leaves, and golden fireflies rising from it.
+
+	private static final Color LEAF = new Color(120, 230, 90);
+	private static final Color GOLD = new Color(255, 215, 90);
+	private static final Color SPORE = new Color(220, 255, 170);
+
+	private static void drawGardenGlow(Graphics2D graphics, Rectangle bounds)
+	{
+		long now = System.currentTimeMillis();
+		double pulse = 0.5 + 0.5 * Math.sin(now / 420.0);
+		int cx = bounds.x + bounds.width / 2;
+		int cy = bounds.y + bounds.height / 2;
+
+		// Warm the button itself a little, so it visibly lights up and dims.
+		int sheen = (int) (24 + 22 * pulse);
+		graphics.setColor(new Color(GOLD.getRed(), GOLD.getGreen(), GOLD.getBlue(), sheen));
+		graphics.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 6, 6);
+
+		// A soft green halo that breathes around the frame.
+		java.awt.Stroke oldStroke = graphics.getStroke();
+		graphics.setStroke(new BasicStroke(1.4f));
+		for (int ring = 0; ring < 3; ring++)
+		{
+			int pad = 2 + ring;
+			int alpha = (int) ((18 + 28 * pulse) / (ring + 1));
+			graphics.setColor(new Color(LEAF.getRed(), LEAF.getGreen(), LEAF.getBlue(), alpha));
+			graphics.drawRoundRect(bounds.x - pad, bounds.y - pad,
+				bounds.width + pad * 2, bounds.height + pad * 2, 8, 8);
+		}
+		graphics.setStroke(oldStroke);
+
+		// A slow ring of tiny leaves, alternating in brightness.
+		int leaves = 8;
+		for (int i = 0; i < leaves; i++)
+		{
+			double angle = now / 1250.0 + i * Math.PI * 2 / leaves;
+			double orbit = 14 + 1.5 * pulse;
+			int x = cx + (int) Math.round(Math.cos(angle) * orbit);
+			int y = cy + (int) Math.round(Math.sin(angle) * orbit * 0.78);
+			int alpha = (int) (90 + 90 * (0.5 + 0.5 * Math.sin(now / 260.0 + i)));
+			drawLeaf(graphics, x, y, alpha);
+		}
+
+		// Fireflies rising from the bottom edge and fading out.
+		for (int i = 0; i < 4; i++)
+		{
+			double t = ((now % 1900) / 1900.0 + i / 4.0) % 1.0;
+			int x = bounds.x + 3 + (int) Math.round((bounds.width - 6) * ((i * 0.37 + 0.1) % 1.0))
+				+ (int) Math.round(Math.sin(now / 260.0 + i * 2) * 2);
+			int y = bounds.y + bounds.height - 1 - (int) Math.round(t * 18);
+			int alpha = Math.max(0, (int) (210 * Math.sin(Math.PI * t)));
+			Color colour = i % 2 == 0 ? GOLD : SPORE;
+			graphics.setColor(new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), alpha));
+			graphics.fillOval(x, y, 3, 3);
+			graphics.setColor(new Color(255, 255, 240, Math.max(0, alpha / 2)));
+			graphics.fillRect(x + 1, y + 1, 1, 1);
+		}
+	}
+
+	private static void drawLeaf(Graphics2D graphics, int x, int y, int alpha)
+	{
+		alpha = Math.max(0, Math.min(255, alpha));
+		graphics.setColor(new Color(LEAF.getRed(), LEAF.getGreen(), LEAF.getBlue(), alpha));
+		graphics.fillRect(x, y - 1, 3, 3);
+		graphics.fillRect(x - 1, y, 1, 1);
+		graphics.fillRect(x + 3, y, 1, 1);
+		graphics.setColor(new Color(GOLD.getRed(), GOLD.getGreen(), GOLD.getBlue(), alpha / 2));
+		graphics.fillRect(x + 1, y - 2, 1, 1);
 	}
 
 	private boolean onTab(MouseEvent e)

@@ -286,8 +286,8 @@ public interface HerbRunConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(keyName = "bankTabGlow", name = "Glowing bank tab",
-		description = "Give the Farm run bank tab a soft pulsing glow so it's easy to spot",
+	@ConfigItem(keyName = "bankTabGlow", name = "Animated bank button",
+		description = "A glow, a ring of leaves and fireflies around the Farm run bank button while it's closed (animation by Romte1)",
 		position = 8, section = navSection)
 	default boolean bankTabGlow()
 	{

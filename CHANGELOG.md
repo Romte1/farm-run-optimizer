@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.18.0 (2026-11-22)
+- **Animated bank button by Romte1.** While the run view is closed, the Farm run square by the bank's close button gets Romte1's garden animation: a breathing gold sheen and green halo, a slow ring of tiny leaves, and golden fireflies rising from it. While the view is open it shows a steady green rim. Turn it off with "Animated bank button".
+- **Cleaner labels:** smaller text on a small dark pill, with a few pixels of space between the item and its label.
+- **More space between items** in the run view: 7 wider columns and taller rows, so every label fits and nothing touches. The bank's tab divider lines are hidden in this view. It only moves items on screen, and clicking still withdraws as normal.
+- **Credits for Romte1** in the README and NOTICE: the bank button animation is his code, used with his permission, and the Now / next box and the spaced-out bank view follow ideas from his pull request.
+
 ## 1.17.2 (2026-11-22)
 - **The bank tab is now a small glowing square** with the magic secateurs emblem, right next to the bank's close button, so it no longer covers the bank's title (like the GE / HA values). Hover over it to see "Farm run 8/10" and what a click does. It turns green once you carry everything. Clicking it still shows just the run's items, and clicking again brings your whole bank back.
 

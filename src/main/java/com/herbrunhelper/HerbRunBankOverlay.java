@@ -2,12 +2,13 @@ package com.herbrunhelper;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import javax.inject.Inject;
 import net.runelite.api.widgets.WidgetItem;
-import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
 
 /** Outlines the items you still need to withdraw while the bank is open. */
@@ -44,24 +45,28 @@ public class HerbRunBankOverlay extends WidgetItemOverlay
 		graphics.draw(bounds);
 	}
 
-	/** How many to take and noted / unnoted, underneath the item. */
+	/** A small, clean font for the labels. */
+	private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 9);
+
+	/** How many to take and noted / unnoted, a little below the item. */
 	private static void drawLabel(Graphics2D g, String label, Rectangle b)
 	{
 		if (label == null)
 		{
 			return;
 		}
-		g.setFont(FontManager.getRunescapeSmallFont());
+		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		g.setFont(LABEL_FONT);
 		FontMetrics fm = g.getFontMetrics();
-		int w = fm.stringWidth(label) + 4;
-		// Just below the item, so it doesn't cover the icon or the bank's own count.
+		int w = fm.stringWidth(label) + 6;
+		int h = fm.getAscent() + 3;
 		int x = b.x + (b.width - w) / 2;
-		int y = b.y + b.height + 1;
-		g.setColor(new Color(0, 0, 0, 170));
-		g.fillRect(x, y, w, fm.getAscent());
+		int y = b.y + b.height + 3;
+		g.setColor(new Color(0, 0, 0, 150));
+		g.fillRoundRect(x, y, w, h, 4, 4);
 		boolean done = label.startsWith("\u2713");
 		g.setColor(done ? new Color(120, 230, 95) : label.endsWith("unnoted") ? new Color(255, 214, 90)
 			: label.endsWith("noted") ? new Color(130, 200, 255) : Color.WHITE);
-		g.drawString(label, x + 2, y + fm.getAscent() - 1);
+		g.drawString(label, x + 3, y + fm.getAscent() + 1);
 	}
 }

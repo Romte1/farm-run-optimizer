@@ -2674,6 +2674,18 @@ public class HerbRunPlugin extends Plugin
 		return "Install Shortest Path from the Plugin Hub to get a walking line to each stop. Farm Run Optimizer sends it every patch.";
 	}
 
+	/** The bank finished (re)building: space out the items while the Farm run tag is open. */
+	@Subscribe
+	public void onScriptPostFired(net.runelite.api.events.ScriptPostFired event)
+	{
+		if (event.getScriptId() == net.runelite.api.ScriptID.BANKMAIN_FINISHBUILDING
+			&& config.bankSupplyTab() && isRunTagOpen())
+		{
+			// After Bank Tags has laid out its own view.
+			clientThread.invokeAtTickEnd(() -> RunBankLayout.apply(client));
+		}
+	}
+
 	@Subscribe
 	public void onPluginChanged(net.runelite.client.events.PluginChanged event)
 	{

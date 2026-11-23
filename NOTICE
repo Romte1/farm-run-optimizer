@@ -96,6 +96,16 @@ Patch tiles for bushes, hops, cactus, calquat, celastrus and redwood are from Ru
 plugin (FarmingPatchLocation.java, BSD 2-Clause); spirit tree patch tiles are the patch boxes in
 Shortest Path's spirit-tree-patches.tsv; calquat tiles were checked against Quest Helper's tree run.
 
+Romte1
+------
+https://github.com/Romte1
+
+The animated Farm run bank button in BankSupplyOverlay.java (the gold sheen, green halo, ring of
+leaves and fireflies: drawGardenGlow and drawLeaf) is Romte1's code from his pull request #1 to
+this repository (FarmBankButtonOverlay.java), used with his permission. The Now / next box and
+spacing out the bank tag's items (RunBankLayout.java) follow ideas from the same pull request; that
+code was written separately here.
+
 Quest Helper
 ------------
 https://github.com/Zoinkwiz/quest-helper

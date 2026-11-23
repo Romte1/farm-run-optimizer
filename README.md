@@ -15,7 +15,9 @@
 
 ## Patch notes
 
-**Latest: 1.17.2**
+**Latest: 1.18.0**
+- **Bank view polish:** Romte1's animated bank button, smaller labels with a little space under each item, and wider spacing between items.
+
 - **Farm run bank tab:** click the glowing square next to the bank's close button to see just the run's items, labelled with how many to take and whether noted or unnoted, and withdraw them with normal clicks.
 - **Now / next box:** what to do right now and the next stop, at the top of the screen.
 - **Herb profit the OSRS Wiki way:** expected herbs per patch from your level, compost, magic secateurs, Farming cape, diaries and disease, minus seed and compost.
@@ -116,6 +118,7 @@ Everything can be switched on or off in the panel's **Settings** section or in R
 - **[RuneLite](https://github.com/runelite/runelite)**: patch states, regions and growth stages come from RuneLite's Time Tracking plugin.
 - **[Shortest Path](https://github.com/Skretzo/shortest-path)** by Skretzo: draws the walking line when installed (Farm Run Optimizer sends it each stop). Spirit tree patch tiles come from its data (BSD 2-Clause, see NOTICE).
 - **[Old School RuneScape Wiki](https://oldschool.runescape.wiki/)**: items, payments, growth times, teleports, directions and fairy ring codes.
+- **[Romte1](https://github.com/Romte1)**: the animated Farm run bank button (garden glow, leaf ring and fireflies), and the ideas behind the on-screen step box and the spaced-out bank view, from his pull request #1.
 
 Released under the [BSD 2-Clause License](LICENSE). Full attributions: [NOTICE](NOTICE). Old School RuneScape is a trademark of Jagex Ltd; this plugin is not affiliated with or endorsed by Jagex.
 
