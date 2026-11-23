@@ -270,6 +270,28 @@ public interface HerbRunConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(keyName = "showNowNext", name = "Now / next box",
+		description = "A box at the top of the screen with what to do right now and the stop after that",
+		position = 6, section = navSection)
+	default boolean showNowNext()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "bankSupplyTab", name = "Supply tab in bank",
+		description = "A small Farm run tab on the bank's title bar; click it for a quick supply list for the run",
+		position = 7, section = navSection)
+	default boolean bankSupplyTab()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "bankSupplyOpen", name = "", description = "", hidden = true)
+	default boolean bankSupplyOpen()
+	{
+		return true;
+	}
+
 	@ConfigItem(keyName = "showSocials", name = "Channel links in panel",
 		description = "Show buttons to ToadFx's YouTube, Twitch, Kick and TikTok at the bottom of the panel",
 		position = 5, section = navSection)

@@ -124,6 +124,12 @@ public class HerbRunPlugin extends Plugin
 
 	@Inject
 	private LeadHintOverlay leadHintOverlay;
+	@Inject
+	private NowNextOverlay nowNextOverlay;
+	@Inject
+	private BankSupplyOverlay bankSupplyOverlay;
+	@Inject
+	private net.runelite.client.input.MouseManager mouseManager;
 
 	@Inject
 	private SpellHighlightOverlay spellHighlightOverlay;
@@ -245,6 +251,9 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(inventoryOverlay);
 		overlayManager.add(readyOverlay);
 		overlayManager.add(leadHintOverlay);
+		overlayManager.add(nowNextOverlay);
+		overlayManager.add(bankSupplyOverlay);
+		mouseManager.registerMouseListener(bankSupplyOverlay);
 		overlayManager.add(spellHighlightOverlay);
 		overlayManager.add(minimapArrowOverlay);
 		dirty = true;
@@ -263,6 +272,9 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(inventoryOverlay);
 		overlayManager.remove(readyOverlay);
 		overlayManager.remove(leadHintOverlay);
+		overlayManager.remove(nowNextOverlay);
+		overlayManager.remove(bankSupplyOverlay);
+		mouseManager.unregisterMouseListener(bankSupplyOverlay);
 		overlayManager.remove(spellHighlightOverlay);
 		overlayManager.remove(minimapArrowOverlay);
 		saveHistory(); // keeps the run in progress for next time
@@ -288,6 +300,9 @@ public class HerbRunPlugin extends Plugin
 		bankSeen = false;
 		highlightIds = Collections.emptySet();
 		nextPatch = null;
+		nowText = null;
+		nextText = null;
+		supplyRows = Collections.emptyList();
 	}
 
 	// ================================================================ events
@@ -1230,6 +1245,8 @@ public class HerbRunPlugin extends Plugin
 		if (lastPlan == null || player == null)
 		{
 			stepItem = null;
+			nowText = null;
+			nextText = null;
 			return;
 		}
 		long now = System.currentTimeMillis();
@@ -1320,12 +1337,139 @@ public class HerbRunPlugin extends Plugin
 			payPatch = null;
 			payLabel = null;
 		}
+		updateNowNext(focus, action, item, travelling);
 		if (patch != stepPatch || !java.util.Objects.equals(action, stepAction))
 		{
 			stepPatch = patch;
 			stepAction = action;
 			SwingUtilities.invokeLater(() -> panel.setStepHint(patch, action, item));
 		}
+	}
+
+	/** One line of the bank's supply list. */
+	static final class SupplyRow
+	{
+		final String name;
+		final int need;
+		final int carried;
+		final int inBank;
+		final int itemId;
+
+		SupplyRow(String name, int need, int carried, int inBank, int itemId)
+		{
+			this.name = name;
+			this.need = need;
+			this.carried = carried;
+			this.inBank = inBank;
+			this.itemId = itemId;
+		}
+	}
+
+	private volatile List<SupplyRow> supplyRows = Collections.emptyList();
+	private volatile int supplyBankStops;
+	private volatile String nowText;
+	private volatile String nextText;
+	private volatile String stopCountText;
+
+	List<SupplyRow> getSupplyRows()
+	{
+		return supplyRows;
+	}
+
+	int getSupplyBankStops()
+	{
+		return supplyBankStops;
+	}
+
+	boolean isBankSupplyOpen()
+	{
+		return config.bankSupplyOpen();
+	}
+
+	void toggleBankSupplyOpen()
+	{
+		configManager.setConfiguration("herbrunhelper", "bankSupplyOpen", !config.bankSupplyOpen());
+	}
+
+	String getNowText()
+	{
+		return nowText;
+	}
+
+	String getNextText()
+	{
+		return nextText;
+	}
+
+	String getStopCountText()
+	{
+		return stopCountText;
+	}
+
+	/**
+	 * The top-of-screen box: what to do now and the stop after. "Now" is the fairy ring code or
+	 * spirit tree to pick, else the current step at a patch (with what to use), else the teleport
+	 * or walk to the next stop. "Next" is the following stop that still needs a visit.
+	 */
+	private void updateNowNext(RunPlan.RouteStep focus, String action, String item, boolean travelling)
+	{
+		RunPlan plan = lastPlan;
+		if (plan == null || (focus == null && nextPatch == null))
+		{
+			nowText = null;
+			nextText = null;
+			stopCountText = null;
+			return;
+		}
+		long now = System.currentTimeMillis();
+		RunPlan.RouteStep at = focus != null ? focus : stepFor(nextPatch);
+		String here = at == null ? "" : at.patch.getDisplayName();
+		String text;
+		String lead = navLeadHint;
+		if (lead != null)
+		{
+			text = lead;
+		}
+		else if (action != null && !travelling)
+		{
+			String what = payLabel != null && action.startsWith("Pay the gardener") ? payLabel
+				: item != null && !action.toLowerCase().contains(item.toLowerCase()) ? action + " (" + item + ")" : action;
+			text = what + " at " + here;
+		}
+		else if (travelling && at != null && at.teleportLabel != null)
+		{
+			text = at.teleportLabel + " to " + here;
+		}
+		else if (at != null && timers.needsVisit(at.patch, now))
+		{
+			text = "Go to " + here + " (harvest / check it)";
+		}
+		else
+		{
+			text = here.isEmpty() ? null : "Go to " + here;
+		}
+		nowText = text;
+
+		// The stop after this one that still needs a visit.
+		int index = at == null ? -1 : plan.route.indexOf(at);
+		String after = null;
+		int left = 0;
+		for (int i = 0; i < plan.route.size(); i++)
+		{
+			RunPlan.RouteStep s = plan.route.get(i);
+			boolean todo = timers.needsVisit(s.patch, now) || s == at;
+			if (todo)
+			{
+				left++;
+			}
+			if (after == null && i > index && timers.needsVisit(s.patch, now))
+			{
+				after = s.patch.getDisplayName() + (s.teleport != null ? " (" + s.teleport.getLabel() + ")" : "");
+			}
+		}
+		nextText = after != null ? after : index >= 0 ? "Last stop of this run" : null;
+		int total = plan.route.size();
+		stopCountText = total > 0 && index >= 0 ? "stop " + (index + 1) + " of " + total : null;
 	}
 
 	private volatile String spellToHighlight;
@@ -1621,6 +1765,23 @@ public class HerbRunPlugin extends Plugin
 			}
 		}
 		highlightIds = ids;
+		List<SupplyRow> rows = new ArrayList<>();
+		for (RunPlan.Withdrawal w : plan.withdrawals)
+		{
+			int carriedQty = inventoryItems.getOrDefault(w.itemName, 0) + equipmentItems.getOrDefault(w.itemName, 0);
+			Integer id = bankNameToId.get(w.itemName);
+			if (id == null)
+			{
+				id = inventoryNameToId.get(w.itemName);
+			}
+			if (id == null)
+			{
+				id = equipmentNameToId.get(w.itemName);
+			}
+			rows.add(new SupplyRow(w.itemName, w.quantity, carriedQty, bankItems.getOrDefault(w.itemName, 0), id == null ? -1 : id));
+		}
+		supplyRows = rows;
+		supplyBankStops = plan.bankStops.size();
 
 		Map<String, Integer> carried = new HashMap<>(inventoryItems);
 		equipmentItems.forEach((k, v) -> carried.merge(k, v, Integer::sum));

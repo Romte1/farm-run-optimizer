@@ -15,7 +15,9 @@
 
 ## Patch notes
 
-**Latest: 1.15.0**
+**Latest: 1.16.0**
+- **Supply tab in the bank:** a Farm run tab on the bank's title bar with a quick have/need list for the run.
+- **Now / next box:** what to do right now and the next stop, at the top of the screen.
 - **Herb profit the OSRS Wiki way:** expected herbs per patch from your level, compost, magic secateurs, Farming cape, diaries and disease, minus seed and compost.
 - **New hardwoods:** camphor, ironwood and rosewood from the Sailing update are planned, timed and tracked in every hardwood patch.
 - **Seven new runs** (turn them on in the panel): bushes, hops, cactus, calquat, spirit trees, celastrus and redwood, each with timers, steps, gardener payments and Farming Guild contracts.

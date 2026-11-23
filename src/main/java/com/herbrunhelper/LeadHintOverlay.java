@@ -16,11 +16,13 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 class LeadHintOverlay extends OverlayPanel
 {
 	private final HerbRunPlugin plugin;
+	private final HerbRunConfig config;
 
 	@Inject
-	LeadHintOverlay(HerbRunPlugin plugin)
+	LeadHintOverlay(HerbRunPlugin plugin, HerbRunConfig config)
 	{
 		this.plugin = plugin;
+		this.config = config;
 		setPosition(OverlayPosition.TOP_CENTER);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
@@ -29,7 +31,8 @@ class LeadHintOverlay extends OverlayPanel
 	public Dimension render(Graphics2D graphics)
 	{
 		String hint = plugin.getOnScreenLeadHint();
-		if (hint == null)
+		// The Now / next box shows the same hint, so don't draw two boxes.
+		if (hint == null || (config.showNowNext() && plugin.getNowText() != null))
 		{
 			return null;
 		}

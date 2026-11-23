@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.16.0 (2026-11-22)
+- **Supply tab in the bank.** A small "Farm run 3/6" tab sits on the bank's title bar and shows how many of the run's items you already carry. Click it to open a quick supply list: each item with how many you carry out of how many you need. Green means you have them all, white means the rest is in your bank, red means you're short. If the run needs a bank stop on the way, it says so. Click the tab again to close it; it stays as you left it. It only draws on screen: it never withdraws anything, and clicks on the open list are ignored so you can't withdraw through it by accident.
+- **"Now / next" box at the top of the screen.** It shows what to do right now and the stop after that, e.g. "Now: Pay: 10 x Coconut at Catherby fruit tree" and "Next: Ardougne herb (Ardougne cloak)". "Now" covers the fairy ring code to dial, the spirit tree to pick, the teleport to use and each step at the patch. It also shows "stop 3 of 7". It replaces the separate "Dial AKR..." box while it's on.
+- Both can be turned off in Settings ("Now / next box", "Supply tab in bank").
+
 ## 1.15.0 (2026-11-21)
 - **Herb profit now uses the OSRS Wiki's method.** Before, every herb was priced at a flat 8 herbs a patch (or your own average), minus the seed. Now each herb's expected yield is worked out the way the wiki's herb calculator does it:
   - **Harvest lives:** 3, plus 1, 2 or 3 for compost, supercompost or ultracompost (the bottomless bucket counts as ultracompost).
