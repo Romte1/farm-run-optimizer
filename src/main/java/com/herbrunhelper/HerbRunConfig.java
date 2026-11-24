@@ -346,4 +346,12 @@ public interface HerbRunConfig extends Config
 	{
 		return new Color(80, 220, 80);
 	}
+
+	@ConfigItem(keyName = "markWearables", name = "WEAR tags in inventory",
+		description = "Mark equippable run items in your inventory with an orange WEAR tag",
+		position = 3, section = bankSection)
+	default boolean markWearables()
+	{
+		return true;
+	}
 }

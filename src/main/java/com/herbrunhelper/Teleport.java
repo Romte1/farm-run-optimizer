@@ -80,6 +80,15 @@ public enum Teleport
 	// ---- Other
 	SPIRIT_TREE(Kind.OTHER, "Spirit tree", 6063, 0, null, null, null);
 
+	/** Items whose uncharged state is a separate, unusable item name. */
+	private static final Set<Teleport> CHARGEABLE = EnumSet.of(
+		XERICS_TALISMAN, SKILLS_NECKLACE, AMULET_OF_GLORY, RING_OF_WEALTH,
+		DIGSITE_PENDANT, TELEPORT_CRYSTAL, PENDANT_OF_ATES);
+
+	/** Items whose charged state is the plain item name, with "(inert)" for no charges. */
+	private static final Set<Teleport> BASE_IS_CHARGED = EnumSet.of(
+		XERICS_TALISMAN, PENDANT_OF_ATES);
+
 	public enum Kind
 	{
 		ITEM("Jewellery & items"),
@@ -207,20 +216,70 @@ public enum Teleport
 		return false;
 	}
 
+	/**
+	 * Charges written in the item's name, e.g. "Skills necklace(6)" or "Ring of wealth (5)".
+	 * Uncharged names score 0, so a charged version in the bank wins over a 1-charge one.
+	 */
+	static int chargesOf(String itemName)
+	{
+		if (itemName == null)
+		{
+			return 0;
+		}
+		int open = itemName.lastIndexOf('(');
+		int close = itemName.lastIndexOf(')');
+		if (open < 0 || close <= open + 1)
+		{
+			return 0;
+		}
+		String inside = itemName.substring(open + 1, close).trim();
+		try
+		{
+			return Integer.parseInt(inside);
+		}
+		catch (NumberFormatException e)
+		{
+			return 0;
+		}
+	}
+
+	private static boolean isDepletedName(String name)
+	{
+		String lower = name.toLowerCase();
+		return lower.contains("inert") || lower.contains("empty") || lower.contains("uncharged")
+			|| lower.contains("(0)") || lower.endsWith(" 0");
+	}
+
 	public Availability check(Context ctx)
 	{
 		switch (kind)
 		{
 			case ITEM:
 			case TABLET:
+				String best = null;
+				int bestCharges = -1;
+				boolean needsCharges = CHARGEABLE.contains(this);
 				for (Map.Entry<String, Integer> e : ctx.owned.entrySet())
 				{
-					if (e.getValue() > 0 && matchesItem(e.getKey()))
+					if (e.getValue() <= 0 || !matchesItem(e.getKey()))
 					{
-						return new Availability(true, "You own " + e.getKey(), e.getKey());
+						continue;
+					}
+					int charges = chargesOf(e.getKey());
+					if (needsCharges && charges <= 0
+						&& !(BASE_IS_CHARGED.contains(this) && !isDepletedName(e.getKey())))
+					{
+						// Inert/empty/uncharged variants have no teleport.
+						continue;
+					}
+					if (charges > bestCharges)
+					{
+						bestCharges = charges;
+						best = e.getKey();
 					}
 				}
-				return new Availability(false, "You don't own one", null);
+				return best == null ? new Availability(false, "You don't own a charged one", null)
+					: new Availability(true, "You own " + best, best);
 			case SPELL:
 				if (!ctx.standardSpellbook)
 				{

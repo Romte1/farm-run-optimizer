@@ -2,7 +2,9 @@ package com.herbrunhelper;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import net.runelite.client.util.Text;
 
 /**
@@ -91,6 +93,18 @@ final class TravelItems
 		{"construction cape", "Construct. cape"},
 	};
 
+	/** Items whose uncharged state is a separate name, e.g. "Xeric's talisman (inert)". */
+	private static final Set<String> CHARGEABLE = new HashSet<>(Arrays.asList(
+		"Xeric's talisman", "Skills necklace", "Amulet of glory", "Ring of wealth",
+		"Digsite pendant", "Teleport crystal", "Pendant of ates", "Pendant of Ates",
+		"Ring of dueling", "Games necklace", "Combat bracelet", "Burning amulet",
+		"Necklace of passage", "Ring of returning", "Ring of the elements",
+		"Ring of shadows", "Slayer ring"));
+
+	/** Charged state is the plain name; only the inert variant is unusable. */
+	private static final Set<String> BASE_IS_CHARGED = new HashSet<>(Arrays.asList(
+		"Xeric's talisman", "Pendant of ates", "Pendant of Ates"));
+
 	private TravelItems()
 	{
 	}
@@ -115,8 +129,17 @@ final class TravelItems
 		}
 		if (best != null)
 		{
-			String variant = bestOwnedVariant(best, owned);
-			return variant != null ? variant : best;
+			String base = baseOf(best);
+			String variant = bestOwnedVariant(base, owned);
+			if (variant != null)
+			{
+				return variant;
+			}
+			if (requiresCharges(base))
+			{
+				return baseIsCharged(base) && exactUsable(base, owned) ? base : null;
+			}
+			return best;
 		}
 		for (String[] alias : ALIASES)
 		{
@@ -141,12 +164,24 @@ final class TravelItems
 			return null;
 		}
 		String base = baseOf(wanted);
+		if (baseIsCharged(base) && exactUsable(base, carried))
+		{
+			return base;
+		}
 		String best = bestOwnedVariant(base, carried);
+		if (best == null && baseIsCharged(base) && exactUsable(base, owned))
+		{
+			return base;
+		}
 		if (best == null)
 		{
 			best = bestOwnedVariant(base, owned);
 		}
-		return best != null ? best : base;
+		if (best != null)
+		{
+			return best;
+		}
+		return requiresCharges(base) ? null : base;
 	}
 
 	/** "Ring of wealth (4)" -> "Ring of wealth"; "Ardougne cloak 4" -> "Ardougne cloak". */
@@ -181,7 +216,7 @@ final class TravelItems
 		int bestNumber = -1;
 		for (String name : owned)
 		{
-			if (name.length() <= base.length() || !name.startsWith(base))
+			if (!isUsable(name) || name.length() <= base.length() || !name.startsWith(base))
 			{
 				continue;
 			}
@@ -229,6 +264,71 @@ final class TravelItems
 			value = value * 10 + (c - '0');
 		}
 		return value;
+	}
+
+	/** True for inert, empty, uncharged or zero-charge variants that cannot teleport. */
+	static boolean isDepleted(String name)
+	{
+		if (name == null)
+		{
+			return false;
+		}
+		String lower = name.toLowerCase(Locale.ROOT);
+		if (lower.contains("inert") || lower.contains("empty") || lower.contains("uncharged")
+			|| lower.contains("no charges"))
+		{
+			return true;
+		}
+		return name.indexOf('(') >= 0 && name.endsWith(")") && Teleport.chargesOf(name) <= 0;
+	}
+
+	private static boolean requiresCharges(String base)
+	{
+		if (base == null)
+		{
+			return false;
+		}
+		for (String name : CHARGEABLE)
+		{
+			if (name.equalsIgnoreCase(base))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean baseIsCharged(String base)
+	{
+		if (base == null)
+		{
+			return false;
+		}
+		for (String name : BASE_IS_CHARGED)
+		{
+			if (name.equalsIgnoreCase(base))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean exactUsable(String base, Collection<String> names)
+	{
+		for (String name : names)
+		{
+			if (name.equalsIgnoreCase(base) && isUsable(name))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean isUsable(String name)
+	{
+		return name != null && !isDepleted(name);
 	}
 
 	private static String bestMatch(String text, Collection<String> names, boolean ignoreCase)

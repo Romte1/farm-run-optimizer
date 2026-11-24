@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -197,6 +199,25 @@ public class SupplyRouteTest
 	}
 
 	@Test
+	public void wearableTeleportTakesNoInventorySlot()
+	{
+		Set<FarmPatch> unlocked = EnumSet.of(FarmPatch.FARMING_GUILD_TREE);
+		Map<String, Integer> carried = carried();
+		RunPlanner.Options options = options(PatchType.TREE);
+		options.carried.putAll(carried);
+		options.wearable.add("Skills necklace(6)");
+		options.teleports.disabled = EnumSet.allOf(Teleport.class);
+		options.teleports.disabled.remove(Teleport.SKILLS_NECKLACE);
+
+		RunPlan plan = RunPlanner.plan(99, unlocked, owned(bank(), carried), options);
+
+		RunPlan.Withdrawal necklace = allWithdrawals(plan).stream()
+			.filter(w -> w.itemName.equals("Skills necklace(6)")).findFirst().orElse(null);
+		assertTrue("the necklace is used for the Farming Guild tree", necklace != null);
+		assertEquals("a worn necklace takes no inventory slot", 0, necklace.slots);
+	}
+
+	@Test
 	public void treeRunUsesBankAndInventoryTeleports()
 	{
 		Set<FarmPatch> unlocked = EnumSet.of(FarmPatch.VARROCK_TREE, FarmPatch.LUMBRIDGE_TREE,
@@ -314,5 +335,31 @@ public class SupplyRouteTest
 			assertFalse("no base " + rune + " is needed when the staff and pouch cover it",
 				hasWithdrawal(plan, rune));
 		}
+	}
+
+	@Test
+	public void hosidiusDiaryRemovesTheGardenerPayment()
+	{
+		Map<String, Integer> owned = new HashMap<>();
+		owned.put("Watermelon seed", 3);
+		owned.put("Curry leaf", 10);
+
+		RunPlanner.Options free = options(PatchType.ALLOTMENT);
+		free.freeHosidiusGardener = true;
+		RunPlan plan = RunPlanner.plan(99, EnumSet.of(FarmPatch.HOSIDIUS_ALLOTMENT_A), owned, free);
+		RunPlan.RouteStep step = plan.route.stream()
+			.filter(s -> s.patch == FarmPatch.HOSIDIUS_ALLOTMENT_A)
+			.findFirst().orElse(null);
+		assertTrue("the Hosidius allotment is planned", step != null);
+		assertNull("the easy Kourend diary means no gardener payment", step.paymentItem);
+
+		RunPlanner.Options paid = options(PatchType.ALLOTMENT);
+		paid.freeHosidiusGardener = false;
+		plan = RunPlanner.plan(99, EnumSet.of(FarmPatch.HOSIDIUS_ALLOTMENT_A), owned, paid);
+		step = plan.route.stream()
+			.filter(s -> s.patch == FarmPatch.HOSIDIUS_ALLOTMENT_A)
+			.findFirst().orElse(null);
+		assertTrue("without the benefit the payment is still planned", step != null);
+		assertEquals("Curry leaf", step.paymentItem);
 	}
 }

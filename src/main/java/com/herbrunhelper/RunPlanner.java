@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -24,6 +25,8 @@ public final class RunPlanner
 		public boolean useCompost = true;
 		public boolean bringRake = true;
 		public boolean payGardeners = true;
+		/** Hosidius favour makes its gardeners tend crops for free. */
+		public boolean freeHosidiusGardener;
 		public boolean bankKnown = true;
 		public int inventorySlots = 28;
 		/** Crops you've unticked: never planted. */
@@ -41,6 +44,8 @@ public final class RunPlanner
 		public boolean pouchCarried;
 		public String pouchName = "Rune pouch";
 		public int pouchCapacity = 3;
+		/** Items that can be equipped, so they take no inventory slot once worn. */
+		public Set<String> wearable = new HashSet<>();
 		/** Crops in the order to plant them (e.g. most profitable first); empty = highest level first. */
 		public List<Crop> cropRank = new ArrayList<>();
 		/** Farming Guild contract crop to plant in the guild patch, or null. */
@@ -186,7 +191,8 @@ public final class RunPlanner
 			step.crop = crops.get(step.patch);
 			step.done = options.doneThisRun.contains(step.patch);
 			if (step.crop != null && step.patch.getType().hasGardenerPayment() && options.payGardeners
-				&& step.crop.getPaymentItem() != null)
+				&& step.crop.getPaymentItem() != null
+				&& !(options.freeHosidiusGardener && isHosidius(step.patch)))
 			{
 				step.paymentItem = step.crop.getPaymentItem();
 				step.paymentQuantity = step.crop.getPaymentQuantity();
@@ -839,12 +845,12 @@ public final class RunPlanner
 		boolean dibber = options.runs.contains(PatchType.HERB) || options.runs.contains(PatchType.HOPS);
 		if (dibber)
 		{
-			requireTool(plan, out, owned, "Seed dibber");
+			requireTool(plan, out, owned, "Seed dibber", options.wearable);
 		}
-		requireTool(plan, out, owned, "Spade");
+		requireTool(plan, out, owned, "Spade", options.wearable);
 		if (options.bringRake)
 		{
-			requireTool(plan, out, owned, "Rake");
+			requireTool(plan, out, owned, "Rake", options.wearable);
 		}
 		if (bottomless != null)
 		{
@@ -870,8 +876,9 @@ public final class RunPlanner
 		boolean magicSecateurs = owned.getOrDefault("Magic secateurs", 0) > 0;
 		if ((yieldRun || sickTree) && magicSecateurs)
 		{
+			int slots = options.wearable.contains("Magic secateurs") ? 0 : 1;
 			out.add(new RunPlan.Withdrawal("Magic secateurs", 1,
-				yieldRun ? "+10% crop yield; wield it" : "cure the diseased tree", 0));
+				yieldRun ? "+10% crop yield; wield it" : "cure the diseased tree", slots));
 		}
 		if (sickHerbs > 0)
 		{
@@ -884,7 +891,7 @@ public final class RunPlanner
 		}
 		if (sickTree && !magicSecateurs)
 		{
-			requireTool(plan, out, owned, "Secateurs");
+			requireTool(plan, out, owned, "Secateurs", options.wearable);
 		}
 
 		// Teleport items and tablets
@@ -937,8 +944,9 @@ public final class RunPlanner
 			String name = e.getKey();
 			int qty = name.toLowerCase().endsWith(" teleport") ? e.getValue() : 1;
 			int have = options.carried.getOrDefault(name, 0);
+			int slots = options.wearable.contains(name) ? 0 : 1;
 			out.add(new RunPlan.Withdrawal(name, qty, Math.max(0, qty - have),
-				firstPatch.get(name), 1));
+				firstPatch.get(name), slots));
 		}
 		// Spell runes: staves, tomes, the rune pouch and combination runes first.
 		if (!runes.isEmpty())
@@ -952,6 +960,7 @@ public final class RunPlanner
 			rc.pouchCarried = options.pouchCarried;
 			rc.pouchName = options.pouchName;
 			rc.pouchCapacity = options.pouchCapacity;
+			rc.wearable = options.wearable;
 			rc.herbs = options.runs.contains(PatchType.HERB);
 			rc.ownsMagicSecateurs = magicSecateurs;
 			RuneSupply.Result rp = RuneSupply.plan(rc);
@@ -970,15 +979,18 @@ public final class RunPlanner
 			String staff = Teleport.staffName(owned);
 			if (staff != null)
 			{
-				out.add(new RunPlan.Withdrawal(staff, 1, "wield it for fairy rings", 0));
+				int slots = options.wearable.contains(staff) ? 0 : 1;
+				out.add(new RunPlan.Withdrawal(staff, 1, "wield it for fairy rings", slots));
 			}
 		}
 		return out;
 	}
 
-	private static void requireTool(RunPlan plan, List<RunPlan.Withdrawal> out, Map<String, Integer> owned, String tool)
+	private static void requireTool(RunPlan plan, List<RunPlan.Withdrawal> out, Map<String, Integer> owned,
+		String tool, Set<String> wearable)
 	{
-		out.add(new RunPlan.Withdrawal(tool, 1, ""));
+		int slots = wearable.contains(tool) ? 0 : 1;
+		out.add(new RunPlan.Withdrawal(tool, 1, "", slots));
 		if (owned.getOrDefault(tool, 0) <= 0)
 		{
 			plan.warnings.add("You don't seem to own a " + tool + " (unless it's in a tool leprechaun store).");
@@ -1155,5 +1167,19 @@ public final class RunPlanner
 	{
 		int have = carried.getOrDefault(name, 0);
 		return new RunPlan.Withdrawal(name, quantity, Math.max(0, quantity - have), note, 1);
+	}
+
+	/** The Easy Kourend &amp; Kebos Diary makes the Hosidius allotment gardener free. */
+	private static boolean isHosidius(FarmPatch patch)
+	{
+		switch (patch)
+		{
+			case HOSIDIUS_HERB:
+			case HOSIDIUS_ALLOTMENT_A:
+			case HOSIDIUS_ALLOTMENT_B:
+				return true;
+			default:
+				return false;
+		}
 	}
 }

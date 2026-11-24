@@ -140,7 +140,8 @@ public final class RunPlan
 				return false; // coins stack, they aren't noted
 			}
 			return text.contains("noted") || text.contains("payment")
-				|| name.contains("compost") || name.contains("plant cure");
+				|| (name.contains("compost") && !name.contains("bottomless"))
+				|| name.contains("plant cure");
 		}
 	}
 

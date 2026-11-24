@@ -49,6 +49,7 @@ import net.runelite.api.events.DecorativeObjectSpawned;
 import net.runelite.api.events.GroundObjectDespawned;
 import net.runelite.api.events.GroundObjectSpawned;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.StatChanged;
@@ -149,6 +150,10 @@ public class HerbRunPlugin extends Plugin
 	@Inject
 	private FarmBankButtonOverlay farmBankButtonOverlay;
 	@Inject
+	private FarmBankLayout farmBankLayout;
+	@Inject
+	private FarmBankViewOverlay farmBankViewOverlay;
+	@Inject
 	private net.runelite.client.callback.ClientThread clientThread;
 	@Inject
 	private net.runelite.client.plugins.banktags.TagManager tagManager;
@@ -203,6 +208,8 @@ public class HerbRunPlugin extends Plugin
 	private final Map<String, Integer> seedVaultItems = new HashMap<>();
 	/** Tools, compost and plant cures stored at the tool leprechaun. */
 	private final Map<String, Integer> leprechaunItems = new HashMap<>();
+	/** The one item chosen to wear in each equipment slot. */
+	private volatile Set<String> wearPrincipals = Collections.emptySet();
 
 	private final Set<String> completedQuests = new HashSet<>();
 	private boolean fairyRingsUnlocked;
@@ -291,6 +298,7 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.add(nowNextOverlay);
 		overlayManager.add(bankSupplyOverlay);
 		overlayManager.add(farmBankButtonOverlay);
+		overlayManager.add(farmBankViewOverlay);
 		clientThread.invokeLater(() -> farmBankButton.init()); // if the bank is already open
 		tagManager.registerTag(RunBankTag.NAME, runBankTag);
 		overlayManager.add(spellHighlightOverlay);
@@ -314,6 +322,8 @@ public class HerbRunPlugin extends Plugin
 		overlayManager.remove(nowNextOverlay);
 		overlayManager.remove(bankSupplyOverlay);
 		overlayManager.remove(farmBankButtonOverlay);
+		overlayManager.remove(farmBankViewOverlay);
+		farmBankLayout.shutDown();
 		clientThread.invokeLater(() -> farmBankButton.destroy());
 		tagManager.unregisterTag(RunBankTag.NAME);
 		overlayManager.remove(spellHighlightOverlay);
@@ -409,11 +419,16 @@ public class HerbRunPlugin extends Plugin
 	public void onVarbitChanged(VarbitChanged event)
 	{
 		int id = event.getVarbitId();
+		if (id == DIARY_KOUREND_EASY)
+		{
+			dirty = true;
+		}
 		for (int varbit : RUNE_POUCH_TYPE_VARBITS)
 		{
 			if (varbit == id)
 			{
 				readRunePouch();
+				updateCarriedForBank();
 				dirty = true;
 				return;
 			}
@@ -423,6 +438,7 @@ public class HerbRunPlugin extends Plugin
 			if (varbit == id)
 			{
 				readRunePouch();
+				updateCarriedForBank();
 				dirty = true;
 				return;
 			}
@@ -468,6 +484,25 @@ public class HerbRunPlugin extends Plugin
 		{
 			snapshot(event.getItemContainer(), seedVaultItems, new HashMap<>());
 			dirty = true;
+		}
+		if (id == INVENTORY || id == EQUIPMENT)
+		{
+			updateCarriedForBank();
+		}
+	}
+
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		String option = event.getMenuOption();
+		if (option == null)
+		{
+			return;
+		}
+		String lower = option.toLowerCase();
+		if (lower.contains("withdraw") || lower.contains("deposit"))
+		{
+			farmBankLayout.saveScroll();
 		}
 	}
 
@@ -1463,6 +1498,10 @@ public class HerbRunPlugin extends Plugin
 
 	private volatile List<SupplyRow> supplyRows = Collections.emptyList();
 	private volatile int supplyBankStops;
+	/** Every line shown in the bank's Farm run view, including later bank stops. */
+	private volatile List<RunPlan.Withdrawal> bankLines = Collections.emptyList();
+	private volatile Map<Integer, RunPlan.Withdrawal> bankLinesById = Collections.emptyMap();
+	private volatile Map<String, Integer> carriedForBank = Collections.emptyMap();
 	private volatile String nowText;
 	private volatile String nextText;
 	private volatile String stopCountText;
@@ -1470,6 +1509,84 @@ public class HerbRunPlugin extends Plugin
 	List<SupplyRow> getSupplyRows()
 	{
 		return supplyRows;
+	}
+
+	List<RunPlan.Withdrawal> getBankLines()
+	{
+		return bankLines;
+	}
+
+	Map<Integer, RunPlan.Withdrawal> getBankLinesById()
+	{
+		return bankLinesById;
+	}
+
+	Map<String, Integer> getCarriedForBank()
+	{
+		return carriedForBank;
+	}
+
+	/** Keeps the bank view's carried counts current before the next full recompute. */
+	private void updateCarriedForBank()
+	{
+		Map<String, Integer> view = new HashMap<>(inventoryItems);
+		equipmentItems.forEach((k, v) -> view.merge(k, v, Integer::sum));
+		if (runePouchCarried)
+		{
+			runePouchItems.forEach((k, v) -> view.merge(k, v, Integer::sum));
+		}
+		carriedForBank = view;
+	}
+
+	Map<String, Integer> getLeprechaunItems()
+	{
+		return leprechaunItems;
+	}
+
+	Map<String, Integer> getSeedVaultItems()
+	{
+		return seedVaultItems;
+	}
+
+	/** True when this is the item chosen to wear in its equipment slot. */
+	boolean isWearItem(String name)
+	{
+		return wearPrincipals.contains(name);
+	}
+
+	/** True when the item is on the run's bring list, including later bank stops. */
+	boolean isRunSupplyItem(String name)
+	{
+		RunPlan plan = lastPlan;
+		if (plan == null)
+		{
+			return false;
+		}
+		for (RunPlan.Withdrawal w : plan.withdrawals)
+		{
+			if (w.itemName.equals(name))
+			{
+				return true;
+			}
+		}
+		for (RunPlan.BankStop stop : plan.bankStops)
+		{
+			for (RunPlan.Withdrawal w : stop.withdrawals)
+			{
+				if (w.itemName.equals(name))
+				{
+					return true;
+				}
+			}
+		}
+		for (RunPlan.Withdrawal w : plan.optionalItems)
+		{
+			if (w.itemName.equals(name))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	int getSupplyBankStops()
@@ -1607,6 +1724,42 @@ public class HerbRunPlugin extends Plugin
 			target.merge(name, item.getQuantity(), Integer::sum);
 			nameToId.putIfAbsent(name, item.getId());
 		}
+	}
+
+	/** Names of owned items that can be equipped, so the planner can count them as worn. */
+	private Set<String> wearableNames()
+	{
+		Set<String> names = new HashSet<>();
+		addWearable(names, bankItems, bankNameToId);
+		addWearable(names, inventoryItems, inventoryNameToId);
+		addWearable(names, equipmentItems, equipmentNameToId);
+		return names;
+	}
+
+	private void addWearable(Set<String> names, Map<String, Integer> items, Map<String, Integer> ids)
+	{
+		for (String name : items.keySet())
+		{
+			Integer id = ids.get(name);
+			if (id == null)
+			{
+				continue;
+			}
+			ItemComposition composition = itemManager.getItemComposition(id);
+			if (Wearables.isWearable(composition))
+			{
+				names.add(name);
+			}
+		}
+	}
+
+	/**
+	 * One wearable per equipment slot. A staff needed for runes beats magic secateurs,
+	 * whose effect still works from the inventory.
+	 */
+	private Set<String> chooseWearPrincipals(Set<String> wearable, RunPlan plan)
+	{
+		return Wearables.choosePrincipals(wearable, plan);
 	}
 
 	/**
@@ -1801,6 +1954,8 @@ public class HerbRunPlugin extends Plugin
 		options.pouchName = runePouchName;
 		options.pouchCapacity = runePouchCapacity;
 		options.payGardeners = config.payGardeners();
+		// Easy Kourend & Kebos Diary: the Hosidius farmer tends the patches for free.
+		options.freeHosidiusGardener = client.getVarbitValue(DIARY_KOUREND_EASY) == 1;
 		options.useCompost = config.useCompost();
 		options.bringRake = config.bringRake();
 		options.onlyReady = config.onlyReady();
@@ -1912,6 +2067,12 @@ public class HerbRunPlugin extends Plugin
 		ctx.chainFairyRings = config.chainFairyRings();
 
 		RunPlan plan = RunPlanner.plan(level, unlocked, owned, options);
+		Set<String> principals = chooseWearPrincipals(wearableNames(), plan);
+		options.wearable.clear();
+		options.wearable.addAll(principals);
+		wearPrincipals = principals;
+		// Plan again so the chosen worn items take no inventory slot.
+		plan = RunPlanner.plan(level, unlocked, owned, options);
 		lastPlan = plan;
 
 		// Highlight what's still to take from the bank (first leg).
@@ -1989,17 +2150,41 @@ public class HerbRunPlugin extends Plugin
 			labels.put(r.itemId, left <= 0 ? "\u2713" : left + (how == null ? "" : " " + how));
 		}
 		bankLabels = labels;
-		if (runBankTag.set(tagIds) && isRunTagOpen())
-		{
-			// Refresh the open view with the new item list.
-			bankTagsService.openBankTag(RunBankTag.NAME, net.runelite.client.plugins.banktags.BankTagsService.OPTION_NO_LAYOUT);
-		}
+		runBankTag.set(tagIds);
 
 		Map<String, Integer> carried = new HashMap<>(inventoryItems);
 		equipmentItems.forEach((k, v) -> carried.merge(k, v, Integer::sum));
 		Map<String, Integer> nameToId = new HashMap<>(equipmentNameToId);
 		inventoryNameToId.forEach(nameToId::putIfAbsent);
 		bankNameToId.forEach(nameToId::putIfAbsent);
+		Map<String, Integer> carriedForBankView = new HashMap<>(inventoryItems);
+		equipmentItems.forEach((k, v) -> carriedForBankView.merge(k, v, Integer::sum));
+		if (runePouchCarried)
+		{
+			runePouchItems.forEach((k, v) -> carriedForBankView.merge(k, v, Integer::sum));
+		}
+		List<RunPlan.Withdrawal> allLines = new ArrayList<>(plan.withdrawals);
+		for (RunPlan.BankStop stop : plan.bankStops)
+		{
+			allLines.addAll(stop.withdrawals);
+		}
+		allLines.addAll(plan.optionalItems);
+		Map<Integer, RunPlan.Withdrawal> linesById = new HashMap<>();
+		for (RunPlan.Withdrawal w : allLines)
+		{
+			Integer id = nameToId.get(w.itemName);
+			if (id != null && id > 0)
+			{
+				linesById.putIfAbsent(id, w);
+			}
+		}
+		bankLines = allLines;
+		bankLinesById = linesById;
+		carriedForBank = carriedForBankView;
+		if (farmBankButton.isActive())
+		{
+			farmBankLayout.refresh();
+		}
 		Set<String> worn = new HashSet<>(equipmentItems.keySet());
 		Set<PatchType> runs = options.runs.isEmpty() ? EnumSet.noneOf(PatchType.class) : EnumSet.copyOf(options.runs);
 		Set<Teleport> disabled = EnumSet.noneOf(Teleport.class);
@@ -2045,6 +2230,7 @@ public class HerbRunPlugin extends Plugin
 		settings.put("showTimers", config.showTimers());
 		settings.put("showTravel", config.showTravel());
 		String spNotice = shortestPathNotice();
+		RunPlan panelPlan = plan;
 		SwingUtilities.invokeLater(() ->
 		{
 			panel.setShortestPathNotice(spNotice);
@@ -2053,7 +2239,7 @@ public class HerbRunPlugin extends Plugin
 			panel.setPicks(offCrops, offPatches);
 			panel.setExtras(profitCopy, herbYield, historyRuns, currentRun, totalProfit, contractNow);
 			panel.setHerbYields(yieldCopy, noteCopy);
-			panel.setPlan(plan, carried, worn, nameToId, disabled, useSpells, useTabs);
+			panel.setPlan(panelPlan, carried, worn, wearPrincipals, nameToId, disabled, useSpells, useTabs);
 		});
 	}
 
@@ -2305,6 +2491,56 @@ public class HerbRunPlugin extends Plugin
 	private static final int TRAVEL_JUMP_TILES = 30;
 	private static final int MAX_TRAVEL_ARRIVAL_TILES = 200;
 
+	/**
+	 * The stop the panel is focused on: a patch in the player's current region first, then the
+	 * first stop in route order that still needs a visit. Navigation and Shortest Path use this
+	 * same stop, so they cannot send the player somewhere else than the panel says.
+	 */
+	private FarmPatch currentPatch(long now)
+	{
+		if (lastPlan == null)
+		{
+			return null;
+		}
+		Player player = client.getLocalPlayer();
+		if (player != null)
+		{
+			WorldPoint wp = player.getWorldLocation();
+			int region = FarmPatch.regionOf(wp.getX(), wp.getY());
+			FarmPatch nearby = null;
+			for (RunPlan.RouteStep step : lastPlan.route)
+			{
+				if (!step.patch.inRegion(region))
+				{
+					continue;
+				}
+				StepItems.Progress progressHere = progress.get(step.patch);
+				if (progressHere != null
+					&& StepItems.next(step, timers.get(step.patch), timers.getStatus(step.patch),
+						progressHere, now) != null)
+				{
+					return step.patch;
+				}
+				if (nearby == null && timers.needsVisit(step.patch, now))
+				{
+					nearby = step.patch;
+				}
+			}
+			if (nearby != null)
+			{
+				return nearby;
+			}
+		}
+		for (RunPlan.RouteStep step : lastPlan.route)
+		{
+			if (timers.needsVisit(step.patch, now))
+			{
+				return step.patch;
+			}
+		}
+		return null;
+	}
+
 	private void updateNavigation()
 	{
 		if (lastPlan == null || client.getGameState() != GameState.LOGGED_IN)
@@ -2312,15 +2548,7 @@ public class HerbRunPlugin extends Plugin
 			return;
 		}
 		long now = System.currentTimeMillis();
-		FarmPatch next = null;
-		for (RunPlan.RouteStep step : lastPlan.route)
-		{
-			if (timers.needsVisit(step.patch, now))
-			{
-				next = step.patch;
-				break;
-			}
-		}
+		FarmPatch next = currentPatch(now);
 		if (next != nextPatch)
 		{
 			nextPatch = next;
@@ -2826,7 +3054,7 @@ public class HerbRunPlugin extends Plugin
 			&& config.bankSupplyTab() && isRunTagOpen())
 		{
 			// After Bank Tags has laid out its own view.
-			clientThread.invokeAtTickEnd(() -> RunBankLayout.apply(client));
+			farmBankLayout.onBankBuilt();
 		}
 	}
 

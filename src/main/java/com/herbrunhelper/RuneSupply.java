@@ -46,6 +46,8 @@ public final class RuneSupply
 		public String pouchName = "Rune pouch";
 		/** Three for a rune pouch, four for a divine rune pouch. */
 		public int pouchCapacity = 3;
+		/** Items that can be equipped, so they take no inventory slot once worn. */
+		public Set<String> wearable = Collections.emptySet();
 		/** True when the run includes herbs, so magic secateurs have extra value. */
 		public boolean herbs;
 		public boolean ownsMagicSecateurs;
@@ -153,9 +155,10 @@ public final class RuneSupply
 			if (!covers.isEmpty())
 			{
 				boolean equipped = ctx.equipped.getOrDefault(staff, 0) > 0;
-				// Worn items take no inventory slot; one in the bank is withdrawn and wielded.
+				// Worn or equippable items take no inventory slot; a bank one is withdrawn and worn.
+				int slots = equipped || ctx.wearable.contains(staff) ? 0 : 1;
 				result.withdrawals.add(new RunPlan.Withdrawal(staff, 1,
-					equipped ? "worn" : "wield it", 0));
+					equipped ? "worn" : "wield it", slots));
 				result.notes.add(staff + " supplies " + join(covers) + " for free");
 				free.addAll(covers);
 				need.keySet().removeAll(covers);
@@ -192,25 +195,25 @@ public final class RuneSupply
 				result.notes.add(ctx.pouchName + " already holds " + String.join(", ", inside));
 			}
 		}
-		boolean pouchUseful = ctx.pouchCarried || remainingTypes >= 2;
-		boolean recommendPouch = !ctx.pouchCarried && pouchUseful && ownedPouch(ctx) != null;
-		if (recommendPouch)
-		{
-			result.withdrawals.add(new RunPlan.Withdrawal(ownedPouch(ctx), 1,
-				"put the runes inside (one slot)", 1));
-			result.notes.add(ownedPouch(ctx) + ": one slot for up to " + ctx.pouchCapacity + " rune types");
-		}
-
 		// 4. Whatever is still missing is carried as base runes.
 		int pouchFree = ctx.pouchCarried
 			? Math.max(0, ctx.pouchCapacity - ctx.pouch.size())
-			: recommendPouch ? ctx.pouchCapacity : 0;
+			: 0;
 		for (Map.Entry<String, Integer> e : shortfall.entrySet())
 		{
 			String rune = e.getKey();
 			int qty = e.getValue();
+			int total = need.getOrDefault(rune, qty);
+			// Keep a line for runes that are already covered so the bank view still shows
+			// them ticked after they are withdrawn. Only add it when the player actually
+			// carries that rune; a combination rune covering it should not leave a red line.
 			if (qty <= 0)
 			{
+				if (carried.getOrDefault(rune, 0) >= total)
+				{
+					result.withdrawals.add(new RunPlan.Withdrawal(rune, total, 0,
+						"already carried", 0));
+				}
 				continue;
 			}
 			boolean pouchSlot = pouchFree > 0;
@@ -232,7 +235,6 @@ public final class RuneSupply
 				slots = 1;
 				note = "spell runes";
 			}
-			int total = need.getOrDefault(rune, qty);
 			result.withdrawals.add(new RunPlan.Withdrawal(rune, total, qty, note, slots));
 			int have = ctx.owned.getOrDefault(rune, 0);
 			if (have < qty)
@@ -249,19 +251,7 @@ public final class RuneSupply
 				+ (remainingTypes - ctx.pouch.size() == 1 ? "" : "s") + ".");
 		}
 
-		// The pouch is worth showing even when it isn't a required withdrawal, so it has a line
-		// in the bank's Farm run view (a carried pouch is shown ticked).
-		String pouch = ownedPouch(ctx);
-		if (pouch != null && !need.isEmpty() && !recommendPouch)
-		{
-			boolean carriedPouch = ctx.carried.getOrDefault(pouch, 0) > 0
-				|| (ctx.pouchCarried && pouch.equals(ctx.pouchName));
-			result.optional.add(new RunPlan.Withdrawal(pouch, 1, carriedPouch ? 0 : 1,
-				carriedPouch ? "carried; one slot for its runes" : "put the spell runes inside; one slot",
-				carriedPouch ? 0 : 1, RunPlan.Group.RUNES, false));
-		}
-
-		result.summary = summary(ctx, free, shortfall, staff, recommendPouch);
+		result.summary = summary(ctx, free, shortfall, staff);
 		return result;
 	}
 
@@ -464,20 +454,8 @@ public final class RuneSupply
 		return out;
 	}
 
-	private static String ownedPouch(Context ctx)
-	{
-		for (String name : new String[]{"Divine rune pouch", "Rune pouch"})
-		{
-			if (ctx.owned.getOrDefault(name, 0) > 0 || name.equals(ctx.pouchName) && ctx.pouchCarried)
-			{
-				return name;
-			}
-		}
-		return null;
-	}
-
 	private static String summary(Context ctx, Set<String> free, Map<String, Integer> shortfall,
-		String staff, boolean pouch)
+		String staff)
 	{
 		List<String> parts = new ArrayList<>();
 		for (Map.Entry<String, Integer> e : shortfall.entrySet())
@@ -496,10 +474,6 @@ public final class RuneSupply
 		if (staff != null)
 		{
 			help.add(staff);
-		}
-		if (pouch)
-		{
-			help.add("rune pouch");
 		}
 		if (!free.isEmpty())
 		{

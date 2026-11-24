@@ -2,6 +2,7 @@ package com.herbrunhelper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -51,7 +52,10 @@ public class RuneSupplyTest
 		assertTrue("the staff is suggested", has(result, "Smoke battlestaff"));
 		assertFalse("air is covered", has(result, "Air rune"));
 		assertFalse("fire is covered", has(result, "Fire rune"));
-		assertFalse("law is already carried", has(result, "Law rune"));
+		RunPlan.Withdrawal law = result.withdrawals.stream()
+			.filter(w -> w.itemName.equals("Law rune")).findFirst().orElse(null);
+		assertTrue("law stays in the list after it is carried", law != null);
+		assertEquals("nothing left to withdraw", 0, law.toWithdraw);
 	}
 
 	@Test
@@ -64,7 +68,8 @@ public class RuneSupplyTest
 
 		RuneSupply.Result result = RuneSupply.plan(ctx);
 
-		assertTrue("nothing left to take", result.withdrawals.isEmpty());
+		assertTrue("nothing left to take", result.withdrawals.stream()
+			.noneMatch(w -> w.toWithdraw > 0));
 		assertTrue(result.notes.toString().contains("Rune pouch"));
 	}
 
@@ -153,5 +158,20 @@ public class RuneSupplyTest
 
 		assertTrue("an equipped staff costs nothing", has(result, "Smoke battlestaff"));
 		assertFalse(has(result, "Air rune"));
+	}
+
+	@Test
+	public void wearableStaffTakesNoInventorySlot()
+	{
+		RuneSupply.Context ctx = context(Map.of("Air rune", 1, "Fire rune", 1),
+			Map.of("Smoke battlestaff", 1));
+		ctx.wearable = Set.of("Smoke battlestaff");
+
+		RuneSupply.Result result = RuneSupply.plan(ctx);
+
+		RunPlan.Withdrawal staff = result.withdrawals.stream()
+			.filter(w -> w.itemName.equals("Smoke battlestaff")).findFirst().orElse(null);
+		assertTrue(staff != null);
+		assertEquals("a wearable staff can be equipped before leaving", 0, staff.slots);
 	}
 }

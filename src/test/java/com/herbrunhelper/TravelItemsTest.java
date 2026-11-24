@@ -75,12 +75,36 @@ public class TravelItemsTest
 			Set.of("Ring of wealth (4)", "Ring of wealth (3)"), Set.of("Ring of wealth (3)")));
 		assertEquals("Ring of wealth (4)", TravelItems.resolve("Ring of wealth (5)",
 			Set.of("Ring of wealth (4)"), Set.of()));
-		assertEquals("Ring of wealth", TravelItems.resolve("Ring of wealth (5)", Set.of(), Set.of()));
+		assertNull("no usable ring of wealth is owned",
+			TravelItems.resolve("Ring of wealth (5)", Set.of(), Set.of()));
 	}
 
 	@Test
 	public void ignoresFairyRings()
 	{
 		assertNull(TravelItems.find("Fairy ring CIR", Set.of()));
+	}
+
+	@Test
+	public void ignoresInertXericsTalisman()
+	{
+		assertNull(TravelItems.find("Xeric's talisman", Set.of("Xeric's talisman (inert)")));
+		assertNull(TravelItems.resolve("Xeric's talisman",
+			Set.of("Xeric's talisman (inert)"), Set.of()));
+		assertEquals("Xeric's talisman",
+			TravelItems.find("Xeric's talisman",
+				Set.of("Xeric's talisman (inert)", "Xeric's talisman")));
+		assertEquals("Xeric's talisman",
+			TravelItems.resolve("Xeric's talisman", Set.of("Xeric's talisman"), Set.of()));
+	}
+
+	@Test
+	public void ignoresZeroChargeJewellery()
+	{
+		assertNull(TravelItems.find("Skills necklace", Set.of("Skills necklace(0)")));
+		assertEquals("Skills necklace(6)", TravelItems.find("Skills necklace",
+			Set.of("Skills necklace(0)", "Skills necklace(6)")));
+		assertNull(TravelItems.find("Ring of wealth", Set.of("Ring of wealth (0)")));
+		assertNull(TravelItems.find("Teleport crystal", Set.of("Teleport crystal (empty)")));
 	}
 }

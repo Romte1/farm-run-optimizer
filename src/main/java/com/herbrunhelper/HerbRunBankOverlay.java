@@ -14,6 +14,9 @@ import net.runelite.client.ui.overlay.WidgetItemOverlay;
 /** Outlines the items you still need to withdraw while the bank is open. */
 public class HerbRunBankOverlay extends WidgetItemOverlay
 {
+	/** A small, clean font for the labels. */
+	private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 9);
+
 	private final HerbRunPlugin plugin;
 	private final HerbRunConfig config;
 
@@ -45,11 +48,8 @@ public class HerbRunBankOverlay extends WidgetItemOverlay
 		graphics.draw(bounds);
 	}
 
-	/** A small, clean font for the labels. */
-	private static final Font LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 9);
-
 	/** How many to take and noted / unnoted, a little below the item. */
-	private static void drawLabel(Graphics2D g, String label, Rectangle b)
+	static void drawLabel(Graphics2D g, String label, Rectangle b)
 	{
 		if (label == null)
 		{
