@@ -4,7 +4,7 @@ Made by ToadFx. Last updated: 2026-11-18.
 
 ## Status
 
-Version **1.18.1**. Live on the Plugin Hub.
+Version **1.18.2**. Live on the Plugin Hub.
 
 ## Done
 
@@ -45,6 +45,7 @@ Version **1.18.1**. Live on the Plugin Hub.
 - 1.7.1: guideStyle (line/tiles/both), guideStatus debug box in LeadHintOverlay, no line >60 tiles from a teleport stop until travelDone. Tree-run missing line still being diagnosed (routes OK offline on real map with exact footprints).
 - 1.7.0: line A to B, untrimmed, hidden once reached (guideReached) until a new target or teleport; travelDone per stop (at destination ring, or a jump that brought you >30 tiles closer and within 200) stops ring/tree leads; 28 FarmPatch tiles corrected from Quest Helper (verify_patches OK).
 - 1.6.2: line points via LocalPoint.fromWorld per tile (was offset from the player's interpolated local position, so it slid); no re-plan when the box turns exact or the Agility boost changes.
+- 1.18.2: Todd's new art: images/banner.png (1600 wide), icon.png (48x48 hub logo), images/logo.png + logo_full.png, panel_banner.png (212 wide, black made transparent) replaces the title text + header.png, sidebar icon.png (16x16, green emblem only).
 - 1.18.1: Romte1's FarmBankButton (widget button, x 380 y 5, shovel sprite, flashes when closed; opens RunBankTag) and FarmBankButtonOverlay copied from PR #1 with permission (config animateBankButton -> bankTabGlow). BankSupplyOverlay now only draws the "Not in your bank" box under the button. Init on WidgetLoaded BANKMAIN, onGameTick, destroy on shutdown.
 - 1.18.0: Romte1's bank button animation (drawGardenGlow, with permission) when the run tag is closed; labels 9pt bold sans in a pill, 3px below the item; RunBankLayout re-grids the tag view (7 x 56px, rows 54px, TRADEBACKING_DARK dividers hidden) on BANKMAIN_FINISHBUILDING via invokeAtTickEnd. Romte1 credited in README/NOTICE.
 - 1.17.2: bank tab is a 22px square (emblem + glow, RIGHT_GAP 55 = next to the close button); count moved to a hover tooltip.

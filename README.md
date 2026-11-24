@@ -15,7 +15,8 @@
 
 ## Patch notes
 
-**Latest: 1.18.1**
+**Latest: 1.18.2**
+- **New look:** new logo, sidebar icon and panel banner.
 - **Romte1's Farm run bank button** in the bank's title bar opens the run view.
 - **Bank view polish:** Romte1's animated bank button, smaller labels with a little space under each item, and wider spacing between items.
 

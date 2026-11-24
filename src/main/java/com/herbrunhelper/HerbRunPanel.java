@@ -48,7 +48,7 @@ import net.runelite.client.util.ImageUtil;
 public class HerbRunPanel extends PluginPanel
 {
 	/** Shown in the footer so it's easy to tell which build is running. */
-	static final String VERSION = "1.18.1";
+	static final String VERSION = "1.18.2";
 	private static final String CREDIT = "<html><center>Made by ToadFx<br>v" + VERSION + "</center></html>";
 
 	private static final Color GREEN = new Color(90, 200, 90);
@@ -155,12 +155,10 @@ public class HerbRunPanel extends PluginPanel
 
 		Column root = new Column();
 
-		JLabel title = new JLabel("Farm Run Optimizer");
-		title.setFont(FontManager.getRunescapeBoldFont());
-		title.setForeground(Color.WHITE);
-		title.setIcon(new ImageIcon(ImageUtil.loadImageResource(HerbRunPanel.class, "header.png")));
-		title.setIconTextGap(6);
-		root.addRow(title, 2);
+		JLabel title = new JLabel(new ImageIcon(ImageUtil.loadImageResource(HerbRunPanel.class, "panel_banner.png")));
+		title.setToolTipText("Farm Run Optimizer");
+		title.setHorizontalAlignment(SwingConstants.CENTER);
+		root.addRow(title, 4);
 
 		noticeSection.setOpaque(false);
 		noticeSection.setLayout(new BorderLayout());
