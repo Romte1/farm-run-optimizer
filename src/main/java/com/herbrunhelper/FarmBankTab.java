@@ -88,9 +88,9 @@ class FarmBankTab
 	private final List<Widget> addedWidgets = new ArrayList<>();
 	private final Map<Widget, BankSupplyLine> lineByWidget = new HashMap<>();
 	private int originalContainerChildren = -1;
-	private Supplier<List<BankSupplyLine>> plan = Collections::emptyList;
-	private Supplier<List<String>> deposit = Collections::emptyList;
-	private boolean enabled;
+	private volatile Supplier<List<BankSupplyLine>> plan = Collections::emptyList;
+	private volatile Supplier<List<String>> deposit = Collections::emptyList;
+	private volatile boolean enabled;
 
 	@Inject
 	FarmBankTab(Client client, ClientThread clientThread, ChatMessageManager chatMessageManager,
@@ -133,9 +133,13 @@ class FarmBankTab
 
 	void shutDown()
 	{
-		clientThread.invokeLater(() -> setEnabled(false));
+		setEnabled(false);
 	}
 
+	/**
+	 * Widgets may only be touched on the client thread, and the plugin can be enabled from the
+	 * config panel (AWT thread), so the actual init/destroy is always deferred.
+	 */
 	void setEnabled(boolean enabled)
 	{
 		if (this.enabled == enabled)
@@ -143,6 +147,15 @@ class FarmBankTab
 			return;
 		}
 		this.enabled = enabled;
+		clientThread.invokeLater(() -> applyEnabled(enabled));
+	}
+
+	private void applyEnabled(boolean enabled)
+	{
+		if (this.enabled != enabled)
+		{
+			return; // a newer toggle superseded this one
+		}
 		if (enabled)
 		{
 			button.init();
@@ -158,7 +171,7 @@ class FarmBankTab
 	{
 		if (enabled && event.getGroupId() == InterfaceID.BANKMAIN)
 		{
-			button.init();
+			button.reload();
 		}
 	}
 
@@ -200,6 +213,12 @@ class FarmBankTab
 		if (event.getScriptId() != ScriptID.BANKMAIN_FINISHBUILDING)
 		{
 			return;
+		}
+		if (enabled)
+		{
+			// The bank's title bar is only ready once building finishes, so retry here in case
+			// the WidgetLoaded init ran too early.
+			button.init();
 		}
 		removeAddedWidgets();
 		if (!button.isActive())

@@ -29,7 +29,7 @@ class FarmBankTabButton
 	private static final int POTION_STORE_VARBIT = 4150;
 	private static final int POTION_STORE_TAB = 15;
 	private static final int BUTTON_SIZE = 25;
-	private static final int BUTTON_X = 434;
+	private static final int BUTTON_X = 380;
 	private static final int BUTTON_Y = 5;
 	private static final int TAB_BUTTON = 195;
 	private static final int TAB_BUTTON_ACTIVE = 196;
@@ -66,6 +66,10 @@ class FarmBankTabButton
 			return;
 		}
 		Widget parent = client.getWidget(InterfaceID.Bankmain.UNIVERSE);
+		if (parent == null || isChildOf(parent, background))
+		{
+			return; // already built for the bank that is open
+		}
 		background = createGraphic(parent, NAME, TAB_BUTTON, BUTTON_SIZE, BUTTON_X, BUTTON_Y);
 		icon = createGraphic(parent, NAME, TAB_ICON, BUTTON_SIZE - 6, BUTTON_X + 3, BUTTON_Y + 3);
 		for (Widget part : new Widget[]{background, icon})
@@ -83,6 +87,23 @@ class FarmBankTabButton
 	void setAttention(boolean attention)
 	{
 		this.attention = attention;
+	}
+
+	/** The bank interface was loaded again; the old widgets belong to the previous one. */
+	void reload()
+	{
+		Widget parent = client.getWidget(InterfaceID.Bankmain.UNIVERSE);
+		if (isChildOf(parent, icon))
+		{
+			icon.setHidden(true);
+		}
+		if (isChildOf(parent, background))
+		{
+			background.setHidden(true);
+		}
+		background = null;
+		icon = null;
+		init();
 	}
 
 	void onGameTick()
@@ -140,6 +161,8 @@ class FarmBankTabButton
 		{
 			background.setHidden(true);
 		}
+		icon = null;
+		background = null;
 		active = false;
 	}
 
@@ -237,6 +260,27 @@ class FarmBankTabButton
 	{
 		Widget bank = client.getWidget(InterfaceID.Bankmain.UNIVERSE);
 		return bank == null || bank.isHidden();
+	}
+
+	private static boolean isChildOf(Widget parent, Widget child)
+	{
+		if (parent == null || child == null)
+		{
+			return false;
+		}
+		Widget[] children = parent.getChildren();
+		if (children == null)
+		{
+			return false;
+		}
+		for (Widget candidate : children)
+		{
+			if (candidate == child)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static Widget createGraphic(Widget parent, String name, int spriteId, int size, int x, int y)
