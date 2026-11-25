@@ -814,7 +814,6 @@ public class HerbRunPanel extends PluginPanel
 		{"highlightGardener", "Highlight gardener to pay", "Outline the gardener when you need to pay them"},
 		{"pointerArrow", "Arrow over target", "A steady arrow over the next patch, ring, tree or gardener"},
 		{"highlightInventory", "Highlight step items", "Outline the seed / compost / payment your current step needs"},
-		{"highlightBank", "Highlight in bank", "Outline what to withdraw when your bank is open"},
 		{"markWearables", "WEAR tags in inventory", "Mark equippable run items with an orange WEAR tag"},
 		{"notifyReady", "Notify when ready", "Notification when a patch finishes growing"},
 		{"notifyDisease", "Notify diseased/dead", "Notification when a patch is found diseased or dead"},

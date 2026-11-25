@@ -11,6 +11,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
@@ -49,7 +50,6 @@ import net.runelite.api.events.DecorativeObjectSpawned;
 import net.runelite.api.events.GroundObjectDespawned;
 import net.runelite.api.events.GroundObjectSpawned;
 import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.StatChanged;
@@ -128,9 +128,6 @@ public class HerbRunPlugin extends Plugin
 	private Notifier notifier;
 
 	@Inject
-	private HerbRunBankOverlay bankOverlay;
-
-	@Inject
 	private PatchNavigationOverlay navigationOverlay;
 
 	@Inject
@@ -144,24 +141,13 @@ public class HerbRunPlugin extends Plugin
 	@Inject
 	private NowNextOverlay nowNextOverlay;
 	@Inject
-	private BankSupplyOverlay bankSupplyOverlay;
+	private FarmBankTabButtonOverlay farmBankTabButtonOverlay;
 	@Inject
-	private FarmBankButton farmBankButton;
-	@Inject
-	private FarmBankButtonOverlay farmBankButtonOverlay;
-	@Inject
-	private FarmBankLayout farmBankLayout;
-	@Inject
-	private FarmBankViewOverlay farmBankViewOverlay;
+	private FarmBankTab farmBankTab;
 	@Inject
 	private net.runelite.client.callback.ClientThread clientThread;
-	@Inject
-	private net.runelite.client.plugins.banktags.TagManager tagManager;
-	@Inject
-	private net.runelite.client.plugins.banktags.BankTagsService bankTagsService;
-	private final RunBankTag runBankTag = new RunBankTag();
-	/** Per bank item: how many to take and "noted" / "unnoted", for the bank labels. */
-	private volatile Map<Integer, String> bankLabels = Collections.emptyMap();
+	private volatile List<BankSupplyLine> bankTabLines = Collections.emptyList();
+	private volatile List<String> depositItems = Collections.emptyList();
 
 	@Inject
 	private SpellHighlightOverlay spellHighlightOverlay;
@@ -231,7 +217,6 @@ public class HerbRunPlugin extends Plugin
 	/** The game's farming patch varbits (FARMING_TRANSMIT_A..N). */
 	private static final Set<Integer> FARMING_VARBITS = new HashSet<>(java.util.Arrays.asList(
 		4771, 4772, 4773, 4774, 4775, 7904, 7905, 7906, 7907, 7908, 7909, 7910, 7911, 7912));
-	private volatile Set<Integer> highlightIds = Collections.emptySet();
 	private volatile FarmPatch nextPatch;
 	private WorldPoint shortestPathTarget;
 	/** Send Shortest Path the same target again (after a teleport or a settings change). */
@@ -290,17 +275,14 @@ public class HerbRunPlugin extends Plugin
 			.panel(panel)
 			.build();
 		clientToolbar.addNavigation(navButton);
-		overlayManager.add(bankOverlay);
 		overlayManager.add(navigationOverlay);
 		overlayManager.add(inventoryOverlay);
 		overlayManager.add(readyOverlay);
 		overlayManager.add(leadHintOverlay);
 		overlayManager.add(nowNextOverlay);
-		overlayManager.add(bankSupplyOverlay);
-		overlayManager.add(farmBankButtonOverlay);
-		overlayManager.add(farmBankViewOverlay);
-		clientThread.invokeLater(() -> farmBankButton.init()); // if the bank is already open
-		tagManager.registerTag(RunBankTag.NAME, runBankTag);
+		overlayManager.add(farmBankTabButtonOverlay);
+		farmBankTab.startUp(this::getBankTabLines, this::getDepositItems);
+		farmBankTab.setEnabled(config.bankSupplyTab());
 		overlayManager.add(spellHighlightOverlay);
 		overlayManager.add(minimapArrowOverlay);
 		dirty = true;
@@ -314,18 +296,13 @@ public class HerbRunPlugin extends Plugin
 	protected void shutDown()
 	{
 		clientToolbar.removeNavigation(navButton);
-		overlayManager.remove(bankOverlay);
 		overlayManager.remove(navigationOverlay);
 		overlayManager.remove(inventoryOverlay);
 		overlayManager.remove(readyOverlay);
 		overlayManager.remove(leadHintOverlay);
 		overlayManager.remove(nowNextOverlay);
-		overlayManager.remove(bankSupplyOverlay);
-		overlayManager.remove(farmBankButtonOverlay);
-		overlayManager.remove(farmBankViewOverlay);
-		farmBankLayout.shutDown();
-		clientThread.invokeLater(() -> farmBankButton.destroy());
-		tagManager.unregisterTag(RunBankTag.NAME);
+		overlayManager.remove(farmBankTabButtonOverlay);
+		farmBankTab.shutDown();
 		overlayManager.remove(spellHighlightOverlay);
 		overlayManager.remove(minimapArrowOverlay);
 		saveHistory(); // keeps the run in progress for next time
@@ -349,11 +326,12 @@ public class HerbRunPlugin extends Plugin
 		spiritTreeObjects.clear();
 		lastSeenValue.clear();
 		bankSeen = false;
-		highlightIds = Collections.emptySet();
 		nextPatch = null;
 		nowText = null;
 		nextText = null;
 		supplyRows = Collections.emptyList();
+		bankTabLines = Collections.emptyList();
+		depositItems = Collections.emptyList();
 	}
 
 	// ================================================================ events
@@ -488,21 +466,6 @@ public class HerbRunPlugin extends Plugin
 		if (id == INVENTORY || id == EQUIPMENT)
 		{
 			updateCarriedForBank();
-		}
-	}
-
-	@Subscribe
-	public void onMenuOptionClicked(MenuOptionClicked event)
-	{
-		String option = event.getMenuOption();
-		if (option == null)
-		{
-			return;
-		}
-		String lower = option.toLowerCase();
-		if (lower.contains("withdraw") || lower.contains("deposit"))
-		{
-			farmBankLayout.saveScroll();
 		}
 	}
 
@@ -767,6 +730,10 @@ public class HerbRunPlugin extends Plugin
 			return;
 		}
 		dirty = true;
+		if ("bankSupplyTab".equals(event.getKey()))
+		{
+			farmBankTab.setEnabled(config.bankSupplyTab());
+		}
 		if (!config.useShortestPath())
 		{
 			clearShortestPath();
@@ -784,7 +751,7 @@ public class HerbRunPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		farmBankButton.onGameTick();
+		farmBankTab.onGameTick();
 		if (!toldAboutShortestPath && client.getGameState() == GameState.LOGGED_IN)
 		{
 			toldAboutShortestPath = true;
@@ -1144,11 +1111,6 @@ public class HerbRunPlugin extends Plugin
 	}
 
 	// ================================================================ accessors for overlays
-
-	Set<Integer> getHighlightIds()
-	{
-		return highlightIds;
-	}
 
 	FarmPatch getNextPatch()
 	{
@@ -1526,6 +1488,133 @@ public class HerbRunPlugin extends Plugin
 		return carriedForBank;
 	}
 
+	List<BankSupplyLine> getBankTabLines()
+	{
+		return bankTabLines;
+	}
+
+	List<String> getDepositItems()
+	{
+		return depositItems;
+	}
+
+	private void buildBankTabLines(List<RunPlan.Withdrawal> lines, Map<String, Integer> carriedView,
+		Map<String, Integer> nameToId)
+	{
+		Map<String, BankSupplyLine> byName = new LinkedHashMap<>();
+		for (RunPlan.Withdrawal w : lines)
+		{
+			if (w.itemName == null)
+			{
+				continue;
+			}
+			int carried = carriedView.getOrDefault(w.itemName, 0);
+			int inBank = bankItems.getOrDefault(w.itemName, 0);
+			int atSource = seedVaultItems.getOrDefault(w.itemName, 0)
+				+ leprechaunItems.getOrDefault(w.itemName, 0);
+			int have = carried + inBank + atSource;
+			boolean wear = isWearItem(w.itemName);
+			boolean noted = w.noted || (w.group == RunPlan.Group.PAYMENTS
+				&& !"Coins".equalsIgnoreCase(w.itemName));
+			BankSupplyLine existing = byName.get(w.itemName);
+			if (existing != null)
+			{
+				byName.put(w.itemName, new BankSupplyLine(existing.group, w.itemName,
+					existing.need + w.quantity, have, carried, existing.itemIds, existing.where,
+					existing.wear || wear, existing.noted || noted));
+				continue;
+			}
+			int[] ids = itemIdsFor(w.itemName, nameToId);
+			if (ids.length == 0)
+			{
+				continue;
+			}
+			byName.put(w.itemName, new BankSupplyLine(w.group, w.itemName, w.quantity, have, carried,
+				ids, whereText(carried, inBank, atSource), wear, noted));
+		}
+		List<BankSupplyLine> tab = new ArrayList<>(byName.values());
+		bankTabLines = tab;
+
+		Set<String> needed = new HashSet<>();
+		for (BankSupplyLine line : tab)
+		{
+			needed.add(line.name);
+		}
+		needed.addAll(wearPrincipals);
+		List<String> deposit = new ArrayList<>();
+		for (Map.Entry<String, Integer> e : inventoryItems.entrySet())
+		{
+			if (e.getValue() > 0 && !needed.contains(e.getKey()))
+			{
+				deposit.add(e.getKey());
+			}
+		}
+		depositItems = deposit;
+	}
+
+	private int[] itemIdsFor(String name, Map<String, Integer> nameToId)
+	{
+		Integer id = nameToId.get(name);
+		if (id == null || id <= 0)
+		{
+			for (var price : itemManager.search(name))
+			{
+				if (name.equalsIgnoreCase(price.getName()))
+				{
+					id = price.getId();
+					break;
+				}
+			}
+		}
+		if (id == null || id <= 0)
+		{
+			return new int[0];
+		}
+		java.util.LinkedHashSet<Integer> ids = new java.util.LinkedHashSet<>();
+		ids.add(id);
+		int canonical = itemManager.canonicalize(id);
+		ids.add(canonical);
+		net.runelite.api.ItemComposition composition = itemManager.getItemComposition(canonical);
+		if (composition != null)
+		{
+			int note = composition.getLinkedNoteId();
+			if (note > 0)
+			{
+				ids.add(note);
+			}
+			int placeholder = composition.getPlaceholderId();
+			if (placeholder > 0)
+			{
+				ids.add(placeholder);
+			}
+		}
+		int[] out = new int[ids.size()];
+		int i = 0;
+		for (int value : ids)
+		{
+			out[i++] = value;
+		}
+		return out;
+	}
+
+	private static String whereText(int carried, int inBank, int atSource)
+	{
+		List<String> parts = new ArrayList<>();
+		if (carried > 0)
+		{
+			parts.add(carried + " carried");
+		}
+		if (inBank > 0)
+		{
+			parts.add(inBank + " in your bank");
+		}
+		if (atSource > 0)
+		{
+			parts.add(atSource + " at the seed vault/leprechaun");
+		}
+		return String.join(", ", parts);
+	}
+
 	/** Keeps the bank view's carried counts current before the next full recompute. */
 	private void updateCarriedForBank()
 	{
@@ -1592,18 +1681,6 @@ public class HerbRunPlugin extends Plugin
 	int getSupplyBankStops()
 	{
 		return supplyBankStops;
-	}
-
-	/** True while the bank shows just the run's items. */
-	boolean isRunTagOpen()
-	{
-		return RunBankTag.NAME.equals(bankTagsService.getActiveTag());
-	}
-
-	/** The label for a bank item ("10 noted", "6 unnoted", "\u2713"), or null if it's not for this run. */
-	String getBankLabel(int itemId)
-	{
-		return bankLabels.get(itemId);
 	}
 
 	String getNowText()
@@ -1898,6 +1975,14 @@ public class HerbRunPlugin extends Plugin
 		{
 			return;
 		}
+		// The bank container is the source of truth for the supply box. Re-read it here as well
+		// as on container events, so opening the bank cannot leave a stale/empty snapshot.
+		ItemContainer bank = client.getItemContainer(InventoryID.BANK);
+		if (bank != null)
+		{
+			snapshot(bank, bankItems, bankNameToId);
+			bankSeen = true;
+		}
 		int level = farmingLevel();
 
 		Set<FarmPatch> unlocked = EnumSet.noneOf(FarmPatch.class);
@@ -2075,22 +2160,6 @@ public class HerbRunPlugin extends Plugin
 		plan = RunPlanner.plan(level, unlocked, owned, options);
 		lastPlan = plan;
 
-		// Highlight what's still to take from the bank (first leg).
-		Set<Integer> ids = new HashSet<>();
-		for (RunPlan.Withdrawal w : plan.withdrawals)
-		{
-			int carried = inventoryItems.getOrDefault(w.itemName, 0) + equipmentItems.getOrDefault(w.itemName, 0);
-			if (runePouchCarried)
-			{
-				carried += runePouchItems.getOrDefault(w.itemName, 0);
-			}
-			Integer bankId = bankNameToId.get(w.itemName);
-			if (bankId != null && carried < w.quantity)
-			{
-				ids.add(bankId);
-			}
-		}
-		highlightIds = ids;
 		List<SupplyRow> rows = new ArrayList<>();
 		for (RunPlan.Withdrawal w : plan.withdrawals)
 		{
@@ -2115,42 +2184,6 @@ public class HerbRunPlugin extends Plugin
 		}
 		supplyRows = rows;
 		supplyBankStops = plan.bankStops.size();
-		// Gardener payments can be handed over noted; compost, saplings, tools and teleport items
-		// have to be unnoted to use. Stackable or unnotable items don't need a label.
-		Set<String> payments = new HashSet<>();
-		for (RunPlan.RouteStep st : plan.route)
-		{
-			if (st.paymentItem != null)
-			{
-				payments.add(st.paymentItem);
-			}
-			if (st.crop != null)
-			{
-				for (String[] extra : st.crop.getExtraPayments())
-				{
-					payments.add(extra[0]);
-				}
-			}
-		}
-		payments.remove("Coins");
-		Map<Integer, String> labels = new HashMap<>();
-		Set<Integer> tagIds = new HashSet<>();
-		for (SupplyRow r : rows)
-		{
-			if (r.itemId <= 0)
-			{
-				continue;
-			}
-			tagIds.add(r.itemId);
-			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(r.itemId);
-			boolean notable = comp != null && comp.getLinkedNoteId() != -1;
-			boolean stackable = comp != null && comp.isStackable();
-			String how = !notable ? null : payments.contains(r.name) ? "noted" : stackable ? null : "unnoted";
-			int left = r.need - r.carried;
-			labels.put(r.itemId, left <= 0 ? "\u2713" : left + (how == null ? "" : " " + how));
-		}
-		bankLabels = labels;
-		runBankTag.set(tagIds);
 
 		Map<String, Integer> carried = new HashMap<>(inventoryItems);
 		equipmentItems.forEach((k, v) -> carried.merge(k, v, Integer::sum));
@@ -2181,10 +2214,8 @@ public class HerbRunPlugin extends Plugin
 		bankLines = allLines;
 		bankLinesById = linesById;
 		carriedForBank = carriedForBankView;
-		if (farmBankButton.isActive())
-		{
-			farmBankLayout.refresh();
-		}
+		buildBankTabLines(allLines, carriedForBankView, nameToId);
+		farmBankTab.refresh();
 		Set<String> worn = new HashSet<>(equipmentItems.keySet());
 		Set<PatchType> runs = options.runs.isEmpty() ? EnumSet.noneOf(PatchType.class) : EnumSet.copyOf(options.runs);
 		Set<Teleport> disabled = EnumSet.noneOf(Teleport.class);
@@ -2210,7 +2241,6 @@ public class HerbRunPlugin extends Plugin
 		settings.put("highlightGardener", config.highlightGardener());
 		settings.put("pointerArrow", config.hintArrow());
 		settings.put("highlightInventory", config.highlightInventory());
-		settings.put("highlightBank", config.highlightBank());
 		settings.put("notifyReady", config.notifyReady());
 		settings.put("chainFairyRings", config.chainFairyRings());
 		settings.put("payGardeners", config.payGardeners());
@@ -3040,22 +3070,31 @@ public class HerbRunPlugin extends Plugin
 	@Subscribe
 	public void onWidgetLoaded(net.runelite.api.events.WidgetLoaded event)
 	{
-		if (event.getGroupId() == net.runelite.api.gameval.InterfaceID.BANKMAIN)
-		{
-			farmBankButton.init(); // Romte1's Farm run button in the bank title bar
-		}
+		farmBankTab.onWidgetLoaded(event);
 	}
 
-	/** The bank finished (re)building: space out the items while the Farm run tag is open. */
+	@Subscribe
+	public void onScriptCallbackEvent(net.runelite.api.events.ScriptCallbackEvent event)
+	{
+		farmBankTab.onScriptCallbackEvent(event);
+	}
+
+	@Subscribe
+	public void onScriptPreFired(net.runelite.api.events.ScriptPreFired event)
+	{
+		farmBankTab.onScriptPreFired(event);
+	}
+
 	@Subscribe
 	public void onScriptPostFired(net.runelite.api.events.ScriptPostFired event)
 	{
-		if (event.getScriptId() == net.runelite.api.ScriptID.BANKMAIN_FINISHBUILDING
-			&& config.bankSupplyTab() && isRunTagOpen())
-		{
-			// After Bank Tags has laid out its own view.
-			farmBankLayout.onBankBuilt();
-		}
+		farmBankTab.onScriptPostFired(event);
+	}
+
+	@Subscribe(priority = -1.0f)
+	public void onMenuOptionClicked(net.runelite.api.events.MenuOptionClicked event)
+	{
+		farmBankTab.onMenuOptionClicked(event);
 	}
 
 	@Subscribe

@@ -58,11 +58,12 @@ public enum Teleport
 	LUMBRIDGE_SPELL(Kind.SPELL, "Lumbridge Teleport", -1, 31, null, null, "Law rune:1,Air rune:3,Earth rune:1"),
 	FALADOR_SPELL(Kind.SPELL, "Falador Teleport", -1, 37, null, null, "Law rune:1,Air rune:3,Water rune:1"),
 	CAMELOT_SPELL(Kind.SPELL, "Camelot Teleport", -1, 45, null, null, "Law rune:1,Air rune:5"),
-	KOUREND_SPELL(Kind.SPELL, "Kourend Castle Teleport", -1, 48, "Client of Kourend", null, null),
+	KOUREND_SPELL(Kind.SPELL, "Kourend Castle Teleport", -1, 48, "Client of Kourend", null,
+		"Law rune:2,Water rune:1,Fire rune:1"),
 	ARDOUGNE_SPELL(Kind.SPELL, "Ardougne Teleport", -1, 51, "Plague City", null, "Law rune:2,Water rune:2"),
 	TROLLHEIM_SPELL(Kind.SPELL, "Trollheim Teleport", -1, 61, "Eadgar's Ruse", null, "Law rune:2,Fire rune:2"),
-	// Level and runes not verified; runes left blank so the plan reminds you to check.
-	CIVITAS_SPELL(Kind.SPELL, "Civitas illa Fortis Teleport", -1, 54, "Twilight's Promise", null, null),
+	CIVITAS_SPELL(Kind.SPELL, "Civitas illa Fortis Teleport", -1, 54, "Twilight's Promise", null,
+		"Law rune:2,Earth rune:1,Fire rune:1"),
 
 	// ---- Fairy rings
 	FAIRY_BLR(Kind.FAIRY_RING, "Fairy ring BLR", -1, 0, null, "BLR", null),
